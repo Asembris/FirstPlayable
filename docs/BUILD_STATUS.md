@@ -1,6 +1,16 @@
 # FirstPlayable — build status
 
-**Completed phase:** Phase 1 — shared scene contract, engine, and offline vertical slice.
+**Completed phases:** Phase 1 and Phase 2.
+**Next authorized phase:** Phase 3 — real Qloo references and explicit influence approval.
+
+This file is append-only across phases. The Phase 1 record below is unchanged;
+the Phase 2 record follows it. Every number in both sections comes from a
+command that was actually run in this repository.
+
+---
+
+# Phase 1 — shared scene contract, engine, and offline vertical slice
+
 **Branch:** `feat/phase-1-engine`
 **Date of this record:** 3 October 2026
 **Runtime observed:** Node `v22.22.0`, npm `10.9.4` (`.nvmrc` pins `22.22.0`; `engines.node` requires `>=22.12.0`).
@@ -207,9 +217,220 @@ by `package-lock.json`.
 7. **Playwright browser pinning.** The e2e gate requires a chromium matching
    `@playwright/test@1.56.1`.
 
+## Phase 1 exit gate
+
+Passed. Phase 1 authorized Phase 2, which is recorded below.
+
+Nothing in the Phase 1 record above was rewritten, and it should be read as the
+state of the repository on the day it was taken: there was then no persistence,
+ownership, budget, or deployment, and no API route. Two of its statements have
+since been narrowed by Phase 2 rather than falsified. `tests/engine/fixtures.test.ts`
+now forbids `fetch`, `process.env`, and provider imports inside `src/domain/`,
+`src/engine/`, `fixtures/`, `src/components/`, and the non-API pages instead of
+across all of `src/`, because Phase 2 adds a deliberately narrow server
+boundary under `src/server/` and `src/app/api/`; and the same file now asserts
+that the API route list is exactly the three Phase 2 routes rather than empty.
+
+---
+
+# Phase 2 — persistent shell and capped-cost deployment preflight
+
+**Branch:** `feat/phase-2-persistence`
+**Date of this record:** 3 October 2026 (UTC)
+**Runtime observed:** Node `v24.11.0`, npm `11.6.1` (`.nvmrc` pins `22.22.0`; `engines.node` requires `>=22.12.0`, which `v24.11.0` satisfies).
+
+Full external evidence, including the exact provider observations, lives in
+`docs/DEPLOYMENT_PREFLIGHT.md`. This section records what was built, what was
+run, and what remains false.
+
+## What Phase 2 implemented
+
+| Area | Files |
+|---|---|
+| Server configuration boundary | `src/server/config.ts` |
+| Database schema and atomic primitives | `supabase/migrations/20261003222350_phase2_schema.sql`, `20261003222456_phase2_atomic_functions.sql` |
+| Server-only Supabase client | `src/server/db/supabase-gateway.ts` |
+| Owner-scoped data contract | `src/server/db/gateway.ts` |
+| Repositories | `src/server/db/{sessions,projects,operations,budgets}.ts` |
+| Session, origin, body, and error security | `src/server/security/{session,request,errors}.ts` |
+| Route handlers | `src/server/api/{deps,session,projects}.ts`, `src/app/api/**/route.ts` |
+| Project contracts | `src/domain/project.ts` |
+| Minimal studio shell | `src/app/studio/**`, `src/components/studio/{StudioClient,ProjectClient,shared}.tsx` |
+| Pinned model adapter | `src/server/model/openai.ts` |
+| Opt-in live commands | `scripts/{smoke-supabase,smoke-openai,verify-deployment,scan-secrets}.ts` |
+| Tests | `tests/server/*.test.ts`, `tests/browser/studio.spec.ts` |
+
+The browser holds no Supabase credential. Exactly one module constructs a
+Supabase client, and it is server only; there is no `@supabase/ssr`, no browser
+client, and no `NEXT_PUBLIC_` variable anywhere in the repository. The owner's
+capability is one opaque 256-bit random secret in an `HttpOnly`, `SameSite=Lax`,
+`Secure`-when-TLS cookie, of which only a SHA-256 hash is stored.
+
+`src/domain/` and `src/engine/` remain free of React, Next, `fetch`,
+`process.env`, and any provider import, and `/example` is still a static route
+that plays with no database and no model call.
+
+## Commands run, and their results
+
+From a clean working tree at the end of implementation:
+
+| Command | Result |
+|---|---|
+| `npm run typecheck` | passed, exit 0 |
+| `npm test` | passed, exit 0 — 14 test files, 222 tests, 0 failures |
+| `npm run test:e2e` | passed, exit 0 — 13 Playwright tests, 0 failures |
+| `npm run check:fixtures` | passed, exit 0 — 29 checks PASS, 0 FAIL |
+| `npm run build` | passed, exit 0 — 8 routes, 4 static and 4 server-rendered on demand |
+| `npm run check:secrets` | passed, exit 0 — 83 tracked and 227 built files scanned |
+| `RUN_SUPABASE_SMOKE=1 npm run smoke:supabase` | passed, exit 0 — 20 of 20 checks |
+| `RUN_OPENAI_SMOKE=1 npm run smoke:openai` | passed, exit 0 — one real call |
+| `RUN_DEPLOY_VERIFY=1 DEPLOY_URL=... npm run verify:deployment` | passed, exit 0 — 24 of 24 checks |
+
+All Phase 1 tests still pass; the suite counts grew only because Phase 2 tests
+were added to it. `npm test`, `npm run test:e2e`, and `npm run build` need no
+Internet access and no credential: the browser gate deliberately runs with
+Supabase configuration set to invalid sentinels, which is how the
+database-outage path is exercised.
+
+## Migrations and database state
+
+| Version | Applied to the real project |
+|---|---|
+| `20261003222350_phase2_schema` | yes |
+| `20261003222456_phase2_atomic_functions` | yes |
+
+All eight tables of specification section 11 exist. Row-level security is
+enabled on every one, **no policy exists**, `anon` and `authenticated` hold no
+grant, and table and function privileges go to `service_role` only. Every
+function is `security invoker` with `search_path` pinned to the empty string.
+There is no ninth application table.
+
+`supabase db push` could not run from this machine: the direct database host is
+IPv6-only on this network and the scoped access token lacks
+`database_pooling_config_read`, so the CLI cannot discover an IPv4 pooler. The
+exact refusal, and the fact that no permission was broadened and the database
+password was never requested, are recorded in `docs/DEPLOYMENT_PREFLIGHT.md`
+section 2. The committed migrations were applied verbatim through the
+already-authorised Supabase management connection, and the resulting schema was
+verified by querying the live catalog.
+
+## Live results that only the real database can establish
+
+| Property | Observed against Postgres |
+|---|---|
+| eight parallel reservations of one idempotent stage | 1 reserved, 1 operation row, 7 refused `lease_held` |
+| replaying a settled stage | returns the committed result, `attempts` stays 1 |
+| twelve concurrent budget reservations against a cap of 3 | exactly 3 granted, 9 refused `budget_exhausted` |
+| reconciling a lease twice | no-op; no counter went negative |
+| releasing an unsent call | capacity returned, `used_calls` unchanged |
+| a second owner reading or reserving on a foreign project | `not_found`, identical to a nonexistent id |
+| a project read through a brand-new client instance | same row |
+
+## Deployed verification
+
+**Production URL:** https://firstplayable.vercel.app
+
+Verified in the deployed application, not in the build log: the landing page,
+`/example`, and `/studio` load; session establishment sets an `HttpOnly` and
+`Secure` cookie; a project persists and reads back; a second owner session gets
+404 with an envelope byte-identical to a nonexistent id; missing Origin, foreign
+Origin, wrong content type, a 32 KiB body, malformed JSON, and a contract
+violation are all refused; no refusal body carries a credential, host, SQL, or
+stack trace. In two genuinely isolated browser contexts, one created a project
+through the studio form and retrieved it after a full reload, while the other
+could not read it; the browser made no request to any origin but the
+application's own; and the deployed saved example played to an ending with zero
+`/api` requests. None of the eight client chunks `/studio` loads contains a
+credential shape or a provider host.
+
+**Persistence across a fresh deployment** was demonstrated, not inferred: a
+project created at `2026-10-03T23:00:21Z` was read back with the same id, the
+same `created_at`, and the same brief through a new `vercel deploy --prod`
+deployment, while a freshly established session on that new deployment got 404
+for the same id.
+
+## OpenAI
+
+Pinned to `gpt-4o-mini-2024-07-18`, enforced at configuration, at request time,
+and on the response. One real Structured Outputs call returned
+`{"colour":"red","letters":3}`, Zod validated, with **72 input, 10 output, 82
+total tokens** and a labelled list-price **estimate** of **$0.0000168**. A
+second identical call was made after a one-line fix to how the smoke script
+exits; usage was identical. No second model or provider exists in the code, no
+public arbitrary-prompt endpoint exists, and no deployed route calls the model.
+
+## Application budget
+
+The configured global cap is **40 model calls per UTC day**, the specification's
+default, lowerable by configuration and never raisable above it. It is this
+application's own cap, not a measured OpenAI account limit. The private budget
+configuration is server-only environment configuration with no admin UI; the
+reasoning for that narrow interpretation is in
+`docs/DEPLOYMENT_PREFLIGHT.md` section 5.
+
+## What Phase 2 did not build, and does not claim
+
+No Qloo call, artist search, reference retrieval, or capture: `QLOO_API_KEY` is
+read by nothing, no Qloo host appears in any source file, and `qloo_captures`
+holds zero rows. No cultural proposal generation, no influence approval UI, no
+base scene generation, no module compilation, no revision command, no
+publication, no public share route, no offline HTML export, and no
+model-selected comparator. No authentication accounts, no social login, no
+queue, no Redis, no LangChain or LangGraph, no multi-agent system, no RAG, no
+embeddings, and no vector database. The route surface is asserted by test to be
+exactly `POST /api/session`, `POST /api/projects`, and `GET /api/projects/:id`.
+
+`scene_versions`, `publications`, `influence_decisions`, and `qloo_captures`
+exist as schema for later phases and hold zero rows. `last_good_version_id` is
+`null` in every error envelope because no scene version exists yet.
+
+## Known limitations of Phase 2
+
+1. **The OpenAI account's own rate limit was not measured.** The specification
+   wants the global model rate set to the lower of the account's verified
+   allowance with a 20% reserve and the application's cap. Only the application
+   cap is in place. Phase 4 must establish the other half before relying on
+   throughput.
+2. **Remaining prepaid balance is unknown.** No billing endpoint was queried.
+3. **`supabase db push` does not work from this machine** (IPv6-only direct
+   host plus a scoped token without `database_pooling_config_read`).
+4. **Preview deployments sit behind Vercel Authentication** and are not
+   publicly reachable. Production is public. The protection setting was left as
+   the account had it.
+5. **The database-outage path was verified locally**, in a real browser against
+   a production build with invalid Supabase configuration, rather than by
+   breaking the live deployment.
+6. **Offline unit tests use an in-memory gateway** that re-implements the SQL's
+   semantics. It catches accounting mistakes; it cannot prove atomicity. The
+   atomicity evidence comes from the live run against Postgres.
+7. **The studio shell is minimal** and uses three fixed world identifiers
+   (`room`, `npc`, `object`). It is not the Phase 6 creative tool: no influence
+   cards, no provenance drawer, no compare view, no mobile sheets.
+8. **No Content-Security-Policy header is set yet.** The specification requires
+   one for the export and share surfaces, which Phase 5 builds.
+9. **Session expiry refresh is coarse:** `last_seen_at` is refreshed at most
+   once an hour per session, to avoid a database write on every read.
+10. **Six projects and nine sessions remain in the database** from the deployed
+    verification runs. They are the persistence evidence. The live Supabase
+    smoke cleans up after itself; the deployed verification deliberately does
+    not.
+11. **Playwright browser pinning** still applies: the browser gate needs a
+    chromium matching `@playwright/test@1.56.1`
+    (`npx playwright install chromium`).
+
+## Phase 2 exit gate
+
+Every binary item passed: the work is on `feat/phase-2-persistence`; typecheck,
+unit tests, browser tests, fixture checks, build, and the secret scan are all
+green; the migrations are committed and applied with the intended
+deny-by-default posture; anonymous ownership, cross-session denial, and
+persistence across a fresh deployment are demonstrated on the real deployment;
+the atomic operation and budget primitives hold under genuine concurrency; one
+real pinned-model Structured Outputs call succeeded with recorded usage; and no
+secret appears in any tracked file, built asset, client chunk, or response body.
+
 ## Next authorized phase
 
-**Phase 2 — persistent shell and capped-cost deployment preflight**, as
-specified in section 17. Phase 1's exit gate passed, so Phase 2 is authorized
-to begin; it is **not** implemented, and nothing in this repository provides
-persistence, ownership, budgets, or a deployment. No later phase is authorized.
+**Phase 3 — real Qloo references and explicit influence approval**, as specified
+in section 17. Phase 2's exit gate passed, so Phase 3 is authorized to begin; it
+is **not** implemented. No later phase is authorized.
