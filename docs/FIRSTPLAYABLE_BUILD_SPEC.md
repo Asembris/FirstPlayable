@@ -1,4 +1,4 @@
-# FirstPlayable v2 — Authoritative Build Specification
+# FirstPlayable — Authoritative Build Specification
 
 **Status:** architecture freeze · **Specification:** 1.0 · **Date:** 3 October 2026  
 **Delivery:** seven sequential Claude Code sessions, with binary exit gates.  
@@ -8,7 +8,7 @@
 
 ## Decision in one paragraph
 
-Build one Next.js/React/TypeScript application, with Zod contracts, a pure TypeScript scene engine shared by browser and server, Supabase Postgres persistence, Vercel Hobby hosting, and the Gemini Developer API free tier. Qloo retrieves movie and videogame candidates in parallel from one confirmed artist. A creator approves at most two concrete interaction ideas. The application composes independently owned influence modules onto a cultural-data-blind scene foundation. Removing an influence removes its module; editing it regenerates only that module. A change is called **mechanical** only when deterministic replay demonstrates a changed action, gate, state consequence, or reachable ending—not merely different wording.
+Build one Next.js/React/TypeScript application, with Zod contracts, a pure TypeScript scene engine shared by browser and server, Supabase Postgres persistence, Vercel Hobby hosting, and the OpenAI API using the pinned `gpt-4o-mini-2024-07-18` snapshot under a small fixed prepaid budget. Qloo retrieves movie and videogame candidates in parallel from one confirmed artist. A creator approves at most two concrete interaction ideas. The application composes independently owned influence modules onto a cultural-data-blind scene foundation. Removing an influence removes its module; editing it regenerates only that module. A change is called **mechanical** only when deterministic replay demonstrates a changed action, gate, state consequence, or reachable ending—not merely different wording.
 
 This is a TypeScript backend intentionally, not a FastAPI service plus a second runtime. One engine and one deployment are worth more here than retaining Python. The user already works with React/TypeScript; the narrowly bounded controller does not need an agent framework.
 
@@ -19,7 +19,7 @@ The uploaded product brief governs the product scope. The supplied experiments g
 - **E1 — `FIRSTPLAYABLE.md`:** the previous automatic-grounding experiment failed its declared gate. The mismatched packet won six of nine B-versus-C votes, and five of nine scenes never closed an ending before the final choice. The report also discloses three briefs, same-family model evaluators, and no actual player evaluation. We do not rewrite that result into proof of creative superiority. See §§8–12 and the validation summary.
 - **E2 — `CROSS_DOMAIN_STRUCTURE(2).md`:** first-hop artist neighborhoods were distinct; source persistence across a second hop was not a reusable primitive. See §§5, 11–13. This product performs no second hop.
 - **E3 — `RECON(6).md`:** observed Qloo limits, request patterns, ambiguity, payload sizes, descriptive fields, and failure cases. The report's phrases about outperforming or being impossible to imitate with an LLM are its interpretation, not a controlled finding adopted by this plan.
-- **E4 — `Texte collé(20261003-173324).txt`:** the locked FirstPlayable v2 brief and its twenty required planning sections.
+- **E4 — `Texte collé(20261003-173324).txt`:** the locked FirstPlayable brief and its twenty required planning sections.
 
 The raw capture files referenced by the reports were **not attached**. Exact unshown JSON paths, entity IDs, and missing game descriptions must be captured or recovered during implementation, not fabricated here. The worked scene below is a **design fixture**, not a claim that a live compiler already generated it.
 
@@ -154,7 +154,7 @@ This intentionally constrains the encounter to an object handover dilemma. It is
 
 ### Types and limits
 
-Use strict Zod objects with unknown keys rejected; derive TypeScript types from the schemas. Export provider-facing JSON Schema from the same Zod shapes, with a tested transformation for unsupported provider features. Do not maintain a second handwritten validation schema. Zod documents JSON Schema conversion, and Gemini documents structured output plus subsequent application validation [W4, W9].
+Use strict Zod objects with unknown keys rejected; derive TypeScript types from the schemas. Export provider-facing JSON Schema from the same Zod shapes, with a tested transformation for unsupported provider features. Do not maintain a second handwritten validation schema. Zod documents JSON Schema conversion, and OpenAI documents Structured Outputs with JSON Schema; application validation remains mandatory [W4, W9].
 
 ```ts
 type Id = string; // 1..64 ASCII chars: /^[a-z][a-z0-9_.-]*$/
@@ -845,11 +845,11 @@ The authoritative compilation input includes the project revision counter, brief
 
 ### Provider and bounded controller
 
-Use **Gemini Developer API, `gemini-3.8-flash`**, one model for proposal, base, module, copy-only ending revision, and repair. Its current official pricing lists free-tier input/output; structured JSON output is documented [W3, W4]. This is a selected provider/model, not a tested quality guarantee. Run an account/model/schema smoke test in phase 2 and record the actual available quota. No paid fallback, no credit-card upgrade, and no silent switch to another provider.
+Use the **OpenAI API, `gpt-4o-mini-2024-07-18`**, one pinned model snapshot for proposal, base, module, copy-only ending revision, and repair. The current official model page lists GPT-4o mini at $0.15 per 1M input tokens and $0.60 per 1M output tokens and documents Structured Outputs support [W3, W4]. This is a selected provider/model, not a tested quality guarantee. Run an account/model/schema smoke test in phase 2 and record the actual account limits and observed usage. Use only the configured prepaid/project budget: no automatic top-up, no paid fallback to another model, and no silent switch to another provider.
 
-Use the official `@google/genai` SDK behind one small `generateStructured<T>()` adapter. Follow its current documented structured-output interface; do not hardcode an obsolete API example from memory. Supply a JSON schema, enforce response size, parse JSON, then Zod-validate and run application checks. Provider-level schema compliance does not establish gameplay validity. Disable hidden SDK retry loops; the application owns retry budgets. Send independent calls without prior conversation handles.
+Use the official `openai` JavaScript SDK behind one small `generateStructured<T>()` adapter. Follow the current documented Structured Outputs interface; do not hardcode an obsolete API example from memory. Supply the provider-facing JSON Schema derived from the authoritative Zod schema, enforce response size, parse the structured result, then Zod-validate and run application checks. Provider-level schema compliance does not establish gameplay validity. Disable or account for SDK retries so the application owns the effective retry budget. Send independent calls without prior conversation state or reusable conversation handles.
 
-Free-tier prompts/output may be used to improve Google's products [W3]. State this before fresh creation and prohibit confidential/client material in the demo form. This is a public creative prototype, not a confidentiality-preserving studio tool.
+OpenAI states that API inputs and outputs are not used to train its models by default unless the customer explicitly opts in; default abuse-monitoring logs may retain customer content for up to 30 days [W5]. Still prohibit confidential/client material in the demo form. This is a public creative prototype, not a Zero Data Retention or confidentiality-preserving studio tool.
 
 ### State machine
 
@@ -910,7 +910,7 @@ If an edit changes only prose, show “Wording changed; interaction unchanged.�
 | Runtime/validator | Pure TypeScript, no React/server dependencies inside the engine | Browser, server, tests, and offline export execute the same transition rules. |
 | Database | Supabase free Postgres; SQL migrations; server-only `@supabase/supabase-js` | Small persistent relational records and atomic RPCs without an ORM or separate database server. |
 | Hosting | Vercel Hobby, Node runtime for API routes | One noncommercial hackathon deployment; bounded request-based orchestration. |
-| Model | Gemini Developer API, `gemini-3.8-flash`, official `@google/genai` | Currently documented free structured generation; one provider, not a routing framework. |
+| Model | OpenAI API, pinned `gpt-4o-mini-2024-07-18`, official `openai` SDK | Low-cost Structured Outputs under a fixed project budget; one provider, not a routing framework. |
 | Qloo | Typed adapter using native `fetch` | Three operations, exact parameter allowlist, explicit cache and quota behavior. |
 | Cache | Normalized Qloo captures and TTL indexes in Postgres; static example assets | No Redis, vector database, or additional deployment. |
 | Public play | Read-only version snapshot on the same application; static canonical example | Playback is client-side after the initial scene load. |
@@ -924,10 +924,10 @@ Official documentation checked on **3 October 2026** supports this cost route, b
 
 - **Vercel:** Hobby is free for personal, noncommercial use, with finite allowances [W1]. Its documented Fluid Compute Node function maximum is 300 seconds; our route deadline is 75 seconds [W2]. Confirm that the submitted personal hackathon prototype fits those terms. No paid upgrade is authorized.
 - **Supabase:** the free plan lists a 500 MB database and 5 GB egress, and may pause a project after one week of inactivity [W6]. Do not promise permanent uptime. The static canonical example is deliberately independent of database availability.
-- **Gemini:** the selected model currently lists free input/output. Free-tier content can be used to improve Google products [W3]. Actual account RPM/TPM/RPD must be read in AI Studio; Google documents project-specific rate limits rather than a universal allowance [W5]. Keep billing disabled and prohibit confidential source material.
+- **OpenAI:** the selected GPT-4o mini snapshot is usage-billed; the current official model page lists $0.15 per 1M input tokens and $0.60 per 1M output tokens, Structured Outputs support, and tier-dependent rate limits [W3]. Use the existing prepaid/project budget with an application-level reserve; do not enable automatic top-ups or silently increase spend. OpenAI states API inputs/outputs are not used for training by default unless explicitly opted in, while default abuse-monitoring logs may retain content for up to 30 days [W5]. Prohibit confidential source material in this prototype.
 - **Qloo:** the supplied report verifies this particular key's operational quotas, not its expiry date or rights to redistribute all metadata [E3]. Verify hackathon-key validity through judging and permission for the proposed minimal evidence cache/public excerpts before publishing. Store short necessary context, not a mirror of Qloo's catalog.
 
-**Phase-2 go/no-go record:** account eligibility, working zero-billing deployment, model name/schema smoke-test result, actual quotas, database access, and owner-visible budget configuration. **Phase-7 record:** Qloo key validity/terms, remaining allowances, demo and share access through judging, tested recovery from a paused database. Missing confirmation is an explicit release blocker, not a reason to silently enable billing or call a mock a working fresh path.
+**Phase-2 go/no-go record:** account eligibility, working capped-cost deployment, pinned model/schema smoke-test result, actual provider limits, remaining project credit/budget, database access, and owner-visible budget configuration. **Phase-7 record:** Qloo key validity/terms, remaining allowances and OpenAI budget, demo and share access through judging, tested recovery from a paused database. Missing confirmation is an explicit release blocker, not a reason to silently increase spend or call a mock a working fresh path.
 
 Do not use a Docker Space as the assumed free Python host: current Hugging Face documentation requires a paid plan to create Docker/Gradio Spaces even when CPU Basic runtime has no hourly charge [W11]. This is why the chosen architecture does not depend on that route.
 
@@ -938,7 +938,7 @@ Browser: brief / influence approval / player / version comparison
        │ same-origin, session-owned API requests
        ▼
 Next.js Node routes
-  ├── bounded operation controller ──► Gemini structured generation
+  ├── bounded operation controller ──► OpenAI Structured Outputs
   ├── typed Qloo adapter ────────────► search + two first-hop requests
   ├── ownership + budget + publish checks
   └── shared TS composer / validator
@@ -1032,11 +1032,11 @@ Return errors as `{ code, message, retryable, last_good_version_id, request_id }
 
 ### Secrets and ownership
 
-Keep `QLOO_API_KEY`, `GEMINI_API_KEY`, and the Supabase service credential in server-only environment variables. Never use `NEXT_PUBLIC_` for them. The browser does not connect to Supabase directly. Enable row-level security with deny-by-default client access; the service-role repository must still enforce owner scoping on every query. Test cross-session access rather than assuming RLS protects service-role calls.
+Keep `QLOO_API_KEY`, `OPENAI_API_KEY`, and the Supabase service credential in server-only environment variables. Read the pinned model from server configuration `OPENAI_CHAT_MODEL=gpt-4o-mini-2024-07-18`. Never expose secrets through `NEXT_PUBLIC_`. The browser does not connect to Supabase directly. Enable row-level security with deny-by-default client access; the service-role repository must still enforce owner scoping on every query. Test cross-session access rather than assuming RLS protects service-role calls.
 
 Set an opaque cryptographically random owner cookie with `Secure`, `HttpOnly`, and `SameSite=Lax`; hash its secret value in storage. Use same-origin mutation checks and JSON content types. A read share token is separately generated with at least 128 bits of entropy, hashed for lookup, and carries no owner authority. Explain: “Anyone with this link can play this version.” Use `noindex` on shares; this is not a confidentiality guarantee.
 
-Unpublished projects are not public, but free-provider processing is not a promise of confidentiality. Do not collect personal profiling data, payments, copyrighted source uploads, or confidential client scripts in this MVP.
+Unpublished projects are not public, but third-party API processing is not a promise of confidentiality or Zero Data Retention. Do not collect personal profiling data, payments, copyrighted source uploads, or confidential client scripts in this MVP.
 
 ### Application budgets
 
@@ -1044,11 +1044,11 @@ Body cap: 16 KiB for creator command requests. Only trusted server output can pr
 
 Default anonymous-session allowances: five projects/day, two complete fresh compilations/day, eight influence/copy revisions/day, and twenty explicit artist searches/day. Count failed attempts and replayed requests consistently. Limit one active generation operation per project and two active provider calls globally. Add shared per-IP burst limits; do not treat IP as identity or block a university's entire network merely because one session hits a limit.
 
-At phase 2, set the global model rate to the **lower** of the account's verified allowance with a 20% reserve and the application's intended cap. Do the same for TPM/RPD, reserving conservatively before a call and reconciling reported usage afterward. Do not manufacture a fixed universal free quota. The default global daily model-call cap is 40, reduced when the verified allowance is lower. Owner development/tests consume the same real allowance; report them separately in the budget screen. A full-generation operation is admitted only if its maximum remaining attempt budget fits the daily reserve.
+At phase 2, set the global model rate to the **lower** of the account's verified allowance with a 20% reserve and the application's intended cap. Do the same for TPM/RPD where applicable, reserving conservatively before a call and reconciling reported usage afterward. Do not manufacture a universal quota or assume the account's limits from documentation alone. The default global daily model-call cap is 40, reduced when the verified allowance or configured spend budget is lower. Owner development/tests consume the same real allowance and paid tokens; report them separately in the budget screen. A full-generation operation is admitted only if its maximum remaining attempt budget fits both the daily reserve and the remaining configured model budget.
 
 For Qloo, reserve 500 of the observed remaining monthly calls for judging once that many remain; halt anonymous fresh retrieval before crossing that reserve. This is a local safety decision, not a new claim about the API's quota. Keep the administrator budget view out of the public scene and exclude it from the main creative UI.
 
-On insufficient capacity, return an honest cooldown or exhausted-budget state with the last valid scene and saved example still usable. Do not open an unbounded waiting queue, start paid billing, or display a fake generation animation.
+On insufficient capacity, return an honest cooldown or exhausted-budget state with the last valid scene and saved example still usable. Do not open an unbounded waiting queue, automatically top up credit, raise the configured spend budget, or display a fake generation animation.
 
 ### Untrusted model/metadata handling
 
@@ -1218,7 +1218,7 @@ Each phase is a fresh Claude Code session. Read this specification, inspect the 
 
 **Goal:** make one hand-authored scene and its revised influence genuinely playable and provably valid without any external service.
 
-**Exact deliverables:** repository skeleton and lockfile; `docs/FIRSTPLAYABLE_V2_BUILD_SPEC.md`; `src/domain/scene.ts` and brief constraints; `src/engine/{interpreter,compose,validate,diff}.ts`; the design fixture and edited variant; a minimal `/example` player with inspect/ask/give/withhold/leave, dialogue, endings, reset, and version switch. The same pure engine serves UI and tests. Add a script that extracts/checks fixtures and an initial `BUILD_STATUS.md`.
+**Exact deliverables:** repository skeleton and lockfile; `docs/FIRSTPLAYABLE_BUILD_SPEC.md`; `src/domain/scene.ts` and brief constraints; `src/engine/{interpreter,compose,validate,diff}.ts`; the design fixture and edited variant; a minimal `/example` player with inspect/ask/give/withhold/leave, dialogue, endings, reset, and version switch. The same pure engine serves UI and tests. Add a script that extracts/checks fixtures and an initial `BUILD_STATUS.md`.
 
 **Acceptance criteria:** one command starts the local player; all three endings are reachable; the same three choices open return in v1 and close it in v2; base hashes match; removal restores the base; every subset validates; invalid scenes fail with readable errors. No network key or account is required. No arbitrary JavaScript generated from content is executed.
 
@@ -1228,13 +1228,13 @@ Each phase is a fresh Claude Code session. Read this specification, inspect the 
 
 **Exit artifact:** an offline local playable vertical slice, green `typecheck`, `test`, `test:e2e`, and `build`, plus a short test-result record. It need not be visually final, but must be usable and structurally correct.
 
-### Phase 2 — Persistent shell and zero-paid deployment preflight
+### Phase 2 — Persistent shell and capped-cost deployment preflight
 
 **Goal:** establish trustworthy project ownership, persistence, budgets, and the actual deployment path before building generation on assumptions.
 
-**Exact deliverables:** SQL migrations for §11; server-only repositories; anonymous session/origin checks; atomic operation/approval/budget RPCs; owner-only project routes; minimal studio shell; private admin budget configuration; first Vercel/Supabase deployment. Add the small Gemini adapter and one opt-in schema smoke command, not the full compiler. Record verified free-tier/account/model details in `docs/DEPLOYMENT_PREFLIGHT.md` without secrets.
+**Exact deliverables:** SQL migrations for §11; server-only repositories; anonymous session/origin checks; atomic operation/approval/budget RPCs; owner-only project routes; minimal studio shell; private admin budget configuration; first Vercel/Supabase deployment. Add the small OpenAI adapter and one opt-in schema smoke command, not the full compiler. Record verified account/model availability, pricing, rate limits, observed token usage, and configured spend safeguards in `docs/DEPLOYMENT_PREFLIGHT.md` without secrets.
 
-**Acceptance criteria:** a project survives reload/redeployment; another session cannot access it; owner cookie is not in JS; shared budget reservations and idempotency work; the deployed static example remains playable with database access disabled; a real account/model structured-output smoke call succeeds without billing enabled.
+**Acceptance criteria:** a project survives reload/redeployment; another session cannot access it; owner cookie is not in JS; shared budget reservations and idempotency work; the deployed static example remains playable with database access disabled; a real `gpt-4o-mini-2024-07-18` Structured Outputs smoke call succeeds within the configured project budget.
 
 **Tests:** cross-session access; missing-Origin/oversized mutation rejection; atomic duplicate-stage reservation; quota exhaustion; database outage UI; secret scan of built public assets.
 
@@ -1304,7 +1304,7 @@ Each phase is a fresh Claude Code session. Read this specification, inspect the 
 
 **Exact deliverables:** final live smoke record; security/budget/error tests; database/key/quota checks through judging; clean public README, environment template, setup commands, license, limitations, and architecture explanation; deployed URLs; submission copy; short demo recording; `docs/RELEASE_CHECKLIST.md` with exact commit/deployment identifiers.
 
-**Acceptance criteria:** all §16 checks pass; three recorded fresh-brief/artist runs and one arbitrary edit complete within fixed budgets; static example and offline export play with upstream access blocked; no secret in repo/history/build/export; public share works in a new browser; no stuck loading state after timeout; Qloo access and evidence-publication permissions are confirmed; remaining free quotas are sufficient for the documented judge path. No paid service is silently required.
+**Acceptance criteria:** all §16 checks pass; three recorded fresh-brief/artist runs and one arbitrary edit complete within fixed budgets; static example and offline export play with upstream access blocked; no secret in repo/history/build/export; public share works in a new browser; no stuck loading state after timeout; Qloo access and evidence-publication permissions are confirmed; remaining service allowances and configured OpenAI budget are sufficient for the documented judge path. No unapproved paid service, automatic top-up, or spend increase is silently required.
 
 **Tests:** full CI; deployed happy path; deployed cold/database-unavailable path; provider/Qloo timeout and quota exhaustion; public route privacy; first-load and mobile usability; README clean-checkout instructions.
 
@@ -1359,7 +1359,7 @@ The rules list a submission deadline of **30 October 2026 at 11:45 p.m. Eastern 
 
 This document chooses one product, one runtime, one provider, one deployment route, two cultural domains, two influence slots, and seven sequential phases. The minimum supported creative format is an object-handover dilemma, not arbitrary game creation. Schema restrictions are deliberate product boundaries, not unfinished general-engine features.
 
-The largest **technical risk** is reliable generation of modules that are both mechanically meaningful and valid across every supported subset while staying inside a small repair/free-quota budget. Mitigate with a frozen foundation, independent ownership, small boolean state spaces, explicit ports, and hard validation. Measure the real success/failure rate during phase 4; do not weaken the checks merely to improve a promotional number.
+The largest **technical risk** is reliable generation of modules that are both mechanically meaningful and valid across every supported subset while staying inside a small repair/call/spend budget. Mitigate with a frozen foundation, independent ownership, small boolean state spaces, explicit ports, and hard validation. Measure the real success/failure rate during phase 4; do not weaken the checks merely to improve a promotional number.
 
 The largest **product risk** is that the references and approvals feel like extra work for a generic interactive story. Mitigate with one strong default influence, compact approvals, excellent writing, and the visible before/after consequence. Qloo's retrieval provenance plus a causal software intervention is defensible; exceptional creative value still requires actual users and a persuasive artifact. This freeze is a build decision, not a claim of proven creative superiority or guaranteed prizes.
 
@@ -1380,9 +1380,9 @@ URLs below identify the checked sources for deployment/SDK/rules claims. They ar
 
 - **W1:** Vercel, Hobby plan — `https://vercel.com/docs/plans/hobby`
 - **W2:** Vercel, function limits — `https://vercel.com/docs/functions/limitations`
-- **W3:** Google, Gemini Developer API pricing — `https://ai.google.dev/gemini-api/docs/pricing`
-- **W4:** Google, structured output — `https://ai.google.dev/gemini-api/docs/structured-output`
-- **W5:** Google, Gemini API rate limits — `https://ai.google.dev/gemini-api/docs/rate-limits`
+- **W3:** OpenAI, GPT-4o mini model, pricing, snapshots, and rate limits — `https://developers.openai.com/api/docs/models/gpt-4o-mini`
+- **W4:** OpenAI, Structured Outputs — `https://developers.openai.com/api/docs/guides/structured-outputs`
+- **W5:** OpenAI, API data controls — `https://developers.openai.com/api/docs/guides/your-data`
 - **W6:** Supabase, pricing/free-plan limits — `https://supabase.com/pricing`
 - **W7:** Qloo Agentic Hackathon, official rules — `https://qloo.devpost.com/rules`
 - **W8:** Qloo, hackathon developer guide — `https://docs.qloo.com/reference/qloo-llm-hackathon-developer-guide`
@@ -1398,29 +1398,29 @@ URLs below identify the checked sources for deployment/SDK/rules claims. They ar
 
 **MVP scope:** one room, one player and one NPC, one object, three reachable endings, five verbs, movies and videogames from one confirmed artist, at most two approved influence modules, targeted revisions, immutable sharing, offline export, and one truthful saved example/comparator.
 
-**Stack:** Next.js + React + TypeScript + Zod; pure shared TypeScript engine; Supabase Postgres; Vercel Hobby; Gemini Developer API `gemini-3.8-flash`; a three-operation Qloo adapter. No paid fallback.
+**Stack:** Next.js + React + TypeScript + Zod; pure shared TypeScript engine; Supabase Postgres; Vercel Hobby; OpenAI API `gpt-4o-mini-2024-07-18` through the official `openai` SDK; a three-operation Qloo adapter. No provider fallback or automatic spend increase.
 
 **Architecture:** brief-only immutable foundation + independently compiled creator-approved modules + deterministic subset validation + local playback. One bounded controller; no shared cultural prompt history across the approval boundary.
 
 **Phases:** seven. Execute **Phase 1: shared scene contract, engine, and offline vertical slice** first.
 
-**Largest technical risk:** model-generated modules fail meaningful-consequence/subset-validity checks within the bounded repair and free-quota budgets.
+**Largest technical risk:** model-generated modules fail meaningful-consequence/subset-validity checks within the bounded repair, call, and spend budgets.
 
 **Largest product risk:** a creator sees generic story generation with reference paperwork rather than a useful playable creative decision. The canonical before/after interaction and writing quality must carry the experience.
 
 # CLAUDE CODE PHASE 1 HANDOFF
 
 ```text
-You are implementing Phase 1 only of the locked FirstPlayable v2 build.
+You are implementing Phase 1 only of the locked FirstPlayable build.
 
-Read docs/FIRSTPLAYABLE_V2_BUILD_SPEC.md in full. If it is not yet in the repo,
-copy the supplied FIRSTPLAYABLE_V2_BUILD_SPEC.md there without changing its
+Read docs/FIRSTPLAYABLE_BUILD_SPEC.md in full. If it is not yet in the repo,
+copy the supplied FIRSTPLAYABLE_BUILD_SPEC.md there without changing its
 content. The product is locked. Do not ideate, add domains, or reopen the
 previous experiment verdict.
 
 Inspect the repository and git status first. Preserve recon/, probes/, raw
 local captures, and all previous reports. Do not discard existing uncommitted
-work. Work on a dedicated feat/firstplayable-v2 branch when safe; document an
+work. Work on a dedicated feat/phase-1-engine branch when safe; document an
 existing branch instead of overwriting it. Never print or commit secrets.
 
 Goal: a local offline playable with a single shared typed engine and validator.
