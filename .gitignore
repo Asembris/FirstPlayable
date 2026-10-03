@@ -13,6 +13,9 @@ coverage/
 next-env.d.ts
 *.tsbuildinfo
 
+# Vercel CLI link state and pulled environment files.
+.vercel/
+
 test-results/
 playwright-report/
 blob-report/
