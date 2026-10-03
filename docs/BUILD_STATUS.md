@@ -437,3 +437,75 @@ secret appears in any tracked file, built asset, client chunk, or response body.
 **Phase 3 — real Qloo references and explicit influence approval**, as specified
 in section 17. Phase 2's exit gate passed, so Phase 3 is authorized to begin; it
 is **not** implemented. No later phase is authorized.
+
+---
+
+# Continuous integration
+
+**Branch of this record:** `chore/ci`
+**Date of this record:** 4 October 2026
+**Workflow:** `.github/workflows/ci.yml`
+
+This section records only the CI wiring. It adds no phase, changes no runtime
+or product code, and starts no Phase 3 work.
+
+## Triggers and permissions
+
+Runs on `pull_request` targeting `main` and on `push` to `main`. The workflow
+grants `permissions: contents: read` and nothing else; no write scope is
+requested. Node comes from `node-version-file: .nvmrc`, which pins `22.22.0`.
+Dependencies are installed with `npm ci` against the committed
+`package-lock.json`, with `setup-node`'s npm cache enabled. Concurrent runs on
+the same pull-request ref cancel the superseded one.
+
+## Two independent jobs
+
+| Job | Steps |
+|---|---|
+| `quality` | `npm ci`, `npm run typecheck`, `npm test`, `npm run check:fixtures`, `npm run build`, `npm run check:secrets` |
+| `e2e` | `npm ci`, `npx playwright install --with-deps chromium`, `npm run build`, `npm run test:e2e` |
+
+`npm run build` precedes `npm run check:secrets` because `scripts/scan-secrets.ts`
+scans `.next/static` and `.next/server` in addition to the tracked files; without
+a build it would report "no `.next` output found" rather than scanning anything.
+`npm run build` also precedes `npm run test:e2e` because `playwright.config.ts`
+starts the application with `npm run start`, which serves build output.
+
+Only chromium is installed, at the revision the pinned `@playwright/test@1.56.1`
+resolves to, which is the browser-pinning limitation recorded in both phase
+sections above. No artifact is uploaded: the Playwright reporter is `list`,
+traces are `off`, and the run output is already in the job log.
+
+`npm run typecheck` was confirmed to pass on a tree with neither `next-env.d.ts`
+nor `.next/` present — both are gitignored, so a fresh CI clone has neither —
+so the type gate does not depend on a prior build.
+
+## CI is offline, and needs no secret
+
+No repository secret is read and no `env` is set from one. The workflow does not
+run `smoke:supabase`, `smoke:openai`, or `verify:deployment`, applies no Supabase
+migration, deploys nothing to Vercel, and makes no Qloo or OpenAI call. Those
+commands stay opt-in and local, behind their `RUN_*` environment gates, and
+their results remain recorded in the phase sections above and in
+`docs/DEPLOYMENT_PREFLIGHT.md`; they are excluded from CI deliberately, not by
+oversight. The browser gate is offline by the same mechanism it already used
+locally: `playwright.config.ts` overrides persistence configuration with invalid
+sentinels, so the suite exercises the database-unavailable path.
+
+## Local verification of this change
+
+The workflow YAML was parsed locally with the already-installed PyYAML; no CI
+framework or new dependency was added. The full gate was then run from a clean
+working tree on `22.22.0`:
+
+| Command | Result |
+|---|---|
+| `npm run typecheck` | passed, exit 0 |
+| `npm test` | passed, exit 0 — 14 test files, 222 tests, 0 failures |
+| `npm run check:fixtures` | passed, exit 0 — all fixture checks passed |
+| `npm run build` | passed, exit 0 — 8 routes, 4 static and 4 server-rendered on demand |
+| `npm run check:secrets` | passed, exit 0 — 84 tracked and 209 built files scanned |
+| `npm run test:e2e` | passed, exit 0 — 13 Playwright tests, 0 failures |
+
+These are local results. GitHub Actions had not yet executed this workflow when
+this record was written, so no claim is made about a remote run.
