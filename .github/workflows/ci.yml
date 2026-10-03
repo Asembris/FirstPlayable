@@ -41,3 +41,27 @@ jobs:
       - run: npm run build
 
       - run: npm run check:secrets
+
+  e2e:
+    name: Playwright browser gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc # pins 22.22.0
+          cache: npm
+
+      - run: npm ci
+
+      # Only chromium, at the revision the pinned @playwright/test resolves to.
+      - run: npx playwright install --with-deps chromium
+
+      # playwright.config.ts starts the app with `npm run start`, which serves
+      # the build output, so the production build has to exist first.
+      - run: npm run build
+
+      # The config overrides persistence with invalid sentinels, so this gate
+      # needs no credential and reaches no external service.
+      - run: npm run test:e2e
