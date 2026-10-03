@@ -2,7 +2,7 @@
   "name": "firstplayable",
   "version": "0.1.0",
   "private": true,
-  "description": "FirstPlayable \u2014 playable-pitch studio. Phase 1: shared scene contract, engine, and offline vertical slice.",
+  "description": "FirstPlayable — playable-pitch studio. Phase 2: persistent owner-scoped shell, atomic budgets, deployment preflight.",
   "license": "MIT",
   "engines": {
     "node": ">=22.12.0"
@@ -15,10 +15,15 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "check:fixtures": "tsx scripts/check-fixtures.ts"
+    "check:fixtures": "tsx scripts/check-fixtures.ts",
+    "check:secrets": "tsx scripts/scan-secrets.ts",
+    "smoke:supabase": "tsx scripts/smoke-supabase.ts",
+    "smoke:openai": "tsx scripts/smoke-openai.ts"
   },
   "dependencies": {
+    "@supabase/supabase-js": "2.117.2",
     "next": "16.3.8",
+    "openai": "7.27.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "zod": "4.6.5"
@@ -28,6 +33,7 @@
     "@types/node": "26.6.4",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "supabase": "2.119.0",
     "tsx": "4.23.15",
     "typescript": "7.0.2",
     "vitest": "5.0.3"

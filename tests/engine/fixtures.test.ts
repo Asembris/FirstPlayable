@@ -1,5 +1,5 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
@@ -53,16 +53,33 @@ describe("fixture honesty", () => {
 });
 
 describe("no external service reaches the engine or the player", () => {
-  const sources = [
-    ...walk(join(repoRoot, "src")),
-    ...walk(join(repoRoot, "fixtures")),
-  ].filter((file) => file.endsWith(".ts") || file.endsWith(".tsx"));
+  /**
+   * Phase 2 adds a deliberately narrow server boundary: `src/server/` and the
+   * route handlers under `src/app/api/` may read configuration and talk to
+   * Supabase and OpenAI. Nothing else may. This suite enforces that split, so
+   * the pure engine, the trusted player, and the rendered pages stay offline
+   * and credential-free exactly as they were in phase 1.
+   */
+  const SERVER_BOUNDARY = ["/src/server/", "/src/app/api/"];
 
-  it("has sources to inspect", () => {
-    expect(sources.length).toBeGreaterThan(5);
+  function sources(...dirs: string[]): string[] {
+    return dirs
+      .flatMap((dir) => walk(join(repoRoot, ...dir.split("/"))))
+      .filter((file) => file.endsWith(".ts") || file.endsWith(".tsx"))
+      .map((file) => file.split("\\").join("/"));
+  }
+
+  const pure = sources("src/domain", "src/engine", "fixtures");
+  const clientReachable = sources("src/app", "src/components").filter(
+    (file) => !SERVER_BOUNDARY.some((boundary) => file.includes(boundary)),
+  );
+
+  it("has sources to inspect on both sides of the boundary", () => {
+    expect(pure.length).toBeGreaterThan(5);
+    expect(clientReachable.length).toBeGreaterThan(3);
   });
 
-  it("never performs network access or reads provider credentials", () => {
+  it("keeps the engine, the domain, and the fixtures entirely offline", () => {
     const forbidden = [
       /\bfetch\s*\(/,
       /XMLHttpRequest/,
@@ -71,8 +88,9 @@ describe("no external service reaches the engine or the player", () => {
       /from\s+["']openai["']/,
       /@supabase\//,
       /hackathon\.api\.qloo\.com/,
+      /from\s+["']@\/server\//,
     ];
-    for (const file of sources) {
+    for (const file of pure) {
       const text = readFileSync(file, "utf8");
       for (const pattern of forbidden) {
         expect(pattern.test(text), `${file} matches ${String(pattern)}`).toBe(false);
@@ -80,9 +98,36 @@ describe("no external service reaches the engine or the player", () => {
     }
   });
 
-  it("never evaluates generated code", () => {
+  it("never lets a client-reachable module read a credential or a provider SDK", () => {
+    const forbidden = [
+      /process\.env/,
+      /from\s+["']openai["']/,
+      /@supabase\//,
+      /hackathon\.api\.qloo\.com/,
+      /from\s+["']@\/server\//,
+      /\.\.\/server\//,
+    ];
+    for (const file of clientReachable) {
+      const text = readFileSync(file, "utf8");
+      for (const pattern of forbidden) {
+        expect(pattern.test(text), `${file} matches ${String(pattern)}`).toBe(false);
+      }
+    }
+  });
+
+  it("keeps the trusted player free of network access", () => {
+    const player = clientReachable.filter((file) => file.includes("/src/components/player/"));
+    expect(player.length).toBeGreaterThan(0);
+    for (const file of player) {
+      const text = readFileSync(file, "utf8");
+      expect(/\bfetch\s*\(/.test(text), file).toBe(false);
+      expect(/XMLHttpRequest/.test(text), file).toBe(false);
+    }
+  });
+
+  it("never evaluates generated code anywhere in src or fixtures", () => {
     const forbidden = [/\beval\s*\(/, /new\s+Function\s*\(/, /dangerouslySetInnerHTML/];
-    for (const file of sources) {
+    for (const file of sources("src", "fixtures")) {
       const text = readFileSync(file, "utf8");
       for (const pattern of forbidden) {
         expect(pattern.test(text), `${file} matches ${String(pattern)}`).toBe(false);
@@ -91,21 +136,22 @@ describe("no external service reaches the engine or the player", () => {
   });
 
   it("keeps the engine and the domain free of React and Next imports", () => {
-    const pure = sources.filter(
+    const engineAndDomain = pure.filter(
       (file) => file.includes("/src/engine/") || file.includes("/src/domain/"),
     );
-    expect(pure.length).toBeGreaterThan(5);
-    for (const file of pure) {
+    expect(engineAndDomain.length).toBeGreaterThan(5);
+    for (const file of engineAndDomain) {
       const text = readFileSync(file, "utf8");
       expect(/from\s+["']react/.test(text), file).toBe(false);
       expect(/from\s+["']next/.test(text), file).toBe(false);
     }
   });
 
-  it("declares no API route in this phase", () => {
-    const routes = walk(join(repoRoot, "src", "app")).filter((file) =>
-      /route\.(ts|tsx)$/.test(file),
-    );
+  it("declares only the routes this phase has reached", () => {
+    const routes = walk(join(repoRoot, "src", "app"))
+      .filter((file) => /route\.(ts|tsx)$/.test(file))
+      .map((file) => relative(join(repoRoot, "src", "app"), file).split("\\").join("/"))
+      .sort();
     expect(routes).toEqual([]);
   });
 });
