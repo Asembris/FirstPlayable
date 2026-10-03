@@ -165,23 +165,33 @@ describe("the browser has no path to Supabase or to a provider", () => {
 
 describe("error responses are redacted", () => {
   it("strips every credential shape, hash, and URL from a diagnostic", () => {
+    /**
+     * Every prefix is assembled at runtime, so this file does not itself
+     * contain a string shaped like a credential. The scan above is strict on
+     * purpose, and a test fixture must not be the reason it is loosened.
+     */
+    const supabaseKeyPrefix = ["sb", "secret", ""].join("_");
+    const openAiKeyPrefix = ["sk", "proj", ""].join("-");
+    const accessTokenPrefix = ["sbp", ""].join("_");
+    const jwtPrefix = ["ey", "JhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"].join("");
+
     const hostile = [
-      "connect ECONNREFUSED https://vggqtyxtdqvdawwpyzea.supabase.co/rest/v1/projects",
-      "apikey sb_secret_abcdefghijklmnopqrstuvwxyz",
-      "Authorization: Bearer sk-proj-abcdefghijklmnopqrstuvwxyz0123456789",
-      "token sbp_0123456789abcdef0123456789abcdef01234567",
-      "jwt eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIn0.signature",
+      `connect ECONNREFUSED https://project-ref.${["supabase", "co"].join(".")}/rest/v1/projects`,
+      `apikey ${supabaseKeyPrefix}abcdefghijklmnopqrstuvwxyz`,
+      `Authorization: Bearer ${openAiKeyPrefix}abcdefghijklmnopqrstuvwxyz0123456789`,
+      `token ${accessTokenPrefix}0123456789abcdef0123456789abcdef01234567`,
+      `jwt ${jwtPrefix}.eyJyb2xlIjoic2VydmljZV9yb2xlIn0.signature`,
       `session hash ${"a".repeat(64)}`,
     ].join(" | ");
 
     const redacted = redactDiagnostic(hostile, 1_000);
 
-    expect(redacted).not.toContain("sb_secret_");
-    expect(redacted).not.toContain("sk-proj-");
-    expect(redacted).not.toContain("sbp_");
-    expect(redacted).not.toContain("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9");
+    expect(redacted).not.toContain(supabaseKeyPrefix);
+    expect(redacted).not.toContain(openAiKeyPrefix);
+    expect(redacted).not.toContain(accessTokenPrefix);
+    expect(redacted).not.toContain(jwtPrefix);
     expect(redacted).not.toContain("a".repeat(64));
-    expect(redacted).not.toContain("supabase.co");
+    expect(redacted).not.toContain(["supabase", "co"].join("."));
     expect(redacted).toContain("[redacted]");
   });
 
@@ -218,6 +228,7 @@ describe("error responses are redacted", () => {
   });
 
   it("never carries a diagnostic for any code the routes can produce", () => {
+    const keyPrefix = ["sb", "secret", ""].join("_");
     for (const code of Object.values(ERROR_CODES)) {
       const envelope = errorEnvelope(
         new AppError({
@@ -225,11 +236,11 @@ describe("error responses are redacted", () => {
           status: 500,
           publicMessage: "x",
           retryable: false,
-          diagnostic: "sb_secret_abcdefghijklmnop",
+          diagnostic: `${keyPrefix}abcdefghijklmnop`,
         }),
         "req",
       );
-      expect(JSON.stringify(envelope)).not.toContain("sb_secret_");
+      expect(JSON.stringify(envelope)).not.toContain(keyPrefix);
     }
   });
 });
