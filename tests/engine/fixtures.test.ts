@@ -147,11 +147,15 @@ describe("no external service reaches the engine or the player", () => {
     }
   });
 
-  it("declares only the routes this phase has reached", () => {
+  it("declares only the phase 2 route subset, and no phase 3 route", () => {
     const routes = walk(join(repoRoot, "src", "app"))
       .filter((file) => /route\.(ts|tsx)$/.test(file))
       .map((file) => relative(join(repoRoot, "src", "app"), file).split("\\").join("/"))
       .sort();
-    expect(routes).toEqual([]);
+    expect(routes).toEqual([
+      "api/projects/[id]/route.ts",
+      "api/projects/route.ts",
+      "api/session/route.ts",
+    ]);
   });
 });

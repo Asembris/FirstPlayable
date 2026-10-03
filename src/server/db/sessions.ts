@@ -72,18 +72,23 @@ export async function requireOwnerSession(
  * Refreshes last activity and the 60-day expiry, but only once the stored
  * `last_seen_at` is genuinely stale. An owner opening a project repeatedly
  * does not generate a database write per request.
+ *
+ * Returns the expiry that is in force afterwards, so a route can report it
+ * without a second read.
  */
 export async function refreshOwnerActivity(
   gateway: DataGateway,
   session: SessionRow,
   now: Date = new Date(),
-): Promise<void> {
+): Promise<string> {
   const lastSeen = Date.parse(session.last_seen_at);
   if (Number.isFinite(lastSeen)) {
     const age = (now.getTime() - lastSeen) / 1000;
-    if (age < SESSION_TOUCH_INTERVAL_SECONDS) return;
+    if (age < SESSION_TOUCH_INTERVAL_SECONDS) return session.expires_at;
   }
-  await gateway.touchSession(session.id, now.toISOString(), expiryFrom(now));
+  const expiresAt = expiryFrom(now);
+  await gateway.touchSession(session.id, now.toISOString(), expiresAt);
+  return expiresAt;
 }
 
 /** Owner-requested deletion. Cascades to that owner's projects and operations. */

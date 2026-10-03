@@ -27,7 +27,12 @@ const RULES: readonly Rule[] = [
   { name: "supabase publishable key", pattern: /sb_publishable_[A-Za-z0-9_-]{8,}/g },
   { name: "supabase legacy service jwt", pattern: /eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\./g },
   { name: "supabase personal access token", pattern: /sbp_[0-9a-f]{40,}/g },
-  { name: "openai api key", pattern: /sk-[A-Za-z0-9_-]{20,}/g },
+  // Tight enough to miss hyphenated identifiers such as
+  // "after-task-async-storage", which a bare /sk-[\w-]{20,}/ flags falsely.
+  { name: "openai project key", pattern: /sk-proj-[A-Za-z0-9_-]{20,}/g },
+  { name: "openai service account key", pattern: /sk-svcacct-[A-Za-z0-9_-]{20,}/g },
+  { name: "openai admin key", pattern: /sk-admin-[A-Za-z0-9_-]{20,}/g },
+  { name: "openai legacy key", pattern: /\bsk-[A-Za-z0-9]{32,}\b/g },
   { name: "qloo-style bare api key header", pattern: /x-api-key\s*[:=]\s*["'][^"']{8,}/gi },
   {
     name: "NEXT_PUBLIC server secret",
