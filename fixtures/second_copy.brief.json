@@ -1,0 +1,23 @@
+{
+  "title": "The Second Copy",
+  "premise": "At a station's lost-property counter, just before closing, Nia asks you to return the sealed letter she left earlier. You are the attendant. Decide what to ask, whether to promise its return, and whether to give it back, retain it, or leave the decision for tomorrow.",
+  "player_role": "Station attendant",
+  "room": {
+    "id": "counter",
+    "name": "Lost-property counter",
+    "description": "The station is closing. You have one letter left to return."
+  },
+  "character": {
+    "id": "nia",
+    "name": "Nia",
+    "role": "Visitor asking for her letter"
+  },
+  "object": {
+    "id": "letter",
+    "name": "Sealed letter",
+    "description": "One envelope, left behind earlier today."
+  },
+  "tone": "intimate",
+  "cultural_anchor_query": null,
+  "forbidden_wording": []
+}

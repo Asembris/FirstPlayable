@@ -1,0 +1,448 @@
+{
+  "schema_version": "1.0",
+  "scene_id": "fixture_second_copy_v1",
+  "title": "The Second Copy",
+  "world": {
+    "player_role": "Station attendant",
+    "room": {
+      "id": "counter",
+      "name": "Lost-property counter",
+      "description": "The station is closing. You have one letter left to return."
+    },
+    "characters": [
+      {
+        "id": "nia",
+        "name": "Nia",
+        "role": "Visitor asking for her letter"
+      }
+    ],
+    "object": {
+      "id": "letter",
+      "name": "Sealed letter",
+      "description": "One envelope, left behind earlier today."
+    }
+  },
+  "core": {
+    "variables": [
+      {
+        "id": "core.inspected",
+        "label": "Letter inspected",
+        "initial": false,
+        "visible": false
+      },
+      {
+        "id": "core.context",
+        "label": "Request understood",
+        "initial": false,
+        "visible": false
+      },
+      {
+        "id": "core.promised",
+        "label": "Return promised",
+        "initial": false,
+        "visible": false
+      }
+    ],
+    "actions": [
+      {
+        "id": "core.inspect",
+        "verb": "inspect",
+        "label": "Inspect the letter",
+        "target": {
+          "kind": "object",
+          "id": "letter"
+        },
+        "when": {
+          "kind": "any",
+          "clauses": [
+            [
+              {
+                "var_id": "core.inspected",
+                "equals": false
+              }
+            ]
+          ]
+        },
+        "branches": [
+          {
+            "when": {
+              "kind": "always"
+            },
+            "effects": [
+              {
+                "op": "set_true",
+                "var_id": "core.inspected"
+              }
+            ],
+            "dialogue_id": "core.inspect_text",
+            "ending_id": null
+          }
+        ]
+      },
+      {
+        "id": "core.ask_context",
+        "verb": "ask",
+        "label": "Ask why she came back",
+        "target": {
+          "kind": "character",
+          "id": "nia"
+        },
+        "when": {
+          "kind": "any",
+          "clauses": [
+            [
+              {
+                "var_id": "core.context",
+                "equals": false
+              }
+            ]
+          ]
+        },
+        "branches": [
+          {
+            "when": {
+              "kind": "always"
+            },
+            "effects": [
+              {
+                "op": "set_true",
+                "var_id": "core.context"
+              }
+            ],
+            "dialogue_id": "core.context_text",
+            "ending_id": null
+          }
+        ]
+      },
+      {
+        "id": "core.ask_terms",
+        "verb": "ask",
+        "label": "Promise to return it",
+        "target": {
+          "kind": "character",
+          "id": "nia"
+        },
+        "when": {
+          "kind": "any",
+          "clauses": [
+            [
+              {
+                "var_id": "core.inspected",
+                "equals": true
+              },
+              {
+                "var_id": "core.context",
+                "equals": true
+              },
+              {
+                "var_id": "core.promised",
+                "equals": false
+              }
+            ]
+          ]
+        },
+        "branches": [
+          {
+            "when": {
+              "kind": "always"
+            },
+            "effects": [
+              {
+                "op": "set_true",
+                "var_id": "core.promised"
+              }
+            ],
+            "dialogue_id": "core.promise_text",
+            "ending_id": null
+          }
+        ]
+      },
+      {
+        "id": "core.give",
+        "verb": "give",
+        "label": "Return the letter",
+        "target": {
+          "kind": "object",
+          "id": "letter"
+        },
+        "when": {
+          "kind": "any",
+          "clauses": [
+            [
+              {
+                "var_id": "core.inspected",
+                "equals": true
+              },
+              {
+                "var_id": "core.context",
+                "equals": true
+              }
+            ]
+          ]
+        },
+        "branches": [
+          {
+            "when": {
+              "kind": "always"
+            },
+            "effects": [],
+            "dialogue_id": null,
+            "ending_id": "end.give"
+          }
+        ]
+      },
+      {
+        "id": "core.withhold",
+        "verb": "withhold",
+        "label": "Keep the letter",
+        "target": {
+          "kind": "object",
+          "id": "letter"
+        },
+        "when": {
+          "kind": "any",
+          "clauses": [
+            [
+              {
+                "var_id": "core.inspected",
+                "equals": true
+              },
+              {
+                "var_id": "core.context",
+                "equals": true
+              },
+              {
+                "var_id": "core.promised",
+                "equals": false
+              }
+            ]
+          ]
+        },
+        "branches": [
+          {
+            "when": {
+              "kind": "always"
+            },
+            "effects": [],
+            "dialogue_id": null,
+            "ending_id": "end.keep"
+          }
+        ]
+      },
+      {
+        "id": "core.leave",
+        "verb": "leave",
+        "label": "Walk away",
+        "target": {
+          "kind": "room",
+          "id": "counter"
+        },
+        "when": {
+          "kind": "any",
+          "clauses": [
+            [
+              {
+                "var_id": "core.inspected",
+                "equals": true
+              },
+              {
+                "var_id": "core.context",
+                "equals": true
+              }
+            ]
+          ]
+        },
+        "branches": [
+          {
+            "when": {
+              "kind": "always"
+            },
+            "effects": [],
+            "dialogue_id": null,
+            "ending_id": "end.leave"
+          }
+        ]
+      }
+    ],
+    "dialogue": [
+      {
+        "id": "core.inspect_text",
+        "speaker_id": "narrator",
+        "text": "The envelope is still sealed. Nia watches your hands rather than your face."
+      },
+      {
+        "id": "core.context_text",
+        "speaker_id": "nia",
+        "text": "I left it here on purpose. That does not mean I stopped wanting it back."
+      },
+      {
+        "id": "core.promise_text",
+        "speaker_id": "player",
+        "text": "All right. I will return it. Keeping it is no longer an honest option."
+      }
+    ],
+    "endings": [
+      {
+        "id": "end.give",
+        "title": "Returned",
+        "text": "Nia takes the letter without opening it. The decision is hers again."
+      },
+      {
+        "id": "end.keep",
+        "title": "Held",
+        "text": "You keep the letter. Nia leaves you responsible for a story you cannot read."
+      },
+      {
+        "id": "end.leave",
+        "title": "Unanswered",
+        "text": "You step away from the counter. Neither of you has agreed to the other person’s ending."
+      }
+    ]
+  },
+  "ports": {
+    "discovery": {
+      "gate_action_ids": [
+        "core.give"
+      ],
+      "effect_action_ids": [
+        "core.inspect"
+      ]
+    },
+    "commitment": {
+      "gate_action_ids": [
+        "core.ask_terms",
+        "core.withhold"
+      ],
+      "effect_action_ids": [
+        "core.ask_context"
+      ]
+    }
+  },
+  "modules": [
+    {
+      "slot": "discovery",
+      "approval_id": "approval_discovery_v1",
+      "variables": [
+        {
+          "id": "discovery.found",
+          "label": "Contradiction noticed",
+          "initial": false,
+          "visible": false
+        },
+        {
+          "id": "discovery.disclosed",
+          "label": "Contradiction discussed",
+          "initial": false,
+          "visible": false
+        }
+      ],
+      "actions": [
+        {
+          "id": "discovery.ask_identity",
+          "verb": "ask",
+          "label": "Ask about the two names",
+          "target": {
+            "kind": "character",
+            "id": "nia"
+          },
+          "when": {
+            "kind": "any",
+            "clauses": [
+              [
+                {
+                  "var_id": "discovery.found",
+                  "equals": true
+                },
+                {
+                  "var_id": "discovery.disclosed",
+                  "equals": false
+                }
+              ]
+            ]
+          },
+          "branches": [
+            {
+              "when": {
+                "kind": "always"
+              },
+              "effects": [
+                {
+                  "op": "set_true",
+                  "var_id": "discovery.disclosed"
+                }
+              ],
+              "dialogue_id": "discovery.discuss_text",
+              "ending_id": null
+            }
+          ]
+        }
+      ],
+      "dialogue": [
+        {
+          "id": "discovery.inspect_text",
+          "speaker_id": "narrator",
+          "text": "Under the address, a second name has been pressed into the paper. Both signatures look like Nia’s."
+        },
+        {
+          "id": "discovery.discuss_text",
+          "speaker_id": "nia",
+          "text": "They are both mine. Ask which promise I can keep now, not which name came first."
+        }
+      ],
+      "gates": [
+        {
+          "id": "discovery.return_gate",
+          "action_id": "core.give",
+          "when": {
+            "kind": "any",
+            "clauses": [
+              [
+                {
+                  "var_id": "discovery.disclosed",
+                  "equals": true
+                }
+              ]
+            ]
+          },
+          "blocked_text": "Discuss the two names before returning the letter."
+        }
+      ],
+      "on_actions": [
+        {
+          "id": "discovery.inspect_hook",
+          "action_id": "core.inspect",
+          "when": {
+            "kind": "always"
+          },
+          "effects": [
+            {
+              "op": "set_true",
+              "var_id": "discovery.found"
+            }
+          ],
+          "dialogue_id": "discovery.inspect_text"
+        }
+      ]
+    }
+  ],
+  "ending_copy_overrides": [],
+  "influences": [
+    {
+      "approval_id": "approval_discovery_v1",
+      "reference_id": "fixture_moon",
+      "source_kind": "design_fixture",
+      "approved_text": "Inspection reveals an identity contradiction. Discussing it is required before returning the letter.",
+      "intended_effect": "Inspection unlocks a question; that question unlocks the return action."
+    }
+  ],
+  "provenance": [
+    {
+      "approval_id": "approval_discovery_v1",
+      "mechanic_ids": [
+        "discovery.ask_identity",
+        "discovery.return_gate",
+        "discovery.inspect_hook"
+      ]
+    }
+  ]
+}
