@@ -28,6 +28,7 @@ pinned exactly in `package.json` and locked by `package-lock.json`.
 | `npm run typecheck` | `tsc --noEmit` over the whole repository. |
 | `npm test` | Vitest: contracts, interpreter, validator, diff, fixtures. |
 | `npm run test:e2e` | Playwright: play, reset, and version switch in a browser. |
+| `npx playwright install chromium` | One-time browser download needed before the first `test:e2e` run. |
 | `npm run check:fixtures` | Validate every fixture and print the canonical Phase 1 evidence. |
 
 ## Layout
