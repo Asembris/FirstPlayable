@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# The whole workflow is offline with respect to application services: no
+# repository secret is read, and the live smoke, migration, and deployment
+# commands are deliberately not run here.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  quality:
+    name: Typecheck, unit tests, fixtures, build, secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc # pins 22.22.0
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run typecheck
+
+      - run: npm test
+
+      - run: npm run check:fixtures
+
+      # Must precede check:secrets, which scans .next/static and .next/server
+      # in addition to the tracked files.
+      - run: npm run build
+
+      - run: npm run check:secrets
