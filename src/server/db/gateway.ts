@@ -262,6 +262,8 @@ export interface DataGateway {
 
   reserveModelBudget(input: ReserveBudgetInput): Promise<BudgetReservation>;
   reconcileModelBudget(input: ReconcileBudgetInput): Promise<BudgetReconciliation>;
+  /** Cleanup for a finished window, and for the live smoke run's own bucket. */
+  deleteBudgetBucket(scope: string, bucketKey: string): Promise<void>;
 
   appendInfluenceDecision(input: AppendDecisionInput): Promise<DecisionAppend>;
 }

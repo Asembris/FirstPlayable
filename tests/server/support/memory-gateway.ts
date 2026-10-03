@@ -111,6 +111,7 @@ export class MemoryGateway implements DataGateway {
       "completeOperation",
       "reserveModelBudget",
       "reconcileModelBudget",
+      "deleteBudgetBucket",
       "appendInfluenceDecision",
     ];
     for (const method of methods) this.failing.add(method);
@@ -446,6 +447,13 @@ export class MemoryGateway implements DataGateway {
       };
     }
     return { applied: false, reason: "lease_not_found" };
+  }
+
+  async deleteBudgetBucket(scope: string, bucketKey: string): Promise<void> {
+    this.#guard("deleteBudgetBucket");
+    for (const [key, bucket] of this.buckets) {
+      if (bucket.scope === scope && bucket.bucket_key === bucketKey) this.buckets.delete(key);
+    }
   }
 
   // -------------------------------------------------------------------------

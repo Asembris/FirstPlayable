@@ -204,6 +204,15 @@ class SupabaseGateway implements DataGateway {
     return parseRpc("reconcileModelBudget", BudgetReconciliationSchema, data);
   }
 
+  async deleteBudgetBucket(scope: string, bucketKey: string): Promise<void> {
+    const { error } = await this.#client
+      .from("budget_buckets")
+      .delete()
+      .eq("scope", scope)
+      .eq("bucket_key", bucketKey);
+    if (error !== null) persistenceFailure("deleteBudgetBucket", error.message);
+  }
+
   async appendInfluenceDecision(input: AppendDecisionInput): Promise<DecisionAppend> {
     const { data, error } = await this.#client.rpc("append_influence_decision", {
       p_project_id: input.projectId,

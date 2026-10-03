@@ -167,6 +167,7 @@ describe("the gateway contract itself enforces owner scoping", () => {
       "appendInfluenceDecision",
       "completeOperation",
       "countProjectsForOwnerSince",
+      "deleteBudgetBucket",
       "deleteSession",
       "findLiveSessionByHash",
       "findProjectForOwner",
