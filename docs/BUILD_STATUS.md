@@ -281,7 +281,7 @@ From a clean working tree at the end of implementation:
 | `npm run test:e2e` | passed, exit 0 — 13 Playwright tests, 0 failures |
 | `npm run check:fixtures` | passed, exit 0 — 29 checks PASS, 0 FAIL |
 | `npm run build` | passed, exit 0 — 8 routes, 4 static and 4 server-rendered on demand |
-| `npm run check:secrets` | passed, exit 0 — 83 tracked and 227 built files scanned |
+| `npm run check:secrets` | passed, exit 0 — 84 tracked and 227 built files scanned |
 | `RUN_SUPABASE_SMOKE=1 npm run smoke:supabase` | passed, exit 0 — 20 of 20 checks |
 | `RUN_OPENAI_SMOKE=1 npm run smoke:openai` | passed, exit 0 — one real call |
 | `RUN_DEPLOY_VERIFY=1 DEPLOY_URL=... npm run verify:deployment` | passed, exit 0 — 24 of 24 checks |
@@ -347,7 +347,9 @@ credential shape or a provider host.
 project created at `2026-10-03T23:00:21Z` was read back with the same id, the
 same `created_at`, and the same brief through a new `vercel deploy --prod`
 deployment, while a freshly established session on that new deployment got 404
-for the same id.
+for the same id. The same read was repeated against a third production
+deployment built from the final commit, with the same result, and the full
+24-check deployed verification passed against it.
 
 ## OpenAI
 
@@ -410,10 +412,11 @@ exist as schema for later phases and hold zero rows. `last_good_version_id` is
    one for the export and share surfaces, which Phase 5 builds.
 9. **Session expiry refresh is coarse:** `last_seen_at` is refreshed at most
    once an hour per session, to avoid a database write on every read.
-10. **Six projects and nine sessions remain in the database** from the deployed
-    verification runs. They are the persistence evidence. The live Supabase
-    smoke cleans up after itself; the deployed verification deliberately does
-    not.
+10. **Thirteen sessions and eight projects remain in the database** from the
+    deployed verification runs and the redeployment probe. They are the
+    persistence evidence. The live Supabase smoke cleans up after itself; the
+    deployed verification deliberately does not. The four later-phase tables
+    hold zero rows.
 11. **Playwright browser pinning** still applies: the browser gate needs a
     chromium matching `@playwright/test@1.56.1`
     (`npx playwright install chromium`).

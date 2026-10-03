@@ -2,7 +2,8 @@
 
 **Date:** 3 October 2026 (UTC)
 **Branch:** `feat/phase-2-persistence`
-**Commit at which this record was taken:** `69adbd0`
+**Commit the deployed production build was made from:** `86aaf69`
+**Commit at which the final gate and the deployed verification were re-run:** `86aaf69`
 **Runtime used:** Node `v24.11.0`, npm `11.6.1`
 
 This file records **only what was actually executed against real accounts**.
@@ -275,7 +276,8 @@ route genuinely needs it. There is no `NEXT_PUBLIC_` variable of any kind.
 | Target | URL | Anonymous access |
 |---|---|---|
 | Production | **https://firstplayable.vercel.app** | public, HTTP 200 |
-| Production (second build, used for the redeployment test) | same URL, deployment `firstplayable-ajm0qc1mk` | public, HTTP 200 |
+| Production, second build (used for the redeployment test) | same URL, deployment `firstplayable-ajm0qc1mk` | public, HTTP 200 |
+| Production, third build (from commit `86aaf69`, the final tree) | same URL, deployment `firstplayable-hrlibp8ln` | public, HTTP 200 |
 | Preview | `https://firstplayable-26kc4sjt0-mohamed-aziz-ayaris-projects.vercel.app` | **HTTP 302 to a login wall** |
 
 The preview deployment is behind the project's default Vercel Authentication
@@ -342,6 +344,11 @@ Done explicitly, not inferred:
    returned **200**, the same project id, the **same `created_at`**, revision 1,
    and the same brief. A freshly established owner session on the new
    deployment got **404** for that id.
+4. The same read was repeated once more against a **third** production
+   deployment (`firstplayable-hrlibp8ln`, built from the final commit) with the
+   same result: 200, same id, same `created_at`, and 404 for a fresh session.
+   The full 24-check deployed verification was also re-run against that third
+   deployment and passed.
 
 ### Database-outage path
 
@@ -367,7 +374,7 @@ npm run build && npm run check:secrets   →  exit 0
 | `.env` tracked | no |
 | `.vercel` tracked | no |
 | both ignored by `.gitignore` | yes, asserted in `tests/server/secrets.test.ts` |
-| credential shape in any of the 83 tracked files | none |
+| credential shape in any of the 84 tracked files | none |
 | credential shape in the 227 built client and server assets | none |
 | `NEXT_PUBLIC_` variable carrying a server secret | none exists |
 | Supabase or OpenAI host in a client chunk | none, checked locally and on the deployment |
@@ -382,7 +389,7 @@ Error envelopes carry only `code`, `message`, `retryable`,
 
 ## 10. Phase 2 commands and their results
 
-Run from a clean working tree at commit `69adbd0`:
+Run from a clean working tree at commit `86aaf69`, with `.next/` deleted first:
 
 | Command | Result |
 |---|---|
@@ -391,7 +398,7 @@ Run from a clean working tree at commit `69adbd0`:
 | `npm run test:e2e` | passed, exit 0 — 13 Playwright tests |
 | `npm run check:fixtures` | passed, exit 0 — 29 checks PASS, 0 FAIL |
 | `npm run build` | passed, exit 0 — 8 routes: 4 static, 4 server-rendered on demand |
-| `npm run check:secrets` | passed, exit 0 — 83 tracked and 227 built files scanned |
+| `npm run check:secrets` | passed, exit 0 — 84 tracked and 227 built files scanned |
 | `RUN_SUPABASE_SMOKE=1 npm run smoke:supabase` | passed, 20 of 20 |
 | `RUN_OPENAI_SMOKE=1 npm run smoke:openai` | passed, 1 real call |
 | `RUN_DEPLOY_VERIFY=1 … npm run verify:deployment` | passed, 24 of 24 |
@@ -426,11 +433,12 @@ Every live command is opt-in. `npm test`, `npm run test:e2e`, and
    cross-session denial, and the honest failure state. It is not the phase 6
    creative tool, and it uses three fixed world identifiers (`room`, `npc`,
    `object`) rather than deriving them from creator wording.
-8. **Six projects and nine sessions remain in the database** from the deployed
-   verification runs. They are real persistence evidence rather than leftovers,
-   and they are inspectable. The live Supabase smoke cleans up after itself;
-   the deployed verification deliberately does not, so the redeployment test
-   had something to read.
+8. **Thirteen sessions and eight projects remain in the database** from the
+   three deployed verification runs and the redeployment probe. They are real
+   persistence evidence rather than leftovers, and they are inspectable. The
+   live Supabase smoke cleans up after itself; the deployed verification
+   deliberately does not, so the redeployment test had something to read. The
+   four later-phase tables hold zero rows.
 9. **Qloo was not used anywhere.** No phase 2 code path reads `QLOO_API_KEY`,
    no Qloo host appears in any source file, and `qloo_captures` holds zero rows.
 10. **Phase 3 is not implemented.** The route list is asserted to be exactly
