@@ -18,7 +18,8 @@
     "check:fixtures": "tsx scripts/check-fixtures.ts",
     "check:secrets": "tsx scripts/scan-secrets.ts",
     "smoke:supabase": "tsx scripts/smoke-supabase.ts",
-    "smoke:openai": "tsx scripts/smoke-openai.ts"
+    "smoke:openai": "tsx scripts/smoke-openai.ts",
+    "verify:deployment": "tsx scripts/verify-deployment.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.117.2",
