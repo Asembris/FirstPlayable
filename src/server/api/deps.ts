@@ -23,6 +23,7 @@ import {
 } from "../config";
 import type { DataGateway } from "../db/gateway";
 import { supabaseGateway } from "../db/supabase-gateway";
+import type { SceneCompiler } from "../compile/compiler";
 import type { ResponsesClient } from "../model/openai";
 import type { QlooLaunchGuard } from "../qloo/client";
 
@@ -61,7 +62,24 @@ export type Phase3Deps = RouteDeps & {
   onReserveReached?: () => void;
 };
 
+/**
+ * What a phase 4 route handler may reach.
+ *
+ * `compiler` exists so the offline suite can drive the real controller, the
+ * real validator, and the real persistence over a deterministic compiler.
+ * Production omits it, so the one pinned adapter in
+ * `src/server/model/openai.ts` is always used.
+ */
+export type Phase4Deps = RouteDeps & {
+  modelClient?: ResponsesClient;
+  compiler?: SceneCompiler;
+};
+
 export function liveDeps(): RouteDeps {
+  return { gateway: supabaseGateway, budget: budgetConfig };
+}
+
+export function livePhase4Deps(): Phase4Deps {
   return { gateway: supabaseGateway, budget: budgetConfig };
 }
 

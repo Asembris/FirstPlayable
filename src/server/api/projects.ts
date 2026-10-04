@@ -22,6 +22,7 @@ import {
   readProjectViewForOwner,
   toProjectView,
 } from "../db/projects";
+import { listVersionSummaries, readPlayableForProject } from "../db/versions";
 import { referencesViewFromProject } from "./qloo";
 import { refreshOwnerActivity, requireOwnerSession } from "../db/sessions";
 import { appErrors, errorResponse, newRequestId } from "../security/errors";
@@ -32,6 +33,7 @@ import {
   readJsonBody,
 } from "../security/request";
 import { readOwnerSecret } from "../security/session";
+import type { PlayableView, SceneVersionSummary } from "@/domain/compile";
 import type { RouteDeps } from "./deps";
 
 const ProjectIdSchema = z.uuid();
@@ -93,7 +95,17 @@ export async function handleReadProject(
     const project = await readProjectViewForOwner(gateway, session, row);
     const references = await referencesViewFromProject(gateway, project.reference_capture_ids);
 
-    return json(project, requestId, 200, references);
+    // From phase 4, the studio also gets the version awaiting review (or the
+    // active one) as a whole validated scene. That single payload is what lets
+    // every subsequent choice and reset run locally through the Phase 1
+    // engine, with no further request of any kind.
+    const playable = await readPlayableForProject(gateway, session, row);
+    const versions =
+      row.active_version_id === null && row.pending_version_id === null
+        ? []
+        : await listVersionSummaries(gateway, session, row);
+
+    return json(project, requestId, 200, references, playable, versions);
   } catch (error) {
     return errorResponse(error, requestId);
   }
@@ -104,9 +116,11 @@ function json(
   requestId: string,
   status: number,
   references: ReferencesView | null = null,
+  playable: PlayableView | null = null,
+  versions: readonly SceneVersionSummary[] = [],
 ): Response {
   return Response.json(
-    { project, references },
+    { project, references, playable, versions },
     {
       status,
       headers: { "x-request-id": requestId, "cache-control": "no-store" },

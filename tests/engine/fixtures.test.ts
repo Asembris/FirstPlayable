@@ -190,17 +190,21 @@ describe("no external service reaches the engine or the player", () => {
   });
 
   /**
-   * The frozen route surface, phase by phase. Phase 3 adds exactly its slice
-   * of specification section 11 and nothing else.
+   * The frozen route surface, phase by phase. Phase 4 adds exactly its four
+   * locked routes of specification section 11 and nothing else.
    */
-  it("declares only the phase 2 and phase 3 route subset", () => {
+  it("declares only the phase 2 to phase 4 route subset", () => {
     const routes = walk(join(repoRoot, "src", "app"))
       .filter((file) => /route\.(ts|tsx)$/.test(file))
       .map((file) => relative(join(repoRoot, "src", "app"), file).split("\\").join("/"))
       .sort();
     expect(routes).toEqual([
+      "api/operations/[id]/advance/route.ts",
+      "api/operations/[id]/route.ts",
+      "api/projects/[id]/activate/route.ts",
       "api/projects/[id]/anchor/route.ts",
       "api/projects/[id]/artist-search/route.ts",
+      "api/projects/[id]/compile/route.ts",
       "api/projects/[id]/decisions/route.ts",
       "api/projects/[id]/proposals/route.ts",
       "api/projects/[id]/references/route.ts",
@@ -211,32 +215,48 @@ describe("no external service reaches the engine or the player", () => {
   });
 
   /**
-   * Compilation, activation, revision, publication, export, and the public
-   * share belong to phases 4 and 5. None of them may exist yet, and no route
-   * may expose an arbitrary Qloo or model request either.
+   * Revision, publication, export, and the public share belong to phase 5.
+   * None of them may exist yet, and no route may expose an arbitrary Qloo,
+   * model, prompt, or operation-stage request either.
    */
-  it("declares no phase 4 or phase 5 route, and no arbitrary upstream route", () => {
+  it("declares no phase 5 route, and no arbitrary upstream or stage route", () => {
     const routes = walk(join(repoRoot, "src", "app"))
       .filter((file) => /route\.(ts|tsx)$/.test(file))
       .map((file) => relative(join(repoRoot, "src", "app"), file).split("\\").join("/"));
     for (const laterPhase of [
-      "compile",
-      "activate",
       "revisions",
-      "operations",
       "publish",
       "publications",
       "public",
       "export",
+      "share",
       "qloo",
       "openai",
       "model",
       "prompt",
+      // The browser asks for *the next* stage; it can never name one.
+      "stage",
+      "base",
+      "module",
+      "validate",
     ]) {
       expect(
         routes.filter((route) => route.includes(laterPhase)),
-        `${laterPhase} is not part of phase 3`,
+        `${laterPhase} is not part of phase 4`,
       ).toEqual([]);
     }
+  });
+
+  /**
+   * The advance route's body contract has no stage field, which is what makes
+   * "the controller, not the browser, chooses the next valid stage" structural
+   * rather than a convention.
+   */
+  it("gives the advance route an empty request contract", () => {
+    const contracts = readFileSync(join(repoRoot, "src", "domain", "compile.ts"), "utf8");
+    const declaration = /export const AdvanceRequestSchema = z\.strictObject\(\{\}\);/.exec(
+      contracts,
+    );
+    expect(declaration, "AdvanceRequestSchema must be a strict empty object").not.toBeNull();
   });
 });
