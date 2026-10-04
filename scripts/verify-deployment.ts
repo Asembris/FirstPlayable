@@ -400,6 +400,487 @@ async function clientBundleScan(base: string): Promise<void> {
   );
 }
 
+/**
+ * The deployed phase 3 workflow, driven over HTTP against the real routes.
+ *
+ * It establishes its own session and project so it is independent of the
+ * matrix above, then walks the whole chain: artist search, explicit anchor
+ * confirmation, both first hops, one bounded proposal call, and one explicit
+ * approval. Afterwards it re-reads the project, repeats the retrieval to show
+ * the cache costs nothing, and checks that a second anonymous owner is refused
+ * at every phase 3 route.
+ *
+ * It spends one real model call on the deployed instance. The Qloo retrieval
+ * normally spends none, because the captures are shared through the database.
+ */
+async function phase3Flow(base: string): Promise<void> {
+  console.log("");
+  console.log("  phase 3 workflow");
+
+  const post = async (path: string, cookie: string, body: unknown, method = "POST") =>
+    fetch(`${base}${path}`, {
+      method,
+      headers: { origin: base, "content-type": "application/json", cookie },
+      body: JSON.stringify(body),
+    });
+
+  const session = await fetch(`${base}/api/session`, {
+    method: "POST",
+    headers: { origin: base, "content-type": "application/json" },
+    body: "{}",
+  });
+  const cookie = cookieValue(session);
+  if (cookie === null) {
+    record("phase 3 workflow could establish a session", false, "no cookie");
+    return;
+  }
+
+  const created = await post("/api/projects", cookie, { brief: brief() });
+  const createdBody = (await created.json()) as { project?: { id: string; revision: number } };
+  const projectId = createdBody.project?.id;
+  if (projectId === undefined) {
+    record("phase 3 workflow could create a project", false, `status ${created.status}`);
+    return;
+  }
+
+  // 1. Artist search.
+  const searchResponse = await post(`/api/projects/${projectId}/artist-search`, cookie, {
+    query: "Radiohead",
+  });
+  const searchText = await searchResponse.text();
+  const search = JSON.parse(searchText) as {
+    search?: {
+      capture_id: string | null;
+      cache: string;
+      candidates: { entity_id: string; name: string; original_rank: number }[];
+    };
+    project?: { revision: number; anchor_confirmed: boolean };
+  };
+  record(
+    "POST artist-search returns real Qloo candidates",
+    searchResponse.status === 200 && (search.search?.candidates.length ?? 0) > 0,
+    `status ${searchResponse.status}, ${search.search?.candidates.length ?? 0} candidates, cache ${
+      search.search?.cache ?? "none"
+    }`,
+  );
+  record(
+    "searching confirms nothing by itself",
+    search.project?.anchor_confirmed === false,
+    `anchor_confirmed ${String(search.project?.anchor_confirmed)}`,
+  );
+  record(
+    "no affinity or credential shape reaches the browser from artist-search",
+    !searchText.includes("affinity") &&
+      !CREDENTIAL_SHAPES.some((shape) => shape.pattern.test(searchText)),
+    `${searchText.length} bytes scanned`,
+  );
+
+  const chosen = search.search?.candidates.find(
+    (candidate) => candidate.name.toLowerCase() === "radiohead",
+  );
+  record(
+    "the canonical artist is confirmable by exact name",
+    chosen !== undefined,
+    chosen === undefined ? "absent" : `${chosen.name} at rank ${chosen.original_rank}`,
+  );
+  const captureId = search.search?.capture_id ?? null;
+  if (chosen === undefined || captureId === null) return;
+
+  // 2. Explicit confirmation. A forged entity id is refused first.
+  const forged = await post(
+    `/api/projects/${projectId}/anchor`,
+    cookie,
+    {
+      expected_revision: search.project?.revision ?? 1,
+      search_capture_id: captureId,
+      entity_id: "11111111-2222-4333-8444-555555555555",
+    },
+    "PUT",
+  );
+  record(
+    "an artist that was not in the snapshot cannot be confirmed",
+    forged.status === 422,
+    `status ${forged.status}`,
+  );
+
+  const anchorResponse = await post(
+    `/api/projects/${projectId}/anchor`,
+    cookie,
+    {
+      expected_revision: search.project?.revision ?? 1,
+      search_capture_id: captureId,
+      entity_id: chosen.entity_id,
+    },
+    "PUT",
+  );
+  const anchored = (await anchorResponse.json()) as {
+    project?: {
+      revision: number;
+      anchor?: { name: string; original_rank: number } | null;
+      approved_slots: string[];
+    };
+  };
+  record(
+    "PUT anchor freezes the explicitly confirmed artist",
+    anchorResponse.status === 200 && anchored.project?.anchor?.name === chosen.name,
+    `status ${anchorResponse.status}, ${anchored.project?.anchor?.name ?? "none"} at rank ${
+      anchored.project?.anchor?.original_rank ?? "unknown"
+    }`,
+  );
+  record(
+    "confirming approves nothing",
+    (anchored.project?.approved_slots.length ?? 1) === 0,
+    `${anchored.project?.approved_slots.length ?? "unknown"} approved`,
+  );
+
+  // 3. Both first hops.
+  const referencesResponse = await post(`/api/projects/${projectId}/references`, cookie, {
+    expected_revision: anchored.project?.revision ?? 2,
+  });
+  const referencesText = await referencesResponse.text();
+  const references = JSON.parse(referencesText) as {
+    project?: { revision: number; reference_capture_ids: string[]; workflow_state: string };
+    references?: {
+      any_usable: boolean;
+      movie: { status: string; cache: string | null; usable_count: number; displayed: { name: string }[] };
+      videogame: { status: string; cache: string | null; usable_count: number; displayed: { name: string }[] };
+    };
+    upstream_calls?: number;
+  };
+  record(
+    "POST references returns both domain rows",
+    referencesResponse.status === 200 && references.references?.any_usable === true,
+    `status ${referencesResponse.status}, upstream calls ${references.upstream_calls ?? "unknown"}` +
+      `, movie ${references.references?.movie.usable_count ?? "?"} usable (${
+        references.references?.movie.cache ?? "none"
+      })` +
+      `, videogame ${references.references?.videogame.usable_count ?? "?"} usable (${
+        references.references?.videogame.cache ?? "none"
+      })`,
+  );
+  record(
+    "the deployed rows show the real first-hop titles",
+    (references.references?.movie.displayed.length ?? 0) > 0 &&
+      (references.references?.videogame.displayed.length ?? 0) > 0,
+    `movies: ${(references.references?.movie.displayed ?? []).map((row) => row.name).join(", ")}` +
+      ` · games: ${(references.references?.videogame.displayed ?? []).map((row) => row.name).join(", ")}`,
+  );
+  record(
+    "no affinity, fingerprint, or credential shape reaches the browser from references",
+    !referencesText.includes("affinity") &&
+      !referencesText.includes("request_fingerprint") &&
+      !CREDENTIAL_SHAPES.some((shape) => shape.pattern.test(referencesText)),
+    `${referencesText.length} bytes scanned`,
+  );
+
+  // 4. One bounded proposal call.
+  const proposalsResponse = await post(`/api/projects/${projectId}/proposals`, cookie, {
+    expected_revision: references.project?.revision ?? 2,
+  });
+  const proposals = (await proposalsResponse.json()) as {
+    project?: {
+      revision: number;
+      approved_slots: string[];
+      proposals: {
+        proposal_id: string;
+        slot: string;
+        reference_name: string;
+        selected_evidence_ids: string[];
+      }[];
+    };
+    model_calls?: number;
+    repaired?: boolean;
+  };
+  record(
+    "POST proposals returns a bounded draft from one model call",
+    proposalsResponse.status === 200 && (proposals.project?.proposals.length ?? 0) > 0,
+    `status ${proposalsResponse.status}, ${
+      proposals.project?.proposals.length ?? 0
+    } proposals, ${proposals.model_calls ?? "unknown"} model call(s), repaired ${String(
+      proposals.repaired,
+    )}`,
+  );
+  record(
+    "the default approved count is still zero",
+    (proposals.project?.approved_slots.length ?? 1) === 0,
+    `${proposals.project?.approved_slots.length ?? "unknown"} approved`,
+  );
+
+  const proposal = proposals.project?.proposals[0];
+  if (proposal === undefined) return;
+
+  // 5. One explicit approval.
+  const decisionResponse = await post(`/api/projects/${projectId}/decisions`, cookie, {
+    expected_revision: proposals.project?.revision ?? 2,
+    kind: "accept",
+    proposal_id: proposal.proposal_id,
+  });
+  const decided = (await decisionResponse.json()) as {
+    project?: {
+      revision: number;
+      approved_slots: string[];
+      approvals: {
+        approval_id: string;
+        approved_text: string;
+        source_kind: string;
+        edited_by_creator: boolean;
+      }[];
+      provenance: Record<string, unknown>[];
+    };
+    decision_id?: string;
+  };
+  record(
+    "POST decisions approves exactly one influence",
+    decisionResponse.status === 200 && (decided.project?.approvals.length ?? 0) === 1,
+    `status ${decisionResponse.status}, slots ${
+      decided.project?.approved_slots.join(",") ?? "none"
+    }, approval ${decided.project?.approvals[0]?.approval_id ?? "none"}`,
+  );
+  const chain = decided.project?.provenance[0];
+  record(
+    "the provenance chain exposes three layers and no fourth",
+    chain !== undefined &&
+      Object.keys(chain).sort().join(",") === "approval_id,approved,proposed,retrieved,slot",
+    chain === undefined ? "no chain" : Object.keys(chain).sort().join(","),
+  );
+
+  // 6. A reload keeps it, and a repeat retrieval costs nothing.
+  const reread = await fetch(`${base}/api/projects/${projectId}`, { headers: { cookie } });
+  const rereadBody = (await reread.json()) as {
+    project?: { approvals: { approval_id: string }[]; revision: number };
+    references?: { movie: { displayed: unknown[] } } | null;
+  };
+  record(
+    "the approval survives a reload of the deployed project",
+    reread.status === 200 &&
+      rereadBody.project?.approvals[0]?.approval_id === decided.project?.approvals[0]?.approval_id,
+    `status ${reread.status}, ${rereadBody.project?.approvals.length ?? 0} approval(s)`,
+  );
+  record(
+    "the reload rebuilt the reference rows from the stored captures",
+    (rereadBody.references?.movie.displayed.length ?? 0) > 0,
+    `${rereadBody.references?.movie.displayed.length ?? 0} movie cards`,
+  );
+
+  const repeat = await post(`/api/projects/${projectId}/references`, cookie, {
+    expected_revision: rereadBody.project?.revision ?? 3,
+  });
+  const repeatBody = (await repeat.json()) as { upstream_calls?: number };
+  record(
+    "repeating the retrieval on this project makes no upstream Qloo call",
+    repeat.status === 200 && repeatBody.upstream_calls === 0,
+    `status ${repeat.status}, upstream calls ${repeatBody.upstream_calls ?? "unknown"}`,
+  );
+
+  // 7. A second anonymous owner is refused at every phase 3 route.
+  const otherSession = await fetch(`${base}/api/session`, {
+    method: "POST",
+    headers: { origin: base, "content-type": "application/json" },
+    body: "{}",
+  });
+  const otherCookie = cookieValue(otherSession) ?? "";
+  const foreignRoutes: { path: string; body: unknown; method?: string }[] = [
+    { path: `/api/projects/${projectId}/artist-search`, body: { query: "Radiohead" } },
+    {
+      path: `/api/projects/${projectId}/anchor`,
+      body: {
+        expected_revision: 1,
+        search_capture_id: captureId,
+        entity_id: chosen.entity_id,
+      },
+      method: "PUT",
+    },
+    { path: `/api/projects/${projectId}/references`, body: { expected_revision: 1 } },
+    { path: `/api/projects/${projectId}/proposals`, body: { expected_revision: 1 } },
+    {
+      path: `/api/projects/${projectId}/decisions`,
+      body: { expected_revision: 1, kind: "accept", proposal_id: proposal.proposal_id },
+    },
+  ];
+  const refusals: string[] = [];
+  for (const route of foreignRoutes) {
+    const response = await post(route.path, otherCookie, route.body, route.method ?? "POST");
+    const text = await response.text();
+    const name = route.path.split("/").pop() ?? route.path;
+    refusals.push(`${name}:${response.status}`);
+    if (response.status !== 404 || text.includes("Radiohead") || text.includes(BRIEF.premise)) {
+      record(`a second owner is refused at ${name}`, false, `status ${response.status}`);
+      return;
+    }
+  }
+  record(
+    "a second anonymous owner is refused at every phase 3 route, identically",
+    true,
+    refusals.join(" · "),
+  );
+}
+
+/**
+ * The deployed phase 3 workflow, driven through the real browser UI against
+ * the real services.
+ *
+ * This is the phase 3 exit criterion in its strongest form: one browser, one
+ * fresh brief, a real artist search, an explicit confirmation click, real
+ * first-hop references, one real bounded proposal call, one Approve click, and
+ * the provenance drawer opened on the result. Every request the browser makes
+ * is recorded, so a direct Qloo, OpenAI, or Supabase call would be caught.
+ *
+ * It spends one more real model call on the deployed instance.
+ */
+async function phase3BrowserFlow(base: string): Promise<void> {
+  console.log("");
+  console.log("  Deployed phase 3 workflow in a real browser");
+
+  let browser: Browser | null = null;
+  try {
+    browser = await chromium.launch();
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    const requests: string[] = [];
+    page.on("request", (request) => requests.push(request.url()));
+
+    await page.goto(`${base}/studio`, { waitUntil: "load" });
+    await page.getByTestId("session-ready").waitFor({ timeout: 30_000 });
+    await page.getByRole("button", { name: "Save this brief" }).click();
+    await page.getByTestId("project-premise").waitFor({ timeout: 30_000 });
+    const projectId = await page.getByTestId("project-id").innerText();
+
+    // 1. Artist search, which must not confirm anything.
+    await page.getByTestId("artist-query").fill("Radiohead");
+    await page.getByTestId("artist-search-submit").click();
+    await page.getByTestId("artist-results").waitFor({ timeout: 30_000 });
+    const optionCount = await page.getByRole("radio").count();
+    const confirmDisabled = await page.getByTestId("anchor-confirm").isDisabled();
+    record(
+      "the deployed studio lists real artist results and preselects none",
+      optionCount > 1 && confirmDisabled,
+      `${optionCount} options, confirm disabled ${String(confirmDisabled)}`,
+    );
+
+    // 2. Explicit confirmation.
+    await page.getByTestId("artist-option-1").check();
+    await page.getByTestId("anchor-confirm").click();
+    await page.getByTestId("anchor-confirmed").waitFor({ timeout: 30_000 });
+    const anchorName = await page.getByTestId("anchor-name").innerText();
+    record(
+      "clicking confirm freezes the artist the creator chose",
+      anchorName.trim() === "Radiohead",
+      anchorName.trim(),
+    );
+
+    // 3. Real first hops.
+    await page.getByTestId("retrieve-references").click();
+    await page.getByTestId("domain-row-movie").waitFor({ timeout: 60_000 });
+    await page.getByTestId("domain-row-videogame").waitFor({ timeout: 60_000 });
+    const movieCards = await page.getByTestId("domain-row-movie").locator(".card").count();
+    const gameCards = await page.getByTestId("domain-row-videogame").locator(".card").count();
+    record(
+      "both deployed domain rows render real reference cards",
+      movieCards > 0 && gameCards > 0,
+      `${movieCards} movie card(s), ${gameCards} videogame card(s)`,
+    );
+
+    const rowsText = await page.locator("main").innerText();
+    record(
+      "the deployed cards show retrieved context and no quality score",
+      rowsText.includes("Qloo describes") &&
+        !/\baffinity\b/i.test(rowsText) &&
+        !/\bconfidence\b/i.test(rowsText) &&
+        !/\b\d{1,3}\s?%/.test(rowsText) &&
+        !/Qloo (recommends|proves|says|knows|generated)/i.test(rowsText),
+      "wording checked",
+    );
+
+    // 4. One real bounded proposal call.
+    await page.getByTestId("run-proposals").click();
+    await page
+      .locator('[data-testid^="approve-ref."]')
+      .first()
+      .waitFor({ timeout: 90_000 });
+    const noApprovalsBefore = await page.getByTestId("no-approvals").count();
+    record(
+      "the deployed proposals approve nothing by default",
+      noApprovalsBefore === 1,
+      `no-approvals panel present: ${String(noApprovalsBefore === 1)}`,
+    );
+
+    // 5. One explicit approval.
+    await page.locator('[data-testid^="approve-ref."]').first().click();
+    await page.getByTestId("approved-chips").waitFor({ timeout: 30_000 });
+    const chipText = await page.getByTestId("approved-chips").innerText();
+    record(
+      "clicking Approve freezes exactly one influence",
+      (await page.getByTestId("approved-chips").locator("li").count()) === 1,
+      chipText.replace(/\s+/g, " ").trim(),
+    );
+
+    // 6. The provenance drawer, with its three layers.
+    await page.getByTestId("approved-chips").locator("button").first().click();
+    const drawer = page.locator('[data-testid^="provenance-"]').first();
+    await drawer.waitFor({ timeout: 30_000 });
+    const labels = await drawer.locator(".drawer__label").allInnerTexts();
+    const layers = labels.map((label) => label.split("\n")[0]?.trim().toLowerCase());
+    const drawerText = await drawer.innerText();
+    record(
+      "the deployed provenance drawer shows retrieval, interpretation and decision",
+      layers.length === 3 &&
+        layers[0] === "qloo retrieved" &&
+        layers[1] === "firstplayable proposed" &&
+        layers[2] === "creator approved",
+      layers.join(" → "),
+    );
+    record(
+      "and claims no scene change, because no scene has been compiled",
+      !/scene changed/i.test(drawerText) && drawerText.includes("Retrieved for Radiohead"),
+      "checked",
+    );
+
+    // 7. The approval survives a full page load.
+    await page.reload({ waitUntil: "load" });
+    await page.getByTestId("approved-chips").waitFor({ timeout: 30_000 });
+    record(
+      "the deployed approval survives a full page reload",
+      (await page.getByTestId("approved-chips").locator("li").count()) === 1,
+      `project ${projectId.slice(0, 8)}…`,
+    );
+
+    // 8. Nothing left the origin.
+    const foreign = foreignRequests(requests, base);
+    record(
+      "the whole deployed workflow made only same-origin requests",
+      foreign.length === 0,
+      foreign.join(", ") || `${requests.length} requests, all same-origin`,
+    );
+    const upstream = requests.filter((url) =>
+      /qloo\.com|api\.openai\.com|supabase\.(co|in)/i.test(url),
+    );
+    record(
+      "the browser never reached Qloo, OpenAI, or Supabase directly",
+      upstream.length === 0,
+      upstream.join(", ") || "none",
+    );
+
+    const html = await page.content();
+    const leaked = CREDENTIAL_SHAPES.filter((shape) => shape.pattern.test(html));
+    record(
+      "the rendered phase 3 page carries no credential and no provider host",
+      leaked.length === 0,
+      leaked.map((shape) => shape.name).join(", ") || "clean",
+    );
+
+    await page.close();
+    await context.close();
+  } catch (error) {
+    record(
+      "the deployed phase 3 browser workflow completed",
+      false,
+      error instanceof Error ? `${error.name}: ${error.message.slice(0, 200)}` : "unknown",
+    );
+  } finally {
+    await browser?.close();
+  }
+}
+
 async function main(): Promise<void> {
   if (process.env[GUARD] !== "1") {
     console.log(
@@ -436,7 +917,9 @@ async function main(): Promise<void> {
   console.log("");
 
   await httpMatrix(base);
+  await phase3Flow(base);
   await browserChecks(base);
+  await phase3BrowserFlow(base);
   await clientBundleScan(base);
 
   const failed = checks.filter((check) => !check.ok).length;
