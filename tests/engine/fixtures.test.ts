@@ -167,6 +167,29 @@ describe("no external service reaches the engine or the player", () => {
     }
   });
 
+  /**
+   * The share loader is the one component outside the studio that reads, and it
+   * reads exactly once, from this application's own origin.
+   *
+   * It is deliberately not in `src/components/player/`: that directory is the
+   * trusted renderer and the assertion above forbids a network call in it at
+   * all. A share view still has to load the snapshot it plays, so the loader
+   * lives here and the renderer it hands the scene to stays offline.
+   */
+  it("gives the share loader one same-origin read and no absolute URL", () => {
+    const loaders = clientReachable.filter((file) => file.includes("/src/components/share/"));
+    expect(loaders.length).toBeGreaterThan(0);
+    for (const file of loaders) {
+      const text = readFileSync(file, "utf8");
+      const calls = [...text.matchAll(/\bfetch\s*\(\s*([^,)]+)/g)];
+      expect(calls.length, `${file} makes more than one read`).toBe(1);
+      // A path, never a scheme and never a host.
+      expect(calls[0]?.[1]).toContain("/api/public/");
+      expect(/https?:\/\//.test(text), `${file} names an absolute URL`).toBe(false);
+      expect(/XMLHttpRequest/.test(text), file).toBe(false);
+    }
+  });
+
   it("never evaluates generated code anywhere in src or fixtures", () => {
     const forbidden = [/\beval\s*\(/, /new\s+Function\s*\(/, /dangerouslySetInnerHTML/];
     for (const file of sources("src", "fixtures")) {
@@ -190,10 +213,10 @@ describe("no external service reaches the engine or the player", () => {
   });
 
   /**
-   * The frozen route surface, phase by phase. Phase 4 adds exactly its four
+   * The frozen route surface, phase by phase. Phase 5 adds exactly its five
    * locked routes of specification section 11 and nothing else.
    */
-  it("declares only the phase 2 to phase 4 route subset", () => {
+  it("declares only the phase 2 to phase 5 route subset", () => {
     const routes = walk(join(repoRoot, "src", "app"))
       .filter((file) => /route\.(ts|tsx)$/.test(file))
       .map((file) => relative(join(repoRoot, "src", "app"), file).split("\\").join("/"))
@@ -206,30 +229,34 @@ describe("no external service reaches the engine or the player", () => {
       "api/projects/[id]/artist-search/route.ts",
       "api/projects/[id]/compile/route.ts",
       "api/projects/[id]/decisions/route.ts",
+      "api/projects/[id]/export/route.ts",
       "api/projects/[id]/proposals/route.ts",
+      "api/projects/[id]/publish/route.ts",
       "api/projects/[id]/references/route.ts",
+      "api/projects/[id]/revisions/route.ts",
       "api/projects/[id]/route.ts",
       "api/projects/route.ts",
+      "api/public/[token]/route.ts",
+      "api/publications/[id]/route.ts",
       "api/session/route.ts",
     ]);
   });
 
   /**
-   * Revision, publication, export, and the public share belong to phase 5.
-   * None of them may exist yet, and no route may expose an arbitrary Qloo,
-   * model, prompt, or operation-stage request either.
+   * No route exposes an arbitrary Qloo, model, prompt, or operation-stage
+   * request, and none of the phase 6 or phase 7 surfaces exists yet.
+   *
+   * The two exclusions that have to be written carefully: `export` and
+   * `publish` are now legitimate path segments, so the stage ban is checked
+   * against the *segment* rather than a substring — otherwise
+   * `api/projects/[id]/export` would match a ban on "port".
    */
-  it("declares no phase 5 route, and no arbitrary upstream or stage route", () => {
+  it("exposes no arbitrary upstream, prompt, or stage route", () => {
     const routes = walk(join(repoRoot, "src", "app"))
       .filter((file) => /route\.(ts|tsx)$/.test(file))
       .map((file) => relative(join(repoRoot, "src", "app"), file).split("\\").join("/"));
-    for (const laterPhase of [
-      "revisions",
-      "publish",
-      "publications",
-      "public",
-      "export",
-      "share",
+    const segments = new Set(routes.flatMap((route) => route.split("/")));
+    for (const forbidden of [
       "qloo",
       "openai",
       "model",
@@ -239,12 +266,40 @@ describe("no external service reaches the engine or the player", () => {
       "base",
       "module",
       "validate",
+      "gallery",
+      "comments",
+      "accounts",
+      "admin",
     ]) {
-      expect(
-        routes.filter((route) => route.includes(laterPhase)),
-        `${laterPhase} is not part of phase 4`,
-      ).toEqual([]);
+      expect(segments.has(forbidden), `${forbidden} is not a route of this product`).toBe(
+        false,
+      );
     }
+  });
+
+  /**
+   * The public share surface, asserted where it is declared.
+   *
+   * `GET /api/public/:token` must be a read: it may not export POST, PUT,
+   * PATCH, or DELETE, because a read token carries no owner authority and must
+   * not be able to mutate anything at all.
+   */
+  it("gives the public share route no mutating method", () => {
+    const route = readFileSync(
+      join(repoRoot, "src", "app", "api", "public", "[token]", "route.ts"),
+      "utf8",
+    );
+    expect(/export async function GET/.test(route)).toBe(true);
+    for (const method of ["POST", "PUT", "PATCH", "DELETE"]) {
+      expect(new RegExp(`export async function ${method}`).test(route)).toBe(false);
+    }
+    // And the owner-only revocation is a DELETE and nothing else.
+    const revoke = readFileSync(
+      join(repoRoot, "src", "app", "api", "publications", "[id]", "route.ts"),
+      "utf8",
+    );
+    expect(/export async function DELETE/.test(revoke)).toBe(true);
+    expect(/export async function GET/.test(revoke)).toBe(false);
   });
 
   /**

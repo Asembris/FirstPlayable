@@ -1019,6 +1019,10 @@ async function runValidateStage(
       selected_evidence_ids: approval.selected_evidence_ids,
       approved_text: approval.approved_text,
       intended_effect: approval.intended_effect,
+      // What the model actually proposed, kept beside the approved wording so
+      // a historical or published view can show the two layers separately and
+      // label a creator edit honestly without reading today's decisions.
+      proposed_idea: approval.proposed_idea,
       edited_by_creator: approval.edited_by_creator,
       approved_at: approval.approved_at,
     })),

@@ -32,10 +32,13 @@ import { serializeCompilerPayload } from "./payloads";
 /** Bounded output budgets. A base is larger than a module, and both are small. */
 export const BASE_MAX_OUTPUT_TOKENS = 6_000;
 export const MODULE_MAX_OUTPUT_TOKENS = 3_000;
+/** One ending's prose and nothing else, so the smallest budget of the three. */
+export const ENDING_COPY_MAX_OUTPUT_TOKENS = 1_200;
 
 /** The schema names the two stages use, so a fake can dispatch on them. */
 export const BASE_SCHEMA_NAME = "firstplayable_scene_base";
 export const MODULE_SCHEMA_NAME = "firstplayable_scene_module";
+export const ENDING_COPY_SCHEMA_NAME = "firstplayable_ending_copy";
 
 export type CompilerRequest<S extends ZodType> = {
   readonly schemaName: string;

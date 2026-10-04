@@ -18,6 +18,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import type { Id, Scene } from "../../domain/scene";
+import { viewOf } from "../../engine/compose";
 import {
   availableActions,
   initialState,
@@ -63,11 +64,15 @@ export function ScenePlayer({
     [scene, play.state, play.endingId],
   );
 
+  /**
+   * The ending as the *composed* view has it, not as `core.endings` declares it.
+   *
+   * A creator ending-copy override replaces one ending's text during
+   * composition (`composeScene`), so reading `core.endings` directly would show
+   * the wording the override was applied to replace.
+   */
   const ending = useMemo(
-    () =>
-      play.endingId === null
-        ? null
-        : (scene.core.endings.find((candidate) => candidate.id === play.endingId) ?? null),
+    () => (play.endingId === null ? null : (viewOf(scene).endingById.get(play.endingId) ?? null)),
     [scene, play.endingId],
   );
 

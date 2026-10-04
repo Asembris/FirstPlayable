@@ -42,3 +42,17 @@ export const SCHEMA_IDENTIFIER = "fp-model-schema-4.2";
  * can be read back and checked against it.
  */
 export const VALIDATOR_IDENTIFIER = "fp-engine-validator-1.0";
+
+/**
+ * The ending-copy prompt and its model-facing contract.
+ *
+ * Deliberately *separate* identifiers rather than a bump of the three above.
+ * A compilation's idempotency key is derived from the compiler, prompt, and
+ * schema identifiers, so bumping them would change every module stage's input
+ * hash and force every project's existing, accepted modules to be compiled
+ * again — which is precisely the "do not regenerate unrelated work" rule
+ * Phase 5 exists to honour. Adding an ending-copy prompt changes nothing about
+ * how a module is compiled, so it changes nothing about how one is keyed.
+ */
+export const COPY_PROMPT_IDENTIFIER = "fp-copy-prompts-5.0";
+export const COPY_SCHEMA_IDENTIFIER = "fp-copy-schema-5.0";

@@ -16,6 +16,7 @@ import {
 } from "../../../fixtures/second-copy";
 import type { VersionKey } from "../../../fixtures/second-copy";
 import type { Id } from "../../domain/scene";
+import { viewOf } from "../../engine/compose";
 import {
   availableActions,
   initialState,
@@ -66,9 +67,10 @@ export function ExamplePlayer(): React.ReactElement {
     [scene, play.state, play.endingId],
   );
 
+  // The composed view, so a creator ending-copy override is what shows.
   const ending = useMemo(() => {
     if (play.endingId === null) return null;
-    return scene.core.endings.find((candidate) => candidate.id === play.endingId) ?? null;
+    return viewOf(scene).endingById.get(play.endingId) ?? null;
   }, [scene, play.endingId]);
 
   const take = useCallback(

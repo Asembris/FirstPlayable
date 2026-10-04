@@ -247,6 +247,13 @@ export type BudgetConfig = {
   readonly modelLeaseSeconds: number;
   /** Projects one anonymous session may create per rolling day. */
   readonly projectsPerSessionPerDay: number;
+  /**
+   * Influence and ending-copy revisions one anonymous session may command per
+   * rolling day (specification section 12). Counted per reserved operation row,
+   * so a replayed identical command does not consume a second unit and a failed
+   * one does consume its own.
+   */
+  readonly revisionsPerSessionPerDay: number;
 };
 
 /** $0.60, expressed in micro-dollars so the counter stays an exact integer. */
@@ -256,6 +263,7 @@ export const BUDGET_DEFAULTS = {
   modelCostCapMicros: MODEL_COST_CAP_MICROS,
   modelLeaseSeconds: 120,
   projectsPerSessionPerDay: 5,
+  revisionsPerSessionPerDay: 8,
 } as const satisfies BudgetConfig;
 
 export function budgetConfig(): BudgetConfig {
@@ -279,6 +287,12 @@ export function budgetConfig(): BudgetConfig {
       BUDGET_DEFAULTS.projectsPerSessionPerDay,
       1,
       BUDGET_DEFAULTS.projectsPerSessionPerDay,
+    ),
+    revisionsPerSessionPerDay: integer(
+      "REVISIONS_PER_SESSION_PER_DAY",
+      BUDGET_DEFAULTS.revisionsPerSessionPerDay,
+      1,
+      BUDGET_DEFAULTS.revisionsPerSessionPerDay,
     ),
   };
 }

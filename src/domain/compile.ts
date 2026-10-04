@@ -32,6 +32,8 @@ import { z } from "zod";
 import { SceneSchema } from "./scene";
 import { FIXED_PORTS, SLOTS, TEXT } from "./limits";
 import { ProjectViewSchema, ReferencesViewSchema, WorkflowStateSchema } from "./project";
+import { PublicationSummarySchema } from "./publish";
+import { RevisionDiffViewSchema, RevisionLabelSchema } from "./revision";
 
 /**
  * The brief-only base call's whole output: **narrative copy, and nothing else.**
@@ -200,6 +202,28 @@ export function moduleOutputSchemaFor(slot: (typeof SLOTS)[number]) {
     mechanics: z.array(moduleMechanicSchema(FIXED_PORTS[slot].gate_action_ids)),
   });
 }
+
+/* ------------------------------------------------- the ending-copy contract */
+
+/**
+ * One ending-copy call's whole output: **one string.**
+ *
+ * This is the narrowest model-facing contract in the application, and it is
+ * narrow for a reason that is not economy. Specification section 9 is explicit
+ * that making an ending kinder is a *writing* judgement, that it is labelled a
+ * wording change and never a mechanical one, and that it "can never rewrite a
+ * gate or make an ending reachable". With one text field and nothing else,
+ * that is not a rule this application enforces afterwards — it is the only
+ * thing the call is able to return. There is no field for an ending id (the
+ * server knows which ending it asked about), no field for a condition, an
+ * effect, a variable, an action, a second ending, a provenance claim, or a
+ * label asserting the change was mechanical.
+ */
+export const EndingCopyOutputSchema = z.strictObject({
+  text: z.string().min(1).max(TEXT.ending_text),
+});
+
+export type EndingCopyOutput = z.infer<typeof EndingCopyOutputSchema>;
 
 /* ---------------------------------------------------- compilation stages */
 
@@ -424,6 +448,12 @@ export const SceneVersionSummarySchema = z.strictObject({
   model_identifier: z.string().max(80).nullable(),
   compiler_identifier: z.string().max(80).nullable(),
   validator_identifier: z.string().max(80).nullable(),
+  /**
+   * The label this version's stored comparison carries, or null for a first
+   * version and for one whose diff is not readable. It is the engine's own
+   * verdict, read off the stored diff rather than recomputed for a list.
+   */
+  revision_label: RevisionLabelSchema.nullable(),
 });
 
 export type SceneVersionSummary = z.infer<typeof SceneVersionSummarySchema>;
@@ -457,6 +487,13 @@ export const PlayableViewSchema = z.strictObject({
   scene: SceneSchema,
   validation: ValidationSummaryViewSchema,
   scene_changed: z.array(SceneChangedViewSchema).max(2),
+  /**
+   * This version's stored comparison against the one it revised, or null for a
+   * first version. It travels with the playable because the comparison the
+   * creator is shown must be the one the server computed and stored, not one
+   * the browser derived from two scenes it happens to hold.
+   */
+  diff: RevisionDiffViewSchema.nullable(),
 });
 
 export type PlayableView = z.infer<typeof PlayableViewSchema>;
@@ -575,7 +612,18 @@ export const ProjectStateResponseSchema = z.strictObject({
   references: ReferencesViewSchema.nullable(),
   /** The pending version awaiting review, else the active one, else null. */
   playable: PlayableViewSchema.nullable(),
+  /**
+   * The version `playable` revised, when it names one that is still readable.
+   *
+   * Phase 5 sends both sides of the comparison in one payload for the same
+   * reason Phase 4 sends the whole scene: the previous/current switch and the
+   * "replay the same choices" control then run entirely locally through the
+   * Phase 1 engine, with no further request of any kind.
+   */
+  previous_playable: PlayableViewSchema.nullable(),
   versions: z.array(SceneVersionSummarySchema).max(8),
+  /** This project's share links. Never a token, only whether one is live. */
+  publications: z.array(PublicationSummarySchema).max(8),
 });
 
 export type ProjectStateResponse = z.infer<typeof ProjectStateResponseSchema>;
