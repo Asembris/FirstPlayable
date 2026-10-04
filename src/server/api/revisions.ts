@@ -289,10 +289,13 @@ export async function handleRevision(
 
     /* ------------------------------------- remove and ending-copy apply */
 
+    // The text is part of an apply's identity: a refused apply of different
+    // wording under the same preview hash is a different command, and must not
+    // settle the key the genuine apply of the previewed wording needs.
     const commandHash = sha256Hex(
       input.kind === "remove"
         ? `remove|${input.slot}|${row.revision}`
-        : `apply|${input.ending_id}|${input.preview_hash}|${row.revision}`,
+        : `apply|${input.ending_id}|${input.preview_hash}|${sha256Hex(input.text)}|${row.revision}`,
     ).slice(0, 48);
 
     const reservation = await reserveStage(

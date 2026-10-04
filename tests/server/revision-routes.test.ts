@@ -446,6 +446,42 @@ describe("ending copy: a wording change, labelled as one", () => {
     expect(after.playable?.scene.ending_copy_overrides).toEqual([]);
   });
 
+  it("still applies the previewed wording after a refused apply of different wording", async () => {
+    const state = await activeProject(["discovery"]);
+    const working: ActiveProject = {
+      ...state,
+      deps: { ...state.deps, compiler: copyCompiler(KINDER) },
+    };
+    const read = await readState(state);
+    const endingId = read.playable!.scene.core.endings[0]!.id;
+    const previewed = await body<RevisionResponse>(
+      await revise(working, {
+        kind: "ending_copy_preview",
+        ending_id: endingId,
+        request: "Make this ending kinder to her.",
+      }),
+    );
+
+    // Same preview hash, same revision, different text: refused, and settled.
+    const forged = await revise(working, {
+      kind: "ending_copy_apply",
+      ending_id: endingId,
+      text: `${previewed.preview!.proposed_text} And the gate opens.`,
+      preview_hash: previewed.preview!.preview_hash,
+    });
+    expect(forged.status).toBe(422);
+
+    // That refusal is a different command, so it must not stand in for this one.
+    const genuine = await revise(working, {
+      kind: "ending_copy_apply",
+      ending_id: endingId,
+      text: previewed.preview!.proposed_text,
+      preview_hash: previewed.preview!.preview_hash,
+    });
+    expect(genuine.status).toBe(200);
+    expect((await body<RevisionResponse>(genuine)).outcome).toBe("version_pending");
+  });
+
   it("refuses an ending the scene does not declare", async () => {
     const state = await activeProject(["discovery"]);
     const compiler = copyCompiler(KINDER);
