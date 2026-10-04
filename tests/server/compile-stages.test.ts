@@ -353,9 +353,42 @@ describe("the fixed instruction blocks state the id rules with worked examples",
     expect(BASE_INSTRUCTIONS).toMatch(/never variable\.inspected/);
   });
 
-  it("says what happens to a variable that is never read", () => {
+  it("says what happens to a variable that is never read, and where to read it", () => {
     expect(BASE_INSTRUCTIONS).toMatch(/set by some effect and read by some condition/);
     expect(BASE_INSTRUCTIONS).toMatch(/only ever set is rejected/);
+    // Both idioms the hand-authored fixture uses, named as the two places a
+    // condition can read a variable.
+    expect(BASE_INSTRUCTIONS).toMatch(/the action that sets it, requiring it to still be false/);
+    expect(BASE_INSTRUCTIONS).toMatch(/an action it constrains/);
+  });
+
+  /**
+   * The worked example in the block has to be the design the hand-authored
+   * fixture actually uses, or it teaches the model the wrong shape. This reads
+   * the fixture and checks the three claims the example makes about it.
+   */
+  it("gives a variable-reading example that the valid fixture really follows", () => {
+    expect(BASE_INSTRUCTIONS).toMatch(/core\.ask_terms sets core\.promised/);
+
+    const named = (id: string) =>
+      SECOND_COPY_BASE.core.actions.find((action) => action.id === id);
+    const reads = (when: unknown, varId: string): boolean =>
+      JSON.stringify(when).includes(`"${varId}"`);
+
+    const askTerms = named("core.ask_terms");
+    const withhold = named("core.withhold");
+    expect(askTerms, "the fixture must declare core.ask_terms").toBeDefined();
+    expect(withhold, "the fixture must declare core.withhold").toBeDefined();
+
+    // 1. core.ask_terms sets core.promised.
+    expect(
+      JSON.stringify(askTerms?.branches).includes('"core.promised"'),
+      "core.ask_terms must set core.promised",
+    ).toBe(true);
+    // 2. Its own condition reads it, so it can be taken once.
+    expect(reads(askTerms?.when, "core.promised")).toBe(true);
+    // 3. core.withhold's condition reads it, so the commitment closes keeping.
+    expect(reads(withhold?.when, "core.promised")).toBe(true);
   });
 
   it("still asks each module for its own slot namespace, with no example from another", () => {
