@@ -2,7 +2,7 @@
   "name": "firstplayable",
   "version": "0.1.0",
   "private": true,
-  "description": "FirstPlayable \u2014 playable-pitch studio. It compiles approved cultural influences into a validated, playable one-room scene the creator activates.",
+  "description": "FirstPlayable — playable-pitch studio. It compiles approved cultural influences into a validated, playable one-room scene the creator activates.",
   "license": "MIT",
   "engines": {
     "node": ">=22.12.0"
@@ -22,7 +22,9 @@
     "smoke:qloo": "tsx scripts/smoke-qloo.ts",
     "smoke:proposal": "tsx scripts/smoke-proposal.ts",
     "smoke:compile": "tsx scripts/smoke-compile.ts",
-    "verify:deployment": "tsx scripts/verify-deployment.ts"
+    "verify:deployment": "tsx scripts/verify-deployment.ts",
+    "build:export": "tsx scripts/build-export-runtime.ts",
+    "prebuild": "tsx scripts/build-export-runtime.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.117.2",
@@ -37,6 +39,7 @@
     "@types/node": "26.6.4",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "esbuild": "0.28.2",
     "supabase": "2.119.0",
     "tsx": "4.23.15",
     "typescript": "7.0.2",
