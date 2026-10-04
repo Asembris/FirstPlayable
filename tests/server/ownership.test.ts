@@ -207,10 +207,29 @@ describe("the gateway contract itself enforces owner scoping", () => {
     "setProjectCompilationState",
   ] as const;
 
-  it("declares exactly the owner-scoped or scope-keyed methods phases 2 to 4 need", () => {
+  /**
+   * Phase 5 adds four owner-scoped methods and **one** that is deliberately
+   * not: `readPublicationByToken`. It is keyed by the SHA-256 hash of a
+   * 256-bit read token, which is a capability to read one published immutable
+   * snapshot and nothing else — it carries no owner authority, its result
+   * carries no project id, and there is no session parameter in which an owner
+   * predicate could have been forgotten. That is the whole public-share
+   * mechanism, and it is the only owner-free read in this interface.
+   */
+  const PHASE_5_METHODS = [
+    "countOperationsForOwnerSince",
+    "publishSceneVersion",
+    "readPublicationByToken",
+    "readPublicationsForOwner",
+    "revokePublication",
+    "setProjectEndingCopyOverrides",
+  ] as const;
+
+  it("declares exactly the owner-scoped or scope-keyed methods phases 2 to 5 need", () => {
     const methods = [...interfaceBody.matchAll(/^\s{2}(\w+)\(/gm)].map((match) => match[1]).sort();
     expect(methods).toEqual([
       ...PHASE_4_METHODS,
+      ...PHASE_5_METHODS,
       "appendInfluenceDecision",
       "completeOperation",
       "confirmProjectAnchor",

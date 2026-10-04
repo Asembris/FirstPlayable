@@ -55,6 +55,13 @@ import type {
   SessionRow,
   SetProjectReferencesInput,
   SetProposalDraftInput,
+  EndingCopyOverridesUpdate,
+  PublicationCommit,
+  PublicationList,
+  PublicationRead,
+  PublicationRevoke,
+  PublishVersionInput,
+  SetEndingCopyOverridesInput,
 } from "../../../src/server/db/gateway";
 import { appErrors } from "../../../src/server/security/errors";
 
@@ -103,6 +110,18 @@ type VersionRecord = SceneVersionRow & { project_id: string };
 
 type DecisionRecord = InfluenceDecisionRow;
 
+/** One publication row. Only the token's hash is ever stored, exactly as in SQL. */
+type PublicationRecord = {
+  id: string;
+  owner_session_id: string;
+  project_id: string;
+  scene_version_id: string;
+  read_token_hash: string;
+  public_snapshot: unknown;
+  created_at: string;
+  revoked_at: string | null;
+};
+
 export type GatewayMethod = keyof DataGateway;
 
 export class MemoryGateway implements DataGateway {
@@ -113,6 +132,7 @@ export class MemoryGateway implements DataGateway {
   readonly decisions: DecisionRecord[] = [];
   readonly captures = new Map<string, QlooCaptureRow>();
   readonly versions: VersionRecord[] = [];
+  readonly publications: PublicationRecord[] = [];
 
   /** Every granted Qloo launch, in order, so a test can assert the pacing. */
   readonly qlooLaunches: { label: string; at: string; leaseId: string }[] = [];
@@ -166,6 +186,12 @@ export class MemoryGateway implements DataGateway {
       "activateSceneVersion",
       "declineSceneVersion",
       "readSceneVersions",
+      "setProjectEndingCopyOverrides",
+      "publishSceneVersion",
+      "revokePublication",
+      "readPublicationByToken",
+      "readPublicationsForOwner",
+      "countOperationsForOwnerSince",
     ];
     for (const method of methods) this.failing.add(method);
   }
@@ -246,6 +272,7 @@ export class MemoryGateway implements DataGateway {
       reference_capture_ids: [],
       active_approvals: {},
       proposal_draft: null,
+      ending_copy_overrides: [],
       base_scene: null,
       compiled_modules: {},
       base_hash: null,
@@ -291,6 +318,7 @@ export class MemoryGateway implements DataGateway {
       ...row,
       reference_capture_ids: [...row.reference_capture_ids],
       active_approvals: { ...row.active_approvals },
+      ending_copy_overrides: [...row.ending_copy_overrides],
     };
   }
 
@@ -937,6 +965,7 @@ export class MemoryGateway implements DataGateway {
       base_hash: input.baseHash,
       module_hashes: { ...input.moduleHashes },
       validation_summary: input.validationSummary,
+      revision_diff: input.revisionDiff ?? null,
       input_snapshot: input.inputSnapshot,
       approval_snapshot: input.approvalSnapshot,
       model_identifier: input.modelIdentifier,
@@ -1068,6 +1097,185 @@ export class MemoryGateway implements DataGateway {
       // The scene travels only when one version is named.
       .map((candidate) => ({ ...candidate, scene: versionId === null ? null : candidate.scene }));
     return { outcome: "read", versions: rows };
+  }
+
+  // -------------------------------------------------------------------------
+  // Phase 5: ending-copy overrides, publication, and the public read
+  // -------------------------------------------------------------------------
+
+  /** Mirrors `set_project_ending_copy_overrides`, counter advance included. */
+  async setProjectEndingCopyOverrides(
+    input: SetEndingCopyOverridesInput,
+  ): Promise<EndingCopyOverridesUpdate> {
+    this.#guard("setProjectEndingCopyOverrides");
+    await Promise.resolve();
+    if (input.overrides.length > 3) {
+      throw appErrors.persistenceUnavailable(
+        "projects_ending_copy_overrides_bounded: at most three overrides",
+      );
+    }
+    const project = this.projects.get(input.projectId);
+    if (project === undefined || project.owner_session_id !== input.ownerSessionId) {
+      return { outcome: "not_found" };
+    }
+    if (project.revision !== input.expectedRevision) {
+      return { outcome: "revision_conflict", current_revision: project.revision };
+    }
+    project.ending_copy_overrides = [...input.overrides];
+    project.revision += 1;
+    project.updated_at = this.now().toISOString();
+    return { outcome: "updated", revision: project.revision };
+  }
+
+  /** Mirrors `publish_scene_version`, including its refusal to publish a review. */
+  async publishSceneVersion(input: PublishVersionInput): Promise<PublicationCommit> {
+    this.#guard("publishSceneVersion");
+    await Promise.resolve();
+    const project = this.projects.get(input.projectId);
+    if (project === undefined || project.owner_session_id !== input.ownerSessionId) {
+      return { outcome: "not_found" };
+    }
+    if (project.revision !== input.expectedRevision) {
+      return { outcome: "revision_conflict", current_revision: project.revision };
+    }
+    const version = this.versions.find(
+      (candidate) =>
+        candidate.id === input.versionId && candidate.project_id === input.projectId,
+    );
+    if (version === undefined) return { outcome: "not_found" };
+    if (project.pending_version_id === input.versionId) return { outcome: "not_reviewed" };
+    if (
+      this.publications.some(
+        (candidate) => candidate.read_token_hash === input.readTokenHash,
+      )
+    ) {
+      throw appErrors.persistenceUnavailable("publications_read_token_hash_key");
+    }
+    const record: PublicationRecord = {
+      id: randomUUID(),
+      owner_session_id: input.ownerSessionId,
+      project_id: input.projectId,
+      scene_version_id: input.versionId,
+      read_token_hash: input.readTokenHash,
+      public_snapshot: input.publicSnapshot,
+      created_at: this.now().toISOString(),
+      revoked_at: null,
+    };
+    this.publications.push(record);
+    return {
+      outcome: "published",
+      publication: {
+        id: record.id,
+        scene_version_id: record.scene_version_id,
+        created_at: record.created_at,
+        revoked_at: null,
+      },
+    };
+  }
+
+  async revokePublication(
+    publicationId: string,
+    ownerSessionId: string,
+  ): Promise<PublicationRevoke> {
+    this.#guard("revokePublication");
+    await Promise.resolve();
+    const record = this.publications.find(
+      (candidate) =>
+        candidate.id === publicationId && candidate.owner_session_id === ownerSessionId,
+    );
+    if (record === undefined) return { outcome: "not_found" };
+    if (record.revoked_at !== null) {
+      return {
+        outcome: "already_revoked",
+        publication: {
+          id: record.id,
+          scene_version_id: record.scene_version_id,
+          created_at: record.created_at,
+          revoked_at: record.revoked_at,
+        },
+      };
+    }
+    record.revoked_at = this.now().toISOString();
+    return {
+      outcome: "revoked",
+      publication: {
+        id: record.id,
+        scene_version_id: record.scene_version_id,
+        created_at: record.created_at,
+        revoked_at: record.revoked_at,
+      },
+    };
+  }
+
+  /** The one read with no owner predicate. Unknown and revoked are the same. */
+  async readPublicationByToken(readTokenHash: string): Promise<PublicationRead> {
+    this.#guard("readPublicationByToken");
+    await Promise.resolve();
+    const record = this.publications.find(
+      (candidate) => candidate.read_token_hash === readTokenHash,
+    );
+    if (record === undefined || record.revoked_at !== null) {
+      return { outcome: "unavailable" };
+    }
+    return {
+      outcome: "read",
+      published_at: record.created_at,
+      public_snapshot: record.public_snapshot,
+    };
+  }
+
+  async readPublicationsForOwner(
+    projectId: string,
+    ownerSessionId: string,
+    limit: number,
+  ): Promise<PublicationList> {
+    this.#guard("readPublicationsForOwner");
+    if (limit < 1 || limit > 50) {
+      throw appErrors.persistenceUnavailable("limit out of range");
+    }
+    await Promise.resolve();
+    const project = this.projects.get(projectId);
+    if (project === undefined || project.owner_session_id !== ownerSessionId) {
+      return { outcome: "not_found" };
+    }
+    const publications = this.publications
+      .filter(
+        (candidate) =>
+          candidate.project_id === projectId &&
+          candidate.owner_session_id === ownerSessionId,
+      )
+      .sort((a, b) => b.created_at.localeCompare(a.created_at))
+      .slice(0, limit)
+      .map((candidate) => ({
+        id: candidate.id,
+        scene_version_id: candidate.scene_version_id,
+        created_at: candidate.created_at,
+        revoked_at: candidate.revoked_at,
+        provenance_included:
+          typeof candidate.public_snapshot === "object" &&
+          candidate.public_snapshot !== null &&
+          (candidate.public_snapshot as { provenance_included?: unknown })
+            .provenance_included === true,
+      }));
+    return { outcome: "read", publications };
+  }
+
+  async countOperationsForOwnerSince(
+    ownerSessionId: string,
+    stages: readonly string[],
+    since: string,
+  ): Promise<number> {
+    this.#guard("countOperationsForOwnerSince");
+    await Promise.resolve();
+    if (stages.length === 0) return 0;
+    const floor = Date.parse(since);
+    let count = 0;
+    for (const operation of this.operations.values()) {
+      if (operation.owner_session_id !== ownerSessionId) continue;
+      if (!stages.includes(operation.stage)) continue;
+      if (Date.parse(operation.created_at) >= floor) count += 1;
+    }
+    return count;
   }
 
   async confirmProjectAnchor(input: ConfirmAnchorInput): Promise<AnchorConfirmation> {

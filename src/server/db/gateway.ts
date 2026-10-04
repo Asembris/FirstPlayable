@@ -48,6 +48,8 @@ export const ProjectRowSchema = z.object({
   reference_capture_ids: z.array(z.uuid()),
   active_approvals: z.record(z.string(), z.unknown()),
   proposal_draft: z.unknown(),
+  /** Phase 5: the creator's explicit text-only ending wording. */
+  ending_copy_overrides: z.array(z.unknown()),
   base_hash: z.string().nullable(),
   active_version_id: z.uuid().nullable(),
   /** Phase 4: a validated version awaiting the creator's explicit review. */
@@ -60,7 +62,7 @@ export const ProjectRowSchema = z.object({
 export type ProjectRow = z.infer<typeof ProjectRowSchema>;
 
 export const PROJECT_COLUMNS =
-  "id,owner_session_id,title,brief,anchor,revision,reference_capture_ids,active_approvals,proposal_draft,base_hash,active_version_id,pending_version_id,workflow_state,created_at,updated_at";
+  "id,owner_session_id,title,brief,anchor,revision,reference_capture_ids,active_approvals,proposal_draft,ending_copy_overrides,base_hash,active_version_id,pending_version_id,workflow_state,created_at,updated_at";
 
 /**
  * The two large compilation columns, read only by the compilation controller.
@@ -419,6 +421,8 @@ export const SceneVersionRowSchema = z.object({
   base_hash: z.string(),
   module_hashes: z.record(z.string(), z.unknown()),
   validation_summary: z.unknown(),
+  /** Phase 5: the deterministic comparison against this version's parent. */
+  revision_diff: z.unknown(),
   input_snapshot: z.unknown(),
   approval_snapshot: z.unknown(),
   model_identifier: z.string().nullable(),
@@ -439,6 +443,87 @@ export const SceneVersionReadSchema = z.union([
 ]);
 
 export type SceneVersionRead = z.infer<typeof SceneVersionReadSchema>;
+
+// ---------------------------------------------------------------------------
+// Phase 5: ending-copy overrides, publication, and the public read.
+// ---------------------------------------------------------------------------
+
+export const EndingCopyOverridesUpdateSchema = z.union([
+  z.object({ outcome: z.literal("not_found") }),
+  z.object({ outcome: z.literal("revision_conflict"), current_revision: z.number().int() }),
+  z.object({ outcome: z.literal("updated"), revision: z.number().int() }),
+]);
+
+export type EndingCopyOverridesUpdate = z.infer<typeof EndingCopyOverridesUpdateSchema>;
+
+/**
+ * One publication, as its owner sees it.
+ *
+ * `read_token_hash` and `public_snapshot` are deliberately absent: the hash is
+ * a lookup key nobody needs back, and the snapshot is read through the public
+ * route, not through an owner list.
+ */
+export const PublicationRowSchema = z.object({
+  id: z.uuid(),
+  scene_version_id: z.uuid(),
+  created_at: z.string(),
+  revoked_at: z.string().nullable(),
+  provenance_included: z.boolean(),
+});
+
+export type PublicationRow = z.infer<typeof PublicationRowSchema>;
+
+/** `not_reviewed` is the refusal to publish a version awaiting the creator. */
+export const PublicationCommitSchema = z.union([
+  z.object({ outcome: z.literal("not_found") }),
+  z.object({ outcome: z.literal("revision_conflict"), current_revision: z.number().int() }),
+  z.object({ outcome: z.literal("not_reviewed") }),
+  z.object({
+    outcome: z.literal("published"),
+    publication: z.object({
+      id: z.uuid(),
+      scene_version_id: z.uuid(),
+      created_at: z.string(),
+      revoked_at: z.string().nullable(),
+    }),
+  }),
+]);
+
+export type PublicationCommit = z.infer<typeof PublicationCommitSchema>;
+
+export const PublicationRevokeSchema = z.union([
+  z.object({ outcome: z.literal("not_found") }),
+  z.object({
+    outcome: z.enum(["revoked", "already_revoked"]),
+    publication: z.object({
+      id: z.uuid(),
+      scene_version_id: z.uuid(),
+      created_at: z.string(),
+      revoked_at: z.string().nullable(),
+    }),
+  }),
+]);
+
+export type PublicationRevoke = z.infer<typeof PublicationRevokeSchema>;
+
+/** An unknown token and a revoked one produce the same `unavailable`. */
+export const PublicationReadSchema = z.union([
+  z.object({ outcome: z.literal("unavailable") }),
+  z.object({
+    outcome: z.literal("read"),
+    published_at: z.string(),
+    public_snapshot: z.unknown(),
+  }),
+]);
+
+export type PublicationRead = z.infer<typeof PublicationReadSchema>;
+
+export const PublicationListSchema = z.union([
+  z.object({ outcome: z.literal("not_found") }),
+  z.object({ outcome: z.literal("read"), publications: z.array(PublicationRowSchema) }),
+]);
+
+export type PublicationList = z.infer<typeof PublicationListSchema>;
 
 // ---------------------------------------------------------------------------
 // Call shapes.
@@ -579,6 +664,30 @@ export type CommitSceneVersionInput = {
   schemaIdentifier: string;
   compilerIdentifier: string;
   validatorIdentifier: string;
+  /**
+   * The deterministic comparison against the version this one revises, or
+   * `null` for a first version. `scene_versions` refuses `UPDATE`, so this is
+   * the only moment a diff can be attached to a version at all.
+   */
+  revisionDiff: unknown;
+};
+
+export type SetEndingCopyOverridesInput = {
+  projectId: string;
+  ownerSessionId: string;
+  expectedRevision: number;
+  /** The whole replacement list, already validated by the scene contract. */
+  overrides: readonly unknown[];
+};
+
+export type PublishVersionInput = {
+  projectId: string;
+  ownerSessionId: string;
+  expectedRevision: number;
+  versionId: string;
+  /** SHA-256 hex of the read token. The plaintext never reaches the database. */
+  readTokenHash: string;
+  publicSnapshot: unknown;
 };
 
 export type VersionDecisionInput = {
@@ -692,6 +801,39 @@ export interface DataGateway {
     versionId: string | null,
     limit: number,
   ): Promise<SceneVersionRead>;
+
+  /** Replaces the creator's ending-wording overrides, advancing the revision. */
+  setProjectEndingCopyOverrides(
+    input: SetEndingCopyOverridesInput,
+  ): Promise<EndingCopyOverridesUpdate>;
+  /** Creates one publication naming one reviewed immutable version. */
+  publishSceneVersion(input: PublishVersionInput): Promise<PublicationCommit>;
+  /** Owner-only revocation. Deletes nothing. */
+  revokePublication(
+    publicationId: string,
+    ownerSessionId: string,
+  ): Promise<PublicationRevoke>;
+  /**
+   * The one read in this interface with no owner session id, and the only one
+   * there will ever be. Its key is the SHA-256 hash of a 256-bit read token,
+   * which carries no owner authority, and its result carries no project id.
+   */
+  readPublicationByToken(readTokenHash: string): Promise<PublicationRead>;
+  /** The owner's own links for one project. Carries no token and no snapshot. */
+  readPublicationsForOwner(
+    projectId: string,
+    ownerSessionId: string,
+    limit: number,
+  ): Promise<PublicationList>;
+  /**
+   * How many operation rows of the named stages this owner created since a
+   * moment, for the per-session daily revision allowance of section 12.
+   */
+  countOperationsForOwnerSince(
+    ownerSessionId: string,
+    stages: readonly string[],
+    since: string,
+  ): Promise<number>;
 
   confirmProjectAnchor(input: ConfirmAnchorInput): Promise<AnchorConfirmation>;
   setProjectReferences(input: SetProjectReferencesInput): Promise<ProjectReferencesUpdate>;

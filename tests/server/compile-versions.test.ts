@@ -167,6 +167,7 @@ describe("the immutable scene version", () => {
         schemaIdentifier: "fp-model-schema-4.2",
         compilerIdentifier: "fp-compiler-4.2",
         validatorIdentifier: "fp-engine-validator-1.0",
+        revisionDiff: null,
       }),
     ).rejects.toSatisfy(
       (error: unknown) =>
@@ -219,6 +220,7 @@ describe("the immutable scene version", () => {
           schemaIdentifier: "fp-model-schema-4.2",
           compilerIdentifier: "fp-compiler-4.2",
           validatorIdentifier: "fp-engine-validator-1.0",
+          revisionDiff: null,
         });
         return "accepted";
       } catch (error) {

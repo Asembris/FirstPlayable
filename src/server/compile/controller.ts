@@ -31,6 +31,7 @@
  */
 
 import type { Brief } from "@/domain/brief";
+import type { Scene } from "@/domain/scene";
 import {
   type CompilationCheckpoint,
   CompilationCheckpointSchema,
@@ -43,6 +44,7 @@ import {
 } from "@/domain/compile";
 import type { ApprovedInfluence, ApprovedInfluencePayload, Slot } from "@/domain/influence";
 import { SLOTS } from "@/domain/limits";
+import { safeParseScene } from "@/domain/scene";
 import { hashCanonical, sha256Hex } from "@/engine/hash";
 import { PINNED_CHAT_MODEL, type BudgetConfig } from "../config";
 import {
@@ -92,6 +94,8 @@ import {
   type RepairContext,
 } from "./stages";
 import { verifyCandidate } from "./verify";
+import { revisionDiffView } from "../revision/diff";
+import { readEndingCopyOverrides } from "../revision/overrides";
 
 /** The operation stage name for one slot's module. */
 export function moduleStageFor(slot: Slot): CompilationStage {
@@ -935,6 +939,9 @@ async function runValidateStage(
     generatedTitle: base.title,
     modules: activeModules,
     approvals: activeApprovals,
+    // Carried through, so a module recompile does not silently discard an
+    // ending-wording change the creator already applied.
+    endingCopyOverrides: readEndingCopyOverrides(project.ending_copy_overrides),
   });
   if (!assembled.ok) {
     return {
@@ -966,6 +973,24 @@ async function runValidateStage(
 
   const moduleHashes: Record<string, string> = {};
   for (const module of activeModules) moduleHashes[module.slot] = moduleHash(module);
+
+  /*
+   * The deterministic comparison against the version this one supersedes.
+   *
+   * `scene_versions` refuses `UPDATE`, so a diff can only be attached by the
+   * insert below — which is why it is computed here rather than when the
+   * creator later opens a comparison. A first version has nothing to compare
+   * against and stores no diff; `revisionDiffView` says so by returning null.
+   */
+  const previous = await readActiveScene(context, project);
+  const diff = revisionDiffView({
+    before: previous,
+    after: { versionId: null, scene: assembled.scene },
+    // A compilation is not itself a revision command. When one preceded it,
+    // the command was `edit` or `replace`, which is what moved the approval
+    // this compilation recompiled.
+    changedBy: previous === null ? null : "edit",
+  });
 
   const commit = await gateway.commitSceneVersion({
     projectId: project.id,
@@ -1002,6 +1027,7 @@ async function runValidateStage(
     schemaIdentifier: checkpoint.snapshot.schema_identifier,
     compilerIdentifier: checkpoint.snapshot.compiler_identifier,
     validatorIdentifier: checkpoint.snapshot.validator_identifier,
+    revisionDiff: diff,
   });
 
   if (commit.outcome !== "committed") {
@@ -1028,6 +1054,32 @@ async function runValidateStage(
     replayed: false,
     settled: true,
   };
+}
+
+/**
+ * The project's active version as a scene, for the comparison above.
+ *
+ * `null` whenever there is no active version or the stored row is not readable:
+ * an unreadable row must produce "no comparison available", never a diff
+ * computed against something this application could not parse.
+ */
+async function readActiveScene(
+  context: CompilationContext,
+  project: ProjectRow,
+): Promise<{ versionId: string; scene: Scene } | null> {
+  const versionId = project.active_version_id;
+  if (versionId === null) return null;
+  const read = await context.gateway.readSceneVersions(
+    project.id,
+    context.session.id,
+    versionId,
+    1,
+  );
+  if (read.outcome !== "read") return null;
+  const row = read.versions[0];
+  if (row === undefined) return null;
+  const parsed = safeParseScene(row.scene);
+  return parsed.ok ? { versionId: row.id, scene: parsed.scene } : null;
 }
 
 /** Every stage of a compilation, in order, for the status projection. */

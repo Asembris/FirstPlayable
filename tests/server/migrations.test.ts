@@ -38,6 +38,7 @@ describe("committed migrations", () => {
       "20261004085412_phase3_qloo.sql",
       "20261004160000_phase4_compilation.sql",
       "20261004173000_phase4_validation_boolean.sql",
+      "20261004190000_phase5_revision_share.sql",
     ]);
   });
 
@@ -265,6 +266,9 @@ describe("committed migrations", () => {
     expect(defined).toEqual([
       "activate_scene_version",
       "append_influence_decision",
+      // Defined twice: phase 4 wrote it, phase 5 replaces it with the
+      // revision-diff parameter. Both definitions are history.
+      "commit_scene_version",
       "commit_scene_version",
       "complete_operation",
       "confirm_project_anchor",
@@ -272,6 +276,12 @@ describe("committed migrations", () => {
       "lease_compile_operation",
       "operation_summary",
       "park_operation",
+      "publish_scene_version",
+      "read_publication_by_token",
+      "read_publications_for_owner",
+      // Likewise: phase 5 replaces the version read so a summary carries its
+      // stored diff. Same signature, so this one needs no drop.
+      "read_scene_versions",
       "read_scene_versions",
       "reconcile_model_budget",
       "reject_content_mutation",
@@ -279,7 +289,9 @@ describe("committed migrations", () => {
       "reserve_model_budget",
       "reserve_operation",
       "reserve_qloo_launch",
+      "revoke_publication",
       "set_project_compilation_state",
+      "set_project_ending_copy_overrides",
       "set_project_proposal_draft",
       "set_project_references",
     ]);
@@ -329,6 +341,9 @@ describe("committed migrations", () => {
       "commit_scene_version",
       "activate_scene_version",
       "decline_scene_version",
+      "set_project_ending_copy_overrides",
+      "publish_scene_version",
+      "revoke_publication",
     ]) {
       const body = sql.slice(
         sql.indexOf(`create or replace function public.${fn}(`),
@@ -365,14 +380,99 @@ describe("committed migrations", () => {
     ]) {
       expect(sql).toContain(`create or replace function ${fn}(`);
     }
-    // No revision, publication, share, token, or export primitive: those are
-    // phase 5 and must not exist yet.
-    for (const absent of ["publication", "publish", "read_token", "revoke_share", "export_"]) {
-      expect(
-        new RegExp(`create or replace function public\\.[a-z_0-9]*${absent}`).test(sql),
-        `${absent} is not part of phase 4`,
-      ).toBe(false);
+  });
+
+  /**
+   * Phase 5's own primitives, and the shape of its one deliberate replacement.
+   *
+   * `commit_scene_version` is dropped and recreated with a `p_revision_diff`
+   * parameter, because `scene_versions` refuses `UPDATE` and a diff can
+   * therefore only be written by the insert that creates the row. Leaving the
+   * nineteen-argument form in place would leave an overload that silently
+   * stores no diff, so the old signature goes.
+   */
+  it("defines the phase 5 revision and publication primitives", () => {
+    for (const fn of [
+      "public.set_project_ending_copy_overrides",
+      "public.publish_scene_version",
+      "public.revoke_publication",
+      "public.read_publication_by_token",
+      "public.read_publications_for_owner",
+    ]) {
+      expect(sql).toContain(`create or replace function ${fn}(`);
     }
+  });
+
+  it("adds phase 5 without creating a table or rewriting a column", () => {
+    const phase5 = readFileSync(
+      join(migrationsDir, "20261004190000_phase5_revision_share.sql"),
+      "utf8",
+    );
+    expect(/create\s+table/i.test(phase5)).toBe(false);
+    expect(/alter\s+column/i.test(phase5)).toBe(false);
+    expect(/drop\s+(table|column|trigger|index|policy)/i.test(phase5)).toBe(false);
+    expect(/create\s+policy/i.test(phase5)).toBe(false);
+
+    // Only additive column work, and only on the two tables phase 5 extends.
+    const touched = [...phase5.matchAll(/alter table public\.([a-z_]+)/g)].map((m) => m[1]);
+    expect([...new Set(touched)].sort()).toEqual(["operations", "projects"]);
+    for (const statement of phase5.matchAll(/add column([^;]*);/g)) {
+      expect(statement[0]).toContain("if not exists");
+    }
+
+    // Exactly two deliberate removals: the stage check constraint, swapped to
+    // admit `revision`, and the superseded commit signature.
+    expect(
+      [...phase5.matchAll(/drop constraint ([a-z_]+)/g)].map((m) => m[1]),
+    ).toEqual(["operations_stage_known"]);
+    expect(phase5).toContain("'revision'");
+    expect(
+      [...phase5.matchAll(/drop function public\.([a-z_0-9]+)\(/g)].map((m) => m[1]),
+    ).toEqual(["commit_scene_version"]);
+  });
+
+  /**
+   * The public read is the one query in the whole schema with no owner
+   * predicate, and it must stay the only one. It is keyed by a hashed token
+   * that carries no owner authority, and it returns no project id and no
+   * sibling publication, so a token cannot be turned into an owner capability.
+   */
+  it("keeps the public read owner-free, project-free, and revocation-aware", () => {
+    const fn = sql.slice(
+      sql.indexOf("create or replace function public.read_publication_by_token("),
+    );
+    const body = fn.slice(0, fn.indexOf("$func$;"));
+    expect(body).toContain("where read_token_hash = p_read_token_hash");
+    // No owner session parameter exists, so none can be forgotten.
+    expect(body.includes("p_owner_session_id")).toBe(false);
+    // A revoked link and an unknown one are the same answer.
+    expect(body).toContain("v_publication.revoked_at is not null");
+    expect(body).toContain("'unavailable'");
+    // The result names the snapshot and the date, and nothing else.
+    const returned = body.slice(body.lastIndexOf("jsonb_build_object"));
+    expect(returned).toContain("public_snapshot");
+    expect(returned).toContain("published_at");
+    expect(returned.includes("project_id")).toBe(false);
+    expect(returned.includes("owner_session_id")).toBe(false);
+  });
+
+  it("revokes a publication without deleting anything", () => {
+    const fn = sql.slice(sql.indexOf("create or replace function public.revoke_publication("));
+    const body = fn.slice(0, fn.indexOf("$func$;"));
+    expect(body).toContain("set revoked_at = v_now");
+    expect(/delete\s+from/i.test(body)).toBe(false);
+    expect(body).toContain("already_revoked");
+  });
+
+  it("refuses to publish a version that is still awaiting review", () => {
+    const fn = sql.slice(
+      sql.indexOf("create or replace function public.publish_scene_version("),
+    );
+    const body = fn.slice(0, fn.indexOf("$func$;"));
+    expect(body).toContain("v_project.pending_version_id is not distinct from p_version_id");
+    expect(body).toContain("'not_reviewed'");
+    // The version must belong to the project naming it.
+    expect(body).toContain("where id = p_version_id and project_id = p_project_id");
   });
 
   it("introduces no phase 3 Qloo call and no model call in SQL", () => {
