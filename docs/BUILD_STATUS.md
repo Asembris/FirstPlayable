@@ -1463,3 +1463,77 @@ and no offline export exists. `tests/engine/fixtures.test.ts` asserts the route
 surface and `tests/server/migrations.test.ts` asserts the function surface, and
 both still pass, which is the mechanical proof that no Phase 5 capability was
 added.
+
+## Phase 5 — offline build complete, live acceptance NOT run — 4 October 2026
+
+**Branch:** `feat/phase-5-revision-share` · **HEAD:** `633ee01` ·
+**Nothing was pushed. No migration was applied. Nothing was deployed.**
+
+**Phase 5 does NOT pass yet.** Every offline gate is green; the live acceptance
+and the deployed verification have not been run, and no Phase 5 OpenAI spend has
+been incurred. This session ran out of its usage allowance before the live
+sequence, and deliberately stopped rather than half-applying it: applying the
+migration without deploying the matching build, or deploying without the
+migration, both leave the deployment in a state nobody verified.
+
+### What was built
+
+| Capability | Where |
+|---|---|
+| Typed `remove` / `edit` / `replace` / ending-copy commands | `src/domain/revision.ts`, `src/server/api/revisions.ts` |
+| Deterministic recomposition, prepare-then-commit | `src/server/revision/recompose.ts` |
+| Hash-preservation diff, label, same-choices replay | `src/server/revision/diff.ts`, stored on the version |
+| Preservation enforced as a refusal | `preserved()` in `recompose.ts` |
+| Ending-copy override, previewed then applied | `src/server/revision/copy.ts`, `overrides.ts` |
+| Publication, hashed read token, revocation | `src/server/api/publish.ts`, `src/server/publish/` |
+| Public read-only player at `/play/:token` | `src/components/share/PublicPlayer.tsx` |
+| Trusted offline export | `src/export/`, `scripts/build-export-runtime.ts` |
+| Studio panels: revise, compare, publish, export | `src/components/studio/{RevisionPanel,VersionCompare,PublishPanel}.tsx` |
+| Migration (additive, drops nothing) | `supabase/migrations/20261004190000_phase5_revision_share.sql` |
+
+Reused unchanged: the Phase 1 engine and validator (`fp-engine-validator-1.0`),
+the Phase 4 controller, compiler (`fp-compiler-4.2`), module reuse by input
+hash, the two-attempt ceiling, the compare-and-swap, and the $0.60 cumulative
+cost cap. Removal and ending-copy apply make **zero** provider calls
+structurally: no compiler is in scope on those paths. No Qloo call was added.
+
+### The offline gate at `633ee01`
+
+| Command | Result |
+|---|---|
+| `npm run typecheck` | **PASS** |
+| `npm test` | **PASS** — 709 tests in 34 files (was 628 in 30) |
+| `npm run test:e2e` | **PASS** — 64 browser tests (was 46) |
+| `npm run check:fixtures` | **PASS** |
+| `npm run build` | **PASS** |
+| `npm run check:secrets` | **PASS** — 196 tracked files, 422 built assets |
+
+### What remains, in order
+
+1. Apply `20261004190000_phase5_revision_share.sql` to project
+   `vggqtyxtdqvdawwpyzea` through the Supabase management path. It is additive —
+   no table, no dropped function, one widened check constraint — so the Phase 4
+   production build keeps working after it is applied.
+2. `vercel deploy` (preview only, **not** `--prod`) from this branch.
+3. Live acceptance against the preview URL with real Supabase, OpenAI and Qloo:
+   a real arbitrary interpretation edit recompiling one slot only, a removal
+   costing zero model calls, an ending rewrite previewed and applied, publish →
+   read the token in a clean browser → revoke, and an exported file played from
+   disk with the network blocked.
+4. `RUN_DEPLOY_VERIFY=1 DEPLOY_URL=<preview> npm run verify:deployment`, which
+   still needs its Phase 5 flow added.
+5. Record the real numbers, including every failure, and only then call the gate.
+
+### Known limitations of what is built
+
+* An ending-copy override must be wording this application generated and
+  previewed; a creator cannot type their own ending text. That is what section 9
+  describes, and it keeps unvalidated prose out of a validated scene, but it is
+  narrower than a free-text editor.
+* `edit` re-approves the slot's own frozen proposal with new wording. Attaching a
+  different reference is the separate `replace` command and needs a current
+  proposal draft.
+* The superseded 19-argument `commit_scene_version` stays callable as a
+  delegation for one deployment window. A later phase should drop it.
+* Every count above is an offline measurement. Nothing here is evidence that the
+  live path works.
