@@ -201,6 +201,7 @@ describe("no external service reaches the engine or the player", () => {
     expect(routes).toEqual([
       "api/projects/[id]/anchor/route.ts",
       "api/projects/[id]/artist-search/route.ts",
+      "api/projects/[id]/decisions/route.ts",
       "api/projects/[id]/proposals/route.ts",
       "api/projects/[id]/references/route.ts",
       "api/projects/[id]/route.ts",

@@ -15,7 +15,10 @@
 import { z } from "zod";
 import { BriefSchema, workingTitle, type Brief } from "./brief";
 import {
+  APPROVED_INTERPRETATION_MAX,
   ApprovedInfluenceSchema,
+  DecisionKindSchema,
+  INTENDED_INTERACTION_MAX,
   ProposedInterpretationSchema,
 } from "./influence";
 import { SLOTS, WORLD_TEXT } from "./limits";
@@ -124,6 +127,69 @@ export const ReferencesViewSchema = z.strictObject({
 
 export type ReferencesView = z.infer<typeof ReferencesViewSchema>;
 
+/**
+ * The provenance chain of one approval (specification section 13).
+ *
+ * Three layers, because three layers exist in phase 3. There is deliberately
+ * **no** `scene_changed` field: a chain cannot assert a mechanical consequence
+ * that no compiler has produced, because the type offers nowhere to put it.
+ *
+ * No affinity appears anywhere in this shape. `original_rank` and the evidence
+ * field paths are here for the deeper disclosures the specification places
+ * behind a second expansion, not for the first fold.
+ */
+export const ProvenanceViewSchema = z.strictObject({
+  approval_id: z.uuid(),
+  slot: z.enum(SLOTS),
+  /** Qloo retrieved. Null only when the original capture is unreadable. */
+  retrieved: z
+    .strictObject({
+      reference_name: z.string(),
+      domain: QlooDomainSchema,
+      year: z.number().int().nullable(),
+      entity_id: QlooUuidSchema,
+      original_rank: z.number().int().positive(),
+      /**
+       * When the capture this approval cites was retrieved upstream.
+       *
+       * A capture row exists only because one live upstream call produced it,
+       * so this is the live-at-retrieval date the drawer shows. The separate
+       * cached-or-live label belongs to the references row, where it says
+       * whether *that request* called upstream; here the fact that matters is
+       * how old the evidence behind a frozen approval is.
+       */
+      captured_at: z.string(),
+      /** One sentence, from one returned field. Never a merge of two. */
+      context: z.string().nullable(),
+      evidence: z.array(
+        z.strictObject({
+          id: z.string(),
+          field_path: z.string(),
+          text: z.string(),
+        }),
+      ),
+    })
+    .nullable(),
+  /** FirstPlayable proposed. Explicitly a model interpretation. */
+  proposed: z.strictObject({
+    idea: z.string(),
+    intended_interaction: z.string(),
+    relevance: z.string(),
+    attribution: z.string(),
+  }),
+  /** Creator approved. The exact frozen wording. */
+  approved: z.strictObject({
+    text: z.string(),
+    intended_effect: z.string(),
+    edited_by_creator: z.boolean(),
+    approved_at: z.string(),
+    slot: z.enum(SLOTS),
+    predecessor_id: z.uuid().nullable(),
+  }),
+});
+
+export type ProvenanceView = z.infer<typeof ProvenanceViewSchema>;
+
 export const ProjectViewSchema = z.strictObject({
   id: z.uuid(),
   title: z.string(),
@@ -143,6 +209,11 @@ export const ProjectViewSchema = z.strictObject({
    * Empty unless the creator explicitly approved something.
    */
   approvals: z.array(ApprovedInfluenceSchema),
+  /**
+   * The inspectable chain behind each current approval: retrieved, proposed,
+   * approved. Empty whenever `approvals` is empty.
+   */
+  provenance: z.array(ProvenanceViewSchema),
   /**
    * The current proposal draft. A draft is not an approval, and rendering one
    * does not imply any of it was accepted.
@@ -274,6 +345,96 @@ export const ProposalsResponseSchema = z.strictObject({
 });
 
 export type ProposalsResponse = z.infer<typeof ProposalsResponseSchema>;
+
+/**
+ * `POST /api/projects/:id/decisions` (specification section 11).
+ *
+ * One explicit creator decision per request. The default accepted count is
+ * zero and stays zero until one of these arrives:
+ *
+ *   * `accept`  — approve a proposal as written, into an **empty** slot;
+ *   * `edit`    — approve creator-edited wording, into an **empty** slot;
+ *   * `replace` — explicitly displace the approval a slot already holds;
+ *   * `reject`  — dismiss a proposal; this never clears an existing approval;
+ *   * `remove`  — withdraw the approval a slot currently holds.
+ *
+ * `accept` into an occupied slot is refused rather than silently merged, which
+ * is what makes replacement an explicit act with a visible before and after.
+ */
+const DecisionBaseFields = {
+  expected_revision: z.number().int().positive(),
+} as const;
+
+const ApprovedTextSchema = z
+  .string()
+  .refine(
+    (value) =>
+      codePointLength(value.trim()) >= 1 &&
+      codePointLength(value.trim()) <= APPROVED_INTERPRETATION_MAX,
+    { message: `must be 1-${APPROVED_INTERPRETATION_MAX} code points` },
+  );
+
+const IntendedEffectSchema = z
+  .string()
+  .refine(
+    (value) =>
+      codePointLength(value.trim()) >= 1 &&
+      codePointLength(value.trim()) <= INTENDED_INTERACTION_MAX,
+    { message: `must be 1-${INTENDED_INTERACTION_MAX} code points` },
+  );
+
+export const DecisionsRequestSchema = z.discriminatedUnion("kind", [
+  z.strictObject({
+    ...DecisionBaseFields,
+    kind: z.literal("accept"),
+    proposal_id: z.string().min(1).max(64),
+    /** An explicit slot choice. Defaults to the slot the proposal named. */
+    slot: z.enum(SLOTS).optional(),
+    /** An optional narrowing of the cited evidence. Never a widening. */
+    selected_evidence_ids: z.array(z.string().min(1).max(64)).min(1).max(4).optional(),
+  }),
+  z.strictObject({
+    ...DecisionBaseFields,
+    kind: z.literal("edit"),
+    proposal_id: z.string().min(1).max(64),
+    slot: z.enum(SLOTS).optional(),
+    approved_text: ApprovedTextSchema,
+    intended_effect: IntendedEffectSchema,
+    selected_evidence_ids: z.array(z.string().min(1).max(64)).min(1).max(4).optional(),
+  }),
+  z.strictObject({
+    ...DecisionBaseFields,
+    kind: z.literal("replace"),
+    proposal_id: z.string().min(1).max(64),
+    slot: z.enum(SLOTS).optional(),
+    approved_text: ApprovedTextSchema.optional(),
+    intended_effect: IntendedEffectSchema.optional(),
+    selected_evidence_ids: z.array(z.string().min(1).max(64)).min(1).max(4).optional(),
+  }),
+  z.strictObject({
+    ...DecisionBaseFields,
+    kind: z.literal("reject"),
+    proposal_id: z.string().min(1).max(64),
+  }),
+  z.strictObject({
+    ...DecisionBaseFields,
+    kind: z.literal("remove"),
+    slot: z.enum(SLOTS),
+  }),
+]);
+
+export type DecisionsRequest = z.infer<typeof DecisionsRequestSchema>;
+
+export const DecisionsResponseSchema = z.strictObject({
+  project: ProjectViewSchema,
+  decision_id: z.uuid(),
+  /** The decision kind that was actually recorded. */
+  kind: DecisionKindSchema,
+  /** The approval this one displaced, when it was an explicit replacement. */
+  replaced_approval_id: z.uuid().nullable(),
+});
+
+export type DecisionsResponse = z.infer<typeof DecisionsResponseSchema>;
 
 export const SessionResponseSchema = z.strictObject({
   established: z.boolean(),

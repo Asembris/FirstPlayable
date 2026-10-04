@@ -104,6 +104,7 @@ describe("owner-scoped project access", () => {
       "created_at",
       "id",
       "proposals",
+      "provenance",
       "reference_capture_ids",
       "revision",
       "title",

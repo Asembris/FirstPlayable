@@ -79,6 +79,8 @@ export function approvalFromDecision(
         : [...frozen.proposal.selected_evidence_ids],
     approved_text: approvedText,
     intended_effect: intendedEffect,
+    proposed_idea: frozen.proposal.idea,
+    proposed_interaction: frozen.proposal.intended_interaction,
     proposed_relevance: frozen.proposal.relevance,
     edited_by_creator: frozen.edited_by_creator,
     source_kind: "qloo",

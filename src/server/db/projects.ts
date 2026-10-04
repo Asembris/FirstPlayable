@@ -13,6 +13,7 @@ import {
   type AnchorView,
   projectTitleFor,
   type ProjectView,
+  type ProvenanceView,
   WorkflowStateSchema,
 } from "@/domain/project";
 import type { ApprovedInfluence } from "@/domain/influence";
@@ -20,6 +21,8 @@ import { ConfirmedAnchorSchema } from "@/domain/qloo";
 import { SLOTS } from "@/domain/limits";
 import type { CreateProjectRequest } from "@/domain/project";
 import { proposalsOf, resolveApprovals } from "../influence/approvals";
+import { buildProvenance, captureIdsForApprovals } from "../influence/provenance";
+import { readCapturesByIds } from "../qloo/cache";
 import { appErrors } from "../security/errors";
 import type { DataGateway, ProjectRow, SessionRow } from "./gateway";
 
@@ -65,6 +68,7 @@ function toAnchorView(value: unknown): AnchorView | null {
 export function toProjectView(
   row: ProjectRow,
   approvals: readonly ApprovedInfluence[] = [],
+  provenance: readonly ProvenanceView[] = [],
 ): ProjectView {
   const brief = BriefSchema.safeParse(row.brief);
   if (!brief.success) {
@@ -90,6 +94,7 @@ export function toProjectView(
     active_version_id: row.active_version_id,
     approved_slots: [...approvedSlots],
     approvals: [...approvals],
+    provenance: [...provenance],
     proposals: proposalsOf(row),
     reference_capture_ids: [...row.reference_capture_ids].slice(0, 2),
     created_at: row.created_at,
@@ -107,7 +112,11 @@ export async function readProjectViewForOwner(
   row: ProjectRow,
 ): Promise<ProjectView> {
   const approvals = await resolveApprovals(gateway, session, row);
-  return toProjectView(row, approvals);
+  if (approvals.length === 0) return toProjectView(row, [], []);
+  // Read by id, so the capture behind a frozen approval is available
+  // regardless of its lookup TTL (specification section 11, "Retention").
+  const captures = await readCapturesByIds(gateway, captureIdsForApprovals(approvals));
+  return toProjectView(row, approvals, buildProvenance(approvals, captures));
 }
 
 /**

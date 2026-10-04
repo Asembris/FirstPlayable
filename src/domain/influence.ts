@@ -207,9 +207,16 @@ export const ApprovedInfluenceSchema = z.strictObject({
   domain: QlooDomainSchema,
   capture_id: z.uuid().nullable(),
   selected_evidence_ids: z.array(z.string().min(1).max(64)).min(1).max(MAX_SELECTED_EVIDENCE),
+  /** The creator's final wording. Equal to `proposed_idea` on a plain accept. */
   approved_text: z.string().min(1).max(APPROVED_INTERPRETATION_MAX),
   intended_effect: z.string().min(1).max(INTENDED_INTERACTION_MAX),
-  /** The model's relevance sentence, kept for the provenance drawer. */
+  /**
+   * What the model actually proposed, kept alongside the approved wording so
+   * the provenance drawer can show the two layers separately and label an
+   * edit honestly. Creator editing never rewrites these.
+   */
+  proposed_idea: z.string().min(1).max(PROPOSED_INTERPRETATION_MAX),
+  proposed_interaction: z.string().min(1).max(INTENDED_INTERACTION_MAX),
   proposed_relevance: z.string().min(1).max(RELEVANCE_MAX),
   edited_by_creator: z.boolean(),
   source_kind: z.literal("qloo"),
