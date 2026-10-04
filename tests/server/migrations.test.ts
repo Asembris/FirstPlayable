@@ -37,6 +37,7 @@ describe("committed migrations", () => {
       "20261003222456_phase2_atomic_functions.sql",
       "20261004085412_phase3_qloo.sql",
       "20261004160000_phase4_compilation.sql",
+      "20261004173000_phase4_validation_boolean.sql",
     ]);
   });
 
@@ -83,13 +84,74 @@ describe("committed migrations", () => {
     expect(phase4).toContain("'compile'");
   });
 
+  /**
+   * The validated-version guard, in its hardened form.
+   *
+   * `20261004160000` wrote it as `(validation_summary ->> 'ok')::boolean is
+   * true`, which goes through `text::boolean` and therefore accepted the JSON
+   * *string* `"true"`. A live probe found that (`docs/PHASE4_EVIDENCE.md`
+   * §12.9) and `20261004173000` replaces it with a jsonb value comparison.
+   *
+   * This reads the **last** definition in migration order, which is the one
+   * the database ends up with, so the test cannot pass on a superseded form.
+   */
   it("makes an unvalidated scene version unrepresentable in the schema", () => {
     expect(sql).toContain("scene_versions_validation_passed");
-    const constraint = sql.slice(sql.indexOf("add constraint scene_versions_validation_passed"));
+    const marker = "add constraint scene_versions_validation_passed";
+    const constraint = sql.slice(sql.lastIndexOf(marker));
     const body = constraint.slice(0, constraint.indexOf(";"));
-    expect(body).toContain("(validation_summary ->> 'ok')::boolean is true");
+
+    // The key's presence is asserted before its type, because a check
+    // constraint accepts a NULL expression: without this conjunct a summary
+    // with no `ok` key would make `jsonb_typeof` NULL and pass.
+    expect(body).toContain("validation_summary ? 'ok'");
+    expect(body).toContain("jsonb_typeof(validation_summary -> 'ok') = 'boolean'");
+    expect(body).toContain("(validation_summary -> 'ok') = 'true'::jsonb");
     expect(body).toContain("validation_summary ? 'subsets'");
     expect(body).toContain("validation_summary ? 'witnesses'");
+
+    // And no text projection of `ok` survives anywhere in the final form: that
+    // is the coercion path the defect came through.
+    expect(body).not.toContain("->> 'ok'");
+    expect(body).not.toContain("::boolean");
+  });
+
+  /**
+   * The hardening migration is a constraint replacement and nothing else.
+   *
+   * Replacing a check constraint needs a drop, which is why it is a separate
+   * forward migration rather than an edit to `20261004160000`. It must not
+   * take the opportunity to touch anything else.
+   */
+  it("hardens the validation guard without changing anything else", () => {
+    const hardening = readFileSync(
+      join(migrationsDir, "20261004173000_phase4_validation_boolean.sql"),
+      "utf8",
+    );
+    expect(/drop\s+(table|column|function|trigger|index|policy)/i.test(hardening)).toBe(false);
+    expect(/alter\s+column/i.test(hardening)).toBe(false);
+    expect(/create\s+table/i.test(hardening)).toBe(false);
+    expect(/create\s+or\s+replace\s+function/i.test(hardening)).toBe(false);
+    expect(/add column/i.test(hardening)).toBe(false);
+    expect(/^\s*(grant|revoke)/im.test(hardening)).toBe(false);
+
+    // Exactly one table, exactly one constraint dropped, exactly one re-added.
+    const touched = [...hardening.matchAll(/alter table public\.([a-z_]+)/g)].map((m) => m[1]);
+    expect([...new Set(touched)]).toEqual(["scene_versions"]);
+    expect(
+      [...hardening.matchAll(/drop constraint ([a-z_]+)/g)].map((m) => m[1]),
+    ).toEqual(["scene_versions_validation_passed"]);
+    expect(
+      [...hardening.matchAll(/add constraint ([a-z_]+)/g)].map((m) => m[1]),
+    ).toEqual(["scene_versions_validation_passed"]);
+
+    // The earlier migration is untouched and still carries its original form,
+    // so the history says what was applied and when it was corrected.
+    const phase4 = readFileSync(
+      join(migrationsDir, "20261004160000_phase4_compilation.sql"),
+      "utf8",
+    );
+    expect(phase4).toContain("(validation_summary ->> 'ok')::boolean is true");
   });
 
   it("keeps the pending review pointer separate from the active version", () => {
