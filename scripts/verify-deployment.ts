@@ -1224,13 +1224,41 @@ async function freshServerPersistence(base: string): Promise<void> {
     body.playable?.state ?? "none",
   );
 
-  // A fresh anonymous session must still be refused.
-  const stranger = await fetch(`${base}/api/projects/${target.projectId}`);
+  /*
+   * A fresh anonymous session must still be refused, and the two refusals are
+   * different on purpose.
+   *
+   * No cookie at all is `401`: the caller has no owner session, so there is
+   * nothing to check ownership against. An *established* session that does not
+   * own the project is `404`, the same answer a project that does not exist
+   * gets, so a stranger learns nothing about whether it is there. This check
+   * used to send no cookie while asserting `404`, which asserted the wrong one
+   * of the two; the HTTP matrix above covers the cookie-less case.
+   */
+  const noSession = await fetch(`${base}/api/projects/${target.projectId}`);
+  const noSessionText = await noSession.text();
+  record(
+    "no owner session is still refused, and learns nothing",
+    noSession.status === 401 && !noSessionText.includes(target.versionId),
+    `status ${noSession.status}`,
+  );
+
+  const strangerSession = await fetch(`${base}/api/session`, {
+    method: "POST",
+    headers: { origin: base, "content-type": "application/json" },
+    body: "{}",
+  });
+  const strangerCookie = cookieValue(strangerSession);
+  const stranger = await fetch(`${base}/api/projects/${target.projectId}`, {
+    headers: { cookie: strangerCookie ?? "" },
+  });
   const strangerText = await stranger.text();
   record(
     "a fresh anonymous session is still denied the same project",
-    stranger.status === 404 && !strangerText.includes(target.versionId),
-    `status ${stranger.status}`,
+    strangerSession.status === 200 &&
+      stranger.status === 404 &&
+      !strangerText.includes(target.versionId),
+    `session ${strangerSession.status}, read ${stranger.status}`,
   );
 
   console.log("");
