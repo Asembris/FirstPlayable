@@ -8,7 +8,10 @@ import {
   handleReferences,
 } from "../../src/server/api/qloo";
 import { handleReadProject } from "../../src/server/api/projects";
-import { MODEL_BUDGET_SCOPE } from "../../src/server/db/budgets";
+import {
+  MODEL_BUDGET_SCOPE,
+  MODEL_CALL_RESERVATION_MICROS,
+} from "../../src/server/db/budgets";
 import { CREATOR_COMMAND_BODY_LIMIT_BYTES } from "../../src/server/security/request";
 import {
   body,
@@ -183,13 +186,17 @@ describe("POST /api/projects/:id/proposals", () => {
     const reloaded = await body<{ project: ProjectView }>(reload);
     expect(reloaded.project.proposals).toHaveLength(2);
 
-    // The model budget saw one reservation and the reported tokens.
+    // The spend budget saw one reservation, the reported tokens, and the
+    // estimate those tokens price out at. The counters hold micro-dollars.
     const bucket = [...h.gateway.buckets.values()].find(
       (candidate) => candidate.scope === MODEL_BUDGET_SCOPE,
     );
-    expect(bucket?.used_calls).toBe(1);
+    expect(bucket?.used_calls).toBe(Math.ceil(2_050 * 0.15 + 410 * 0.6));
     expect(bucket?.used_tokens).toBe(2_460);
     expect(bucket?.reserved_calls).toBe(0);
+    // The conservative reservation was handed back, so one call did not eat
+    // anything like its worst case.
+    expect(bucket?.used_calls ?? 0).toBeLessThan(MODEL_CALL_RESERVATION_MICROS);
   });
 
   it("reserves a second model call for the one permitted repair", async () => {
@@ -211,10 +218,14 @@ describe("POST /api/projects/:id/proposals", () => {
     expect(result.model_calls).toBe(2);
     expect(result.repaired).toBe(true);
 
+    // Two attempts, so twice one attempt's estimate at the scripted default
+    // usage of 1,200 in / 320 out, and still cents from the cumulative cap.
     const bucket = [...h.gateway.buckets.values()].find(
       (candidate) => candidate.scope === MODEL_BUDGET_SCOPE,
     );
-    expect(bucket?.used_calls).toBe(2);
+    expect(bucket?.used_calls).toBe(2 * Math.ceil(1_200 * 0.15 + 320 * 0.6));
+    expect(bucket?.used_tokens).toBe(2 * 1_520);
+    expect(bucket?.reserved_calls).toBe(0);
   });
 
   it("replays a committed draft on a retry, with zero model calls", async () => {
@@ -426,7 +437,7 @@ describe("POST /api/projects/:id/proposals", () => {
   it("refuses honestly when the model budget is used up", async () => {
     const h = harness({
       model: [{ parsed: { proposals: [] } }],
-      budget: { modelDailyCallCap: 0 },
+      budget: { modelCostCapMicros: 0 },
     });
     const { projectId, cookie, revision } = await withReferences(h);
     const response = await handleProposals(

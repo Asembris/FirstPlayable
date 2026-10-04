@@ -14,7 +14,11 @@ import {
   reserveQlooCalls,
 } from "../../src/server/qloo/limiter";
 import { QLOO_ERROR_CODES, QlooError } from "../../src/server/qloo/client";
-import { MODEL_BUDGET_SCOPE, reserveModelCall } from "../../src/server/db/budgets";
+import {
+  MODEL_BUDGET_SCOPE,
+  MODEL_CALL_RESERVATION_MICROS,
+  reserveModelCall,
+} from "../../src/server/db/budgets";
 import { BUDGET_DEFAULTS } from "../../src/server/config";
 import type { AppError } from "../../src/server/security/errors";
 import { MemoryGateway } from "./support/memory-gateway";
@@ -179,9 +183,9 @@ describe("the global launch policy", () => {
     const model = await reserveModelCall(gateway, BUDGET_DEFAULTS, { now: time.now() });
     expect(model.granted).toBe(true);
     if (model.granted) {
-      // The model budget sees its own cap, untouched by the Qloo lease.
-      expect(model.call_limit).toBe(BUDGET_DEFAULTS.modelDailyCallCap);
-      expect(model.reserved_calls).toBe(1);
+      // The spend budget sees its own cap, untouched by the Qloo lease.
+      expect(model.call_limit).toBe(BUDGET_DEFAULTS.modelCostCapMicros);
+      expect(model.reserved_calls).toBe(MODEL_CALL_RESERVATION_MICROS);
     }
 
     const scopes = [...gateway.buckets.values()].map((bucket) => bucket.scope).sort();

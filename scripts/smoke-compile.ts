@@ -37,6 +37,7 @@
  * string, and no auth header.
  */
 
+import { formatMicrosUsd } from "../src/server/db/budgets";
 import type { Brief } from "../src/domain/brief";
 import type { CompilationStatus, PlayableView, SceneVersionSummary } from "../src/domain/compile";
 import type {
@@ -833,7 +834,9 @@ async function main(): Promise<number> {
   console.log("smoke:compile");
   console.log(`  model             ${PINNED_CHAT_MODEL}`);
   console.log(`  qloo host         ${qlooEnv().host}`);
-  console.log(`  model call cap    ${harness.phase4.budget().modelDailyCallCap} per window`);
+  console.log(
+    `  spend cap         ${formatMicrosUsd(harness.phase4.budget().modelCostCapMicros)} cumulative`,
+  );
   console.log("");
 
   const sessionResponse = await handleCreateSession(mutation("/api/session", null, {}), harness.phase3);
@@ -1457,6 +1460,7 @@ async function main(): Promise<number> {
   note(
     `arithmetic only — for example 1000 in / 500 out is $${estimateUsdCost({
       input_tokens: 1000,
+      cached_input_tokens: 0,
       output_tokens: 500,
       total_tokens: 1500,
     }).toFixed(8)}, not a billed amount.`,

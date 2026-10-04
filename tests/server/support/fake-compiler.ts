@@ -32,6 +32,7 @@ export const PINNED_MODEL = "gpt-4o-mini-2024-07-18";
 
 const DEFAULT_USAGE: ModelUsage = {
   input_tokens: 2_400,
+  cached_input_tokens: 0,
   output_tokens: 900,
   total_tokens: 3_300,
 };

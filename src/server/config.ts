@@ -14,9 +14,19 @@ import { z } from "zod";
 /** The one pinned model snapshot. A different value is a configuration error, never a fallback. */
 export const PINNED_CHAT_MODEL = "gpt-4o-mini-2024-07-18";
 
-/** Published prices for the pinned snapshot, used only to label a cost estimate. */
+/**
+ * Published list prices for the pinned snapshot, in US dollars per million
+ * tokens. They exist to turn provider-reported usage into a labelled estimate;
+ * they are not a billing figure read back from the account.
+ *
+ * `cached_input` is the discounted rate the provider charges for the portion of
+ * the input it reports as a cache hit. Charging those tokens at the full input
+ * rate would overstate spend, which matters now that the estimate is what the
+ * cap is enforced against.
+ */
 export const PINNED_MODEL_PRICING_USD_PER_MTOK = {
   input: 0.15,
+  cached_input: 0.075,
   output: 0.6,
 } as const;
 
@@ -222,27 +232,41 @@ export function qlooConfig(): QlooConfig {
  * Each can only be read on the server, and each can be lowered by configuration.
  */
 export type BudgetConfig = {
-  /** Default global daily model-call cap from specification section 12. */
-  readonly modelDailyCallCap: number;
+  /**
+   * The hard cumulative OpenAI spend cap, in micro-dollars, measured against
+   * the estimate computed from provider-reported usage. It is cumulative and
+   * it does not reset: once it is reached, this application stops calling the
+   * provider until the cap is deliberately raised in configuration.
+   *
+   * It replaces the earlier 40-calls-per-UTC-day cap, which blocked real work
+   * long before any meaningful amount of money had been spent. Call count is
+   * still recorded, but it no longer gates anything.
+   */
+  readonly modelCostCapMicros: number;
   /** How long a reservation lease survives an abandoned request, in seconds. */
   readonly modelLeaseSeconds: number;
   /** Projects one anonymous session may create per rolling day. */
   readonly projectsPerSessionPerDay: number;
 };
 
+/** $0.60, expressed in micro-dollars so the counter stays an exact integer. */
+export const MODEL_COST_CAP_MICROS = 600_000;
+
 export const BUDGET_DEFAULTS = {
-  modelDailyCallCap: 40,
+  modelCostCapMicros: MODEL_COST_CAP_MICROS,
   modelLeaseSeconds: 120,
   projectsPerSessionPerDay: 5,
 } as const satisfies BudgetConfig;
 
 export function budgetConfig(): BudgetConfig {
   return {
-    modelDailyCallCap: integer(
-      "MODEL_DAILY_CALL_CAP",
-      BUDGET_DEFAULTS.modelDailyCallCap,
+    // Lowerable only. A configured value above the compiled-in cap is refused
+    // rather than honoured, so configuration cannot widen the spend ceiling.
+    modelCostCapMicros: integer(
+      "MODEL_COST_CAP_MICROS",
+      BUDGET_DEFAULTS.modelCostCapMicros,
       0,
-      BUDGET_DEFAULTS.modelDailyCallCap,
+      BUDGET_DEFAULTS.modelCostCapMicros,
     ),
     modelLeaseSeconds: integer(
       "MODEL_LEASE_SECONDS",

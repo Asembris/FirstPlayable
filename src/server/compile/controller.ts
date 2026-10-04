@@ -46,6 +46,9 @@ import { SLOTS } from "@/domain/limits";
 import { hashCanonical, sha256Hex } from "@/engine/hash";
 import { PINNED_CHAT_MODEL, type BudgetConfig } from "../config";
 import {
+  budgetExhaustedMessage,
+  modelCallRecord,
+  recordModelCall,
   reconcileModelCall,
   releaseModelCall,
   reserveModelCall,
@@ -58,7 +61,7 @@ import {
   settleStage,
   type OperationStage,
 } from "../db/operations";
-import { ModelError } from "../model/openai";
+import { estimateUsdCostMicros, ModelError, type ModelUsage } from "../model/openai";
 import { appErrors } from "../security/errors";
 import {
   assembleScene,
@@ -593,17 +596,50 @@ async function runModelStage(
   const attempt = reservation.operation.attempts;
   const repair = attempt > 1 ? readRepairContext(reservation.operation.result) : null;
 
-  // The budget is reserved before the call and reconciled after it.
+  // A conservative cost is reserved before the call and reconciled against
+  // what the provider reported after it.
   const budget = await reserveModelCall(gateway, context.budget, { now: context.now });
   if (!budget.granted) {
     await gateway.parkOperation(stageOperationId, session.id, null);
-    throw appErrors.budgetExhausted(
-      `This application's configured cap of ${budget.call_limit} model calls for the current window is used up. It resets at ${budget.window_end}. The saved example still plays.`,
-    );
+    throw appErrors.budgetExhausted(budgetExhaustedMessage(budget.call_limit));
   }
 
   let outcomeCheckpoint = checkpoint;
   let settled = false;
+
+  /**
+   * Settles this attempt's share of the cumulative spend cap and records its
+   * telemetry. Called exactly once per attempt, on every exit, including a
+   * rejected candidate and a provider failure: an attempt that reached the
+   * provider costs what the provider reported, and one that did not costs
+   * nothing.
+   */
+  const stageStartedAt = Date.now();
+  let reconciled = false;
+  const settleSpend = async (outcome: {
+    model: string | null;
+    usage: ModelUsage | null;
+  }): Promise<void> => {
+    if (reconciled) return;
+    reconciled = true;
+    const costMicros = estimateUsdCostMicros(outcome.usage);
+    recordModelCall(
+      modelCallRecord({
+        stage,
+        attempt,
+        model: outcome.model,
+        usage: outcome.usage,
+        costMicros,
+        // Wall-clock for the attempt. The provider call dominates it; the
+        // deterministic assembly and validation that follow do not call out.
+        latencyMs: Date.now() - stageStartedAt,
+      }),
+    );
+    await reconcileModelCall(gateway, budget.lease_id, {
+      costMicros,
+      tokens: outcome.usage?.total_tokens ?? 0,
+    });
+  };
 
   try {
     if (stage === "base") {
@@ -611,9 +647,7 @@ async function runModelStage(
         { brief: context.brief, inputHash: frozen.inputHash, repair },
         context.compiler,
       );
-      await reconcileModelCall(gateway, budget.lease_id, {
-        tokens: outcome.usage?.total_tokens ?? 0,
-      });
+      await settleSpend(outcome);
 
       if (outcome.kind === "rejected") {
         await gateway.parkOperation(stageOperationId, session.id, {
@@ -681,7 +715,9 @@ async function runModelStage(
       const approval = context.approvals.find((candidate) => candidate.slot === slot);
       const approvalPayload = slot === null ? undefined : context.approvalPayloads.get(slot);
       if (approval === undefined || approvalPayload === undefined || slot === null) {
-        await reconcileModelCall(gateway, budget.lease_id, { tokens: 0 });
+        // Nothing was sent, so the reservation is released rather than spent.
+        reconciled = true;
+        await releaseModelCall(gateway, budget.lease_id);
         await settleStage(gateway, session, stageOperationId, {
           status: "failed",
           error: { code: "MISSING_APPROVED_EVIDENCE" },
@@ -708,9 +744,7 @@ async function runModelStage(
         },
         context.compiler,
       );
-      await reconcileModelCall(gateway, budget.lease_id, {
-        tokens: outcome.usage?.total_tokens ?? 0,
-      });
+      await settleSpend(outcome);
 
       if (outcome.kind === "rejected") {
         await gateway.parkOperation(stageOperationId, session.id, {
@@ -781,7 +815,9 @@ async function runModelStage(
   } catch (cause) {
     // A provider failure is one spent attempt. The stage is parked so the one
     // permitted further attempt stays available inside the same ceiling.
-    await reconcileModelCall(gateway, budget.lease_id, { tokens: 0 }).catch(() => undefined);
+    // The provider reported no usage, so the attempt reconciles to no spend
+    // and the conservative reservation is handed straight back.
+    await settleSpend({ model: null, usage: null }).catch(() => undefined);
     if (!(cause instanceof ModelError)) {
       await gateway.parkOperation(stageOperationId, session.id, null);
       throw cause;

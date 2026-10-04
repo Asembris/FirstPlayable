@@ -24,6 +24,7 @@
  * the bounded call works, not that its prose is good.
  */
 
+import { formatMicrosUsd } from "../src/server/db/budgets";
 import type { Brief } from "../src/domain/brief";
 import type {
   DecisionsResponse,
@@ -184,7 +185,7 @@ async function main(): Promise<number> {
   console.log("smoke:proposal");
   console.log(`  model             ${PINNED_CHAT_MODEL}`);
   console.log(`  qloo host         ${qlooEnv().host}`);
-  console.log(`  model call cap    ${deps.budget().modelDailyCallCap} per window`);
+  console.log(`  spend cap         ${formatMicrosUsd(deps.budget().modelCostCapMicros)} cumulative`);
   console.log(`  qloo launch gap   ${qlooConfig().launchSpacingMs} ms`);
   console.log("");
 

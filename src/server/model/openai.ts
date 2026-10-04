@@ -70,6 +70,12 @@ export class ModelError extends Error {
 
 export type ModelUsage = {
   input_tokens: number;
+  /**
+   * The part of `input_tokens` the provider reported as a cache hit. Zero when
+   * the provider reported no detail block; it is never inferred, and it is
+   * always a subset of `input_tokens`, not an addition to it.
+   */
+  cached_input_tokens: number;
   output_tokens: number;
   total_tokens: number;
 };
@@ -115,6 +121,9 @@ const ResponseEnvelopeSchema = z.object({
   usage: z
     .object({
       input_tokens: z.number().int().nonnegative(),
+      input_tokens_details: z
+        .object({ cached_tokens: z.number().int().nonnegative().nullish() })
+        .nullish(),
       output_tokens: z.number().int().nonnegative(),
       total_tokens: z.number().int().nonnegative(),
     })
@@ -231,7 +240,20 @@ export async function generateStructured<S extends ZodType>(
     );
   }
 
-  const usage = response.usage ?? null;
+  const usage: ModelUsage | null =
+    response.usage === undefined || response.usage === null
+      ? null
+      : {
+          input_tokens: response.usage.input_tokens,
+          // Clamped to the reported input, so a surprising detail block can
+          // never make the cached portion larger than the input itself.
+          cached_input_tokens: Math.min(
+            response.usage.input_tokens,
+            response.usage.input_tokens_details?.cached_tokens ?? 0,
+          ),
+          output_tokens: response.usage.output_tokens,
+          total_tokens: response.usage.total_tokens,
+        };
 
   const refusal = (response.output ?? [])
     .flatMap((item) => item.content ?? [])
@@ -300,12 +322,36 @@ export async function generateStructured<S extends ZodType>(
 }
 
 /**
- * A labelled cost estimate from the published list prices, for the preflight
- * record only. It is arithmetic on observed token counts, not a billing figure
- * read back from the account.
+ * The one cost helper: provider-reported usage in, a US-dollar estimate out.
+ *
+ * It is arithmetic on the token counts the provider reported, priced at the
+ * pinned snapshot's published list prices. It is *not* a billed amount read
+ * back from the account, and it is not a general billing abstraction: there is
+ * one provider and one model here, so there is one price table and one
+ * function. Cached input is priced at the discounted cached rate, and the
+ * uncached remainder at the full input rate.
  */
 export function estimateUsdCost(usage: ModelUsage): number {
-  const input = (usage.input_tokens / 1_000_000) * PINNED_MODEL_PRICING_USD_PER_MTOK.input;
-  const output = (usage.output_tokens / 1_000_000) * PINNED_MODEL_PRICING_USD_PER_MTOK.output;
-  return input + output;
+  const cached = Math.min(usage.cached_input_tokens, usage.input_tokens);
+  const uncached = usage.input_tokens - cached;
+  const perMillion = (tokens: number, price: number) => (tokens / 1_000_000) * price;
+  return (
+    perMillion(uncached, PINNED_MODEL_PRICING_USD_PER_MTOK.input) +
+    perMillion(cached, PINNED_MODEL_PRICING_USD_PER_MTOK.cached_input) +
+    perMillion(usage.output_tokens, PINNED_MODEL_PRICING_USD_PER_MTOK.output)
+  );
+}
+
+/**
+ * The same estimate as an integer number of micro-dollars, rounded **up**.
+ *
+ * The cumulative cap is enforced against this integer, so it is deliberately
+ * never rounded down: a call that cost a fraction of a micro-dollar still
+ * costs one, and the counter can only ever overstate spend, never understate
+ * it. Usage the provider did not report costs nothing here, which is why the
+ * conservative reservation is taken before the call rather than after.
+ */
+export function estimateUsdCostMicros(usage: ModelUsage | null): number {
+  if (usage === null) return 0;
+  return Math.ceil(estimateUsdCost(usage) * 1_000_000);
 }
