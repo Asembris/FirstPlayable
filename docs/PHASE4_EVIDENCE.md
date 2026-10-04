@@ -1,16 +1,21 @@
 # Phase 4 — live compilation acceptance
 
 **Branch:** `feat/phase-4-compilation` · **Date:** 4 October 2026 ·
-**Status:** **FAIL — Phase 4 is not complete**
+**Status:** **PASS — see §16**
 
-> **Read §12 and §14 as well.** A later session on the same day changed the
-> base compilation architecture in response to the measured failures recorded
-> below, and then fixed a database integrity defect that change's probing
-> uncovered. Both re-ran the whole offline gate. The live acceptance gate is
-> still not met. Sections 1–11 are the original record and are preserved
-> unchanged; §12–13 are the architectural amendment and the budget reason the
-> live gate is still open, and §14–15 are the constraint hardening, applied and
-> verified live with its migration history reconciled.
+> **Read §16 first, then come back.** This document is append-only across four
+> sessions of the same day, and the first three failed. Sections 1–11 are the
+> original record, which ended in failure. §12–13 are the base architecture
+> amendment and the model-call budget that then blocked the live gate. §14–15
+> are a database constraint hardening, applied and verified live. **§16 is the
+> session that passed**: it replaced the blocking call cap with a cumulative
+> cost cap, found that the budget had *not* been the only blocker, amended the
+> module stage for the same reason the base stage had been amended, and then
+> ran and passed every item of the Phase 4 binary gate, locally and against
+> the deployment.
+>
+> Nothing in §1–15 has been rewritten to agree with the outcome. Where §12
+> reached a conclusion that the live run contradicted, §16.1 says so.
 
 Every figure in this document was observed on this machine against the real
 Supabase project and the real OpenAI account. Nothing here is a projection.
@@ -22,7 +27,8 @@ in this file.
 
 **Cloud baseline HEAD:** `2fd70bc3dd6cc54925c34992d5dc3106b36446a0`
 **Final local HEAD of this record:** `67a565a` (see §2); after the §12
-amendment, `62aaca9`; after the §14 hardening, `fcac34a`
+amendment, `62aaca9`; after the §14 hardening, `fcac34a`; after the §16 live
+acceptance, **`2c12321`**
 **Nothing was pushed. No pull request was opened.**
 
 ---
@@ -1124,3 +1130,464 @@ reliability is proven offline but not yet observed against the real provider
 (§13.2), the row-level immutability trigger is still unexercised because that
 probe needs a committed version row, and the live stale-result compare-and-swap
 is still unexercised for the same reason.
+
+---
+
+## 16. Phase 4 PASSES — the live acceptance run of 4 October 2026
+
+**Branch:** `feat/phase-4-compilation`
+**HEAD at the start of this session:** `e564596`
+**Last code commit:** `2c12321`. The documentation commit that carries this
+record is the one immediately after it, and is the branch tip.
+**Nothing was pushed.** Every commit below is local only.
+
+This section supersedes the gate tables of §12.10 and §14.8. Phase 4's binary
+gate (`docs/PHASE4_LOCAL_HANDOFF.md` §Q) now passes on every item, and the
+numbers below all come from commands run in this repository against the real
+Supabase project, the real Qloo host, real `gpt-4o-mini-2024-07-18`, and the
+real Vercel deployment.
+
+It also records two things that were **wrong** in the previous sections'
+diagnosis, and that only a live run could have shown. Both are stated before
+the successes, because both mattered more.
+
+### 16.1 The first wrong diagnosis: the budget was not the only blocker
+
+§12.8 concluded that the remaining live gate was blocked solely on the
+40-calls-per-UTC-day model budget, and that the recovered architecture was
+"complete and fully covered offline" and merely waiting for a window reset.
+
+The first half was right. The second was not. Once the cap was replaced (§16.2)
+and the gate was attempted, the **module** stage failed twice in a row, on two
+separate runs, for two different reasons — and the base stage, which §12 had
+made deterministic, committed on its **first** attempt every single time.
+
+| Run | Base | `module_discovery` | Deterministic findings | Outcome |
+|---|---|---|---|---|
+| 1 | committed, attempt 1 | failed, 2 / 2 | `FOREIGN_WRITE` — set `core.inspected` | `VALIDATION_FAILED` |
+| 2 | committed, attempt 1 | failed, 2 / 2 | `VARIABLE_NEVER_READ` — `discovery.ready_to_give` set, never read | `VALIDATION_FAILED` |
+
+Both are the *same class* of defect the base stage used to fail on, and §6's
+table shows the module stage had already produced `HOOK_PORT_INVALID`,
+`VARIABLE_NEVER_READ`, and `VARIABLE_NEVER_WRITTEN` before. In run 1 the
+module wrote a foundation flag on **both** of its permitted attempts, while the
+instructions forbade exactly that in two separate sentences.
+
+The honest reading: §12 fixed the base stage and left the module stage asking a
+model to author a small state machine, which is the thing that had just been
+shown not to work. The amendment in §16.3 applies §12's own principle to the
+stage §12 did not touch.
+
+### 16.2 Cost-based protection replaces the 40-call cap
+
+The retired cap refused real work while the account had spent a few cents:
+`model_calls.used_calls` stood at **31 of 40** with **129,089** tokens
+recorded, which at list prices is under four cents of a published-price
+estimate. A cap that blocks a gate at that point is measuring the wrong thing.
+
+What replaced it, and nothing more:
+
+| Change | Where |
+|---|---|
+| One cost helper: provider-reported usage → a US-dollar estimate, and the same estimate as integer micro-dollars rounded **up** | `estimateUsdCost`, `estimateUsdCostMicros` in `src/server/model/openai.ts` |
+| `cached_input_tokens` read from the provider's `input_tokens_details`, clamped to the reported input, priced at the published cached rate | same file; `PINNED_MODEL_PRICING_USD_PER_MTOK.cached_input = 0.075` |
+| A hard **cumulative $0.60** cap, as `MODEL_COST_CAP_MICROS = 600_000` | `src/server/config.ts` |
+| The **existing** `budget_buckets` primitive, reused unchanged | `src/server/db/budgets.ts` |
+| Per-call telemetry: input / cached / output tokens, estimated USD, latency, model, stage, attempt, and a call count | `ModelCallRecord`, `recordModelCall` |
+
+**No migration, no new table, no new SQL function.** The primitive gates one
+integer dimension against one integer limit; this scope supplies micro-dollars
+for that dimension, and the ungated `tokens` dimension carries total tokens.
+The scope is named `model_cost_micros` precisely because the columns are called
+`call_limit`, `used_calls`, and `reserved_calls` and now hold money — a reader
+of the row has to know that, so the scope name says it. The retired
+`model_calls` rows are left in place, under their own scope, as history.
+
+The window is `1970-01-01` → `2270-01-01`: the primitive is windowed, so a
+cumulative cap is one window wide enough never to roll over, exactly as
+`qloo_launch` already did. **There is no reset**, and the exhausted-budget
+message says so rather than naming a window to wait for.
+
+A conservative `MODEL_CALL_RESERVATION_MICROS = 5_850` is reserved before each
+call — the 45,000-character context cap charged as uncached input at three
+characters per token, plus the largest stage's 6,000-token output allowance —
+then reconciled down to what the provider actually reported. Observed calls
+reconcile to roughly a tenth of it.
+
+What deliberately does **not** exist: no cost UI, no dashboard, no
+multi-provider billing abstraction, and no historical reconstruction. Call
+count is recorded in the telemetry line and in `public.operations`, and it
+gates nothing.
+
+**Prior spend is not reconstructed.** The cumulative counter starts at zero.
+The 129,089 tokens recorded under the retired `model_calls` scope are
+**approximate legacy spend**: their input/output split was never stored, so at
+list prices they are somewhere between about **$0.02** and **$0.08**, and no
+more precise figure is honest. That amount is *not* counted against the $0.60.
+
+The per-stage ceiling of **1 initial attempt + 1 repair** is unchanged, and
+`public.operations` shows no stage anywhere above `attempts = 2`.
+
+### 16.3 The module amendment: a module chooses its mechanics and owns none of their wiring
+
+Every field of the old module contract was classified as either single-answer
+plumbing or a genuine bounded mechanical choice. The plumbing moved to the
+server; the choices stayed with the model.
+
+**Now server-owned, and absent from the contract:** every identifier and
+namespace; the action's target; the action's availability condition; its single
+branch and that branch's condition; the effect that sets the flag; the flag's
+`initial: false`; the gate's condition; the hook's port; the absence of an
+ending binding; and the dialogue node ids. Each had exactly one legal form
+under the product contract.
+
+**Still the model's choice, as a strict enumeration or a bounded list:** how
+many mechanics to build (1 to 3); whether each is an `inspect` or an `ask`;
+which base action each one gates — enumerated from *that slot's* ports, so
+discovery is forced to `core.give` and commitment genuinely chooses between
+`core.ask_terms` and `core.withhold`; whether a mechanic also attaches a line
+to its slot's effect port; whether its flag is shown to the player; and all of
+the copy.
+
+A mechanic is materialized by `materializeMechanic` in
+`src/server/compile/assemble.ts` as one flag, one action offered only while
+that flag is false whose single branch sets it, and one gate on the chosen base
+action that blocks until the flag is true. That wiring is what makes the
+following live finding codes **unrepresentable** rather than merely illegal:
+`FOREIGN_WRITE`, `VARIABLE_NEVER_READ`, `VARIABLE_NEVER_WRITTEN`,
+`NO_PROGRESS`, `AMBIGUOUS_BRANCH`, `DEAD_BRANCH`, `MODULE_ACTION_TERMINATES`,
+`NONTERMINAL_ACTION_ENDS`, `GATE_PORT_INVALID`, `HOOK_PORT_INVALID`,
+`NAMESPACE_INVALID`, `SPEAKER_UNRESOLVED`, and a cross-slot `VAR_UNRESOLVED`.
+
+One finding was produced *by the amendment itself*, offline, and is worth
+recording because it is the argument for the wiring living in one place: a hook
+that set its own mechanic's flag made that mechanic's gate vacuous, because the
+slot's effect port sits on the path to the action the gate guards, so the flag
+was always already true by the time the gate could matter. The engine reported
+`GATE_NEVER_BLOCKS`. Hooks therefore carry a line and no state change.
+
+**What was not done.** The validator is byte-for-byte unchanged —
+`VALIDATOR_IDENTIFIER` is still `fp-engine-validator-1.0` while
+`COMPILER_IDENTIFIER`, `PROMPT_IDENTIFIER`, and `SCHEMA_IDENTIFIER` all moved
+to `4.2`. The model is unchanged. No provider fallback was added. The retry
+ceiling was not raised. No Qloo call was added to compilation. Slot isolation
+is unchanged. Phase 5 was not started.
+
+Regression coverage was added for each live failure class, as assertions about
+the *contract* rather than about the validator: the validator still holds every
+one of those checks, and the engine suite still exercises them against directly
+constructed scenes. Where a negative fixture became unrepresentable, the test
+was retargeted rather than deleted — `MODULE_WITNESS_MISSING`, for example, is
+now provoked by building a gateless module at the scene level, which is where
+that rule lives.
+
+### 16.4 The live one-influence compilation
+
+`RUN_PHASE4_SMOKE=1 npm run smoke:compile`, project
+`30023972-3b8a-4f99-902c-0fb1daac4888`, brief "The Last Collection" — not the
+saved example's.
+
+| Advance | Stage | Status | Attempts | Repaired | Model calls | State after |
+|---|---|---|---|---|---|---|
+| 1 | `base` | committed | 1 | false | 1 | `BASE_READY` |
+| 2 | `module_discovery` | committed | 1 | false | 1 | `MODULES_READY` |
+| 3 | `validate` | committed | 1 | false | **0** | `REVIEW_PLAYABLE` |
+
+**2 provider calls**, 14,454 ms, no stage needed its repair. Version
+`3263cdf1-f598-44c0-a1b1-386f9b053a9d`.
+
+| Fact | Observed |
+|---|---|
+| Qloo calls between `POST .../compile` and the pending version | **0**, measured by counting upstream requests |
+| `validate` provider calls | **0** |
+| Creating the compilation | 0 provider calls |
+| Stored subsets | 2 of 2 — `[base]` ok, `[discovery]` ok |
+| Stored witnesses | 1, mechanical |
+| Reachable endings | `end.give`, `end.keep`, `end.leave` |
+| Reachability search | 20 states, 54 edges, every nonterminal state can still terminate |
+| Activation | explicit; nothing active until confirmed; `READY` after |
+| Activation + reload cost | 0 provider, 0 Qloo; reloaded scene byte-identical |
+
+Witness sentence, verbatim:
+
+> After core.ask_context then core.inspect, "core.give" is locked with the
+> discovery influence and enabled without it.
+
+### 16.5 The live two-influence compilation
+
+Project `ff0ec6a2-8f44-452a-a47b-a75675609d88`, brief "The Quiet Handover".
+The real proposal stage offered both slots; one Discovery (Children of Men) and
+one Commitment (Mass Effect 2) interaction were approved.
+
+| Advance | Stage | Status | Attempts | Model calls | State after |
+|---|---|---|---|---|---|
+| 1 | `base` | committed | 1 | 1 | `BASE_READY` |
+| 2 | `module_discovery` | committed | 1 | 1 | `BASE_READY` |
+| 3 | `module_commitment` | committed | 1 | 1 | `MODULES_READY` |
+| 4 | `validate` | committed | 1 | **0** | `REVIEW_PLAYABLE` |
+
+**3 provider calls**, 22,051 ms, no repair. Version
+`5abb3c5a-6f89-4446-9344-a9deaedd4540`, two entries in `module_hashes`.
+
+**All four removal subsets, every one `ok`:**
+
+| Subset | Result |
+|---|---|
+| `[]` (base alone) | ok, no findings |
+| `["commitment"]` | ok, no findings |
+| `["discovery"]` | ok, no findings |
+| `["discovery","commitment"]` | ok, no findings |
+
+**Two independent mechanical witnesses**, 72 pairs explored each:
+
+> discovery: After core.ask_context then core.inspect, "core.give" is locked
+> with the discovery influence and enabled without it.
+
+> commitment: After core.ask_context then core.inspect, "core.ask_terms" is
+> locked with the commitment influence and enabled without it.
+
+They name different base actions, which is what makes them independent rather
+than one observation reported twice.
+
+| Fact | Observed |
+|---|---|
+| Qloo calls during compilation | **0** |
+| Reachability | 72 states, 250 edges, all terminable, 8 narrowing edges |
+| Slot isolation, measured on the composed scene | discovery references 0 of commitment's 2 variables; commitment references 0 of discovery's 2 |
+| Variable ownership | 7 of 7 variables have exactly one owner (3 core, 4 module) |
+| Playthrough | all three endings reached locally, reset returns 6 enabled actions |
+
+### 16.6 Base and module reuse after an approval-only change
+
+On the two-influence project, the Commitment approval was **replaced** (Mass
+Effect 2 → Dragon Age: Origins) and the build re-run. The brief did not move.
+
+| Advance | Stage | Model calls | Replayed |
+|---|---|---|---|
+| 1 | `base` | **0** | true |
+| 2 | `module_discovery` | **0** | true |
+| 3 | `module_commitment` | 1 | false |
+| 4 | `validate` | 0 | — |
+
+**1 provider call, not 3.** The base hash was identical across the two
+compilations —
+`062d9a0679ff06eff15deed7d960a8cead360cd6414715425de7e60cfd9cf992` both times —
+and the previously active version stayed active while the rebuild awaited
+review.
+
+### 16.7 The live stale-result / compare-and-swap checks
+
+Disposable project `f578422f-881b-4881-b041-0236a69c583f`. Both checkpoints
+were exercised against real Postgres.
+
+| Check | Result |
+|---|---|
+| `base` committed, then one approval removed (revision 4 → 5), then advance | **refused**, state `FAILED`, code `STALE_INPUT` |
+| The creator-facing sentence | "Your choices changed while this was being written, so this older result was not applied." |
+| Provider calls spent by the stale advance | **0** |
+| `scene_versions` rows created by the stale compilation | **0** |
+| A legitimate rebuild after the removal | produced a pending version, 1 provider call |
+| Activating a version whose approvals had since moved | **refused**, status 429 |
+| The previous active version after the refused activation | **untouched** |
+| Diagnostic leakage in either refusal | none |
+
+### 16.8 Live database integrity probes
+
+Run against the live database with real version rows present for the first
+time, so the probe that §12.9 and §14 could not run is now run.
+
+| Probe | Result |
+|---|---|
+| `model_cost_micros` bucket exists with `call_limit = 600000` | **PASS** |
+| Its window is cumulative, not daily | **PASS** — `1970-01-01` → `2270-01-01` |
+| No reservation left held | **PASS** — `reserved_calls = 0` |
+| **Row-level immutability trigger** refuses an `update` to a committed version | **PASS** — `23001: contents of public.scene_versions are immutable` |
+| The version's recorded model after the refused update | unchanged |
+| `validation_summary.ok` stored as a real JSON **boolean** on every row | **PASS**, 7 of 7 |
+| Insert with `ok: false` | refused, `23514`, `scene_versions_validation_passed` |
+| Insert with `ok` as the JSON **string** `"true"` | **refused**, `23514` — the §12.9 gap, confirmed closed live |
+| Insert with `ok` missing | refused, `23514` |
+| Insert with `subsets` missing | refused, `23514` |
+| Insert with `witnesses` missing | refused, `23514` |
+| Insert with a non-array `approval_snapshot` | refused, `23514`, `scene_versions_approval_snapshot_is_array` |
+| Subset count matches module count on every row | **PASS** — 2 reports for 1 module, 4 for 2 |
+| One witness per active module on every row | **PASS** |
+| Pinned model recorded on every row, never a substitute | **PASS** |
+| `attempts > max_attempts` anywhere in `public.operations` | **none**, across **68** operations |
+| Maximum attempts ever observed, per stage | `base` 2, `module_discovery` 2, `module_commitment` 1, `proposals` 1, `compile` 1 |
+| Every `active_version_id` points at a real `scene_versions` row | **PASS**, 3 projects |
+
+The trigger probe is a real `update` against a real committed row, refused by
+Postgres. Nothing was fabricated to make it possible: the row it ran against
+was produced by §16.4's compilation.
+
+### 16.9 Deployment and deployed verification
+
+```
+vercel env ls production      # 6 variables, every one "Hidden", no NEXT_PUBLIC_ of any kind
+vercel --prod --yes
+```
+
+| Fact | Observed |
+|---|---|
+| Deployment | `https://firstplayable.vercel.app`, target `production`, status `ok` |
+| Immutable URL | `firstplayable-74c7bthei-mohamed-aziz-ayaris-projects.vercel.app` |
+| `/` and `/example` anonymously | 200 and 200 |
+| `SUPABASE_ACCESS_TOKEN` in the deployment environment | **absent**, as required |
+| `MODEL_COST_CAP_MICROS` in the deployment environment | absent, so the compiled-in $0.60 applies |
+
+`RUN_DEPLOY_VERIFY=1 DEPLOY_URL=https://firstplayable.vercel.app npm run verify:deployment`
+— **78 checks, 78 passed.**
+
+The deployed Phase 4 compilation ran in a real browser against real services:
+
+| Deployed check | Result |
+|---|---|
+| Build refused until an interaction is approved | PASS |
+| Stage list advanced in the locked wording | "Writing encounter", "Building Discovery", "Checking choices", all committed |
+| Any stage showing a third attempt | **none** |
+| Provider-call count the UI reported | 2, state `REVIEW_PLAYABLE` |
+| Pending validated scene appeared, nothing active | PASS, pending `1198bfa2…` |
+| Fourth provenance layer | 1 "Scene changed" line, matching the stored witness verbatim |
+| Pending scene played to an ending in the browser | PASS |
+| Requests caused by a complete playthrough, the ending, and a reset | **0** |
+| Nothing current until confirmed, then exactly the reviewed version | PASS |
+| Active version after a full page reload | PASS, `1198bfa2-ca45-4277-ac60-373423a373aa` |
+| Revision, share, publish, export, or compare control anywhere | **none**, 30 actionable elements checked |
+| Requests to `api.openai.com`, the Qloo host, or Supabase from the browser | **none**; 42 requests in the Phase 3 leg, all same-origin |
+| Credential or provider host in the rendered page or the 8 client chunks | **none** |
+| A second browser with its own empty cookie jar | refused; cannot build, advance, or activate |
+
+The first verifier run reported **77 checks, 1 failed**, and the failure was in
+the verifier rather than the application: a check named "a fresh anonymous
+session is still denied the same project" sent **no cookie at all** and
+asserted `404`. No owner session correctly answers `401`; `404` is what an
+*established* session that does not own the project gets, so that a stranger
+learns nothing about whether it exists. Both behaviours were already asserted
+correctly in the same script's HTTP matrix. The check now establishes a real
+session and asserts `404`, and the cookie-less case asserts `401`; both pass.
+
+### 16.10 Fresh-deployment persistence
+
+Verified against the deployment after the compile, with the same owner cookie:
+
+| Check | Result |
+|---|---|
+| The same active version comes back from the server | PASS, `1198bfa2…` |
+| Same creation time and the same scene, byte for byte | PASS, `created_at 2026-10-04T15:34:36.437958+00:00`, scene hash equal |
+| Still the active version rather than a pending review | PASS, `active` |
+| No owner session | refused `401`, learns nothing |
+| A fresh anonymous session | session established `200`, project read **`404`** |
+
+### 16.11 The offline gate at `2c12321`
+
+| Command | Result |
+|---|---|
+| `npm run typecheck` | **PASS**, no errors |
+| `npm test` | **PASS**, 628 tests in 30 files |
+| `npm run check:fixtures` | **PASS**, all fixture checks |
+| `npm run test:e2e` | **PASS**, 46 browser tests (which builds the assets it tests) |
+| `npm run build` | **PASS**, inside `test:e2e` |
+| `npm run check:secrets` | **PASS**, 166 tracked files and 350 built assets scanned |
+
+Test count moved 614 → 628 across this session.
+
+### 16.12 Tracked OpenAI spend
+
+Read live from `public.budget_buckets`, scope `model_cost_micros`, after
+everything above:
+
+| Fact | Value |
+|---|---|
+| Cap | **600,000** micro-USD = **$0.60**, cumulative, no reset |
+| Spent | **20,985** micro-USD = **$0.020985** |
+| Remaining | **579,015** micro-USD = **$0.579015** |
+| Tokens recorded | 95,419 |
+| Reservations still held | 0 |
+| Qloo calls, whole project history | **5**, unchanged by any compilation |
+
+Approximate legacy spend under the retired `model_calls` scope, not counted
+against the cap and not reconstructed: 31 calls, 129,089 tokens, roughly
+**$0.02–$0.08** at list prices.
+
+Every figure is a labelled estimate computed from provider-reported usage at
+published list prices. None of it is a billed amount read back from the
+account.
+
+### 16.13 The Phase 4 binary gate (handoff §Q)
+
+| Gate | Result |
+|---|---|
+| 1. Offline gate green locally | **PASS** (§16.11) |
+| 2. `20261004160000` applied and verified live | **PASS** (§4), plus `20261004173000` (§14) |
+| 3. Fresh brief, **one** real approved influence, playable scene | **PASS** (§16.4) |
+| 4. Fresh brief, **two** real approved influences, playable scene | **PASS** (§16.5) |
+| 5. No pending, rejected, or other-slot evidence entered a module prompt | **PASS** — offline sentinels, and measured slot isolation on the live composed scene (§16.5) |
+| 6. Mechanical witness per active module, stored on the version | **PASS** (§16.4, §16.5, §16.8) |
+| 7. Every supported removal subset validates, stored on the version | **PASS** — 2 of 2 and 4 of 4 (§16.4, §16.5) |
+| 8. A live stale result cannot activate; previous version survives failure | **PASS**, both checkpoints (§16.7) |
+| 9. Repair never exceeded its ceiling — no stage with `attempts > 2` | **PASS**, across 68 operations (§16.8) |
+| 10. Deployed application satisfies every box of handoff §O | **PASS**, 78 of 78 (§16.9, §16.10) |
+| 11. Evidence records the real numbers, including every failure | **PASS** — this document, including §16.1 |
+
+**Phase 4 PASSES.**
+
+### 16.14 Commits
+
+Five, in order, each one line and atomic:
+
+| Commit | Subject |
+|---|---|
+| `97ecbad` | feat: cap OpenAI spend at a cumulative $0.60 instead of 40 calls a day |
+| `971278a` | fix: make a module effect name its own variable by index so a foreign write is unrepresentable |
+| `7402826` | fix: let a module choose its mechanics and own none of their wiring |
+| `7f02617` | test: read the compiler identifier from source in the compile smoke |
+| `2c12321` | fix: assert the right refusal for a fresh session in the deployed verifier |
+
+`971278a` is an intermediate step that `7402826` subsumes: it narrowed an
+effect to an index into the module's own variables, which removed
+`FOREIGN_WRITE` and exposed `VARIABLE_NEVER_READ` underneath. It is kept as a
+separate commit because it is what the second live run measured.
+
+**Nothing was pushed.** `git status` is clean and the branch is ahead of its
+remote by these five commits plus the documentation commit that carries this
+record.
+
+---
+
+## 17. Known limitations, after the live acceptance
+
+Sections 13 and 15 are superseded for everything the gate covers. These remain
+true and are not gate items:
+
+1. **A module's mechanical vocabulary is one shape, repeated.** A mechanic is
+   always "do this new thing, and then the base action opens". The model
+   chooses how many, which verb, which base action each one earns, whether it
+   also adds a line, and all of the copy — but it cannot invent a differently
+   shaped mechanic. That is a deliberate trade for reliability, and it is the
+   first thing to revisit if module variety matters more than a first-attempt
+   commit rate.
+2. **Two live compilations is a small sample.** Every stage committed on its
+   first attempt in both, which is a better result than the previous
+   architecture ever produced, but it is two runs plus one deployed run and not
+   a reliability measurement.
+3. **The repair path is now exercised only offline.** No live stage needed its
+   permitted repair, so the live repair prompt is covered by the offline suite
+   and by §6's historical runs rather than by this session.
+4. **Cached input tokens were 0 on every observed call.** The cached-token
+   pricing path is covered offline against scripted provider envelopes; the
+   provider reported no cache hit in any live call, so the discounted rate has
+   not been exercised live.
+5. **The cost estimate is arithmetic, not billing.** It is computed from
+   provider-reported usage at published list prices. If the provider's prices
+   change, the estimate drifts from the real bill until the price table is
+   updated.
+6. **Per-call telemetry lives in the server log, not a table.** The durable
+   aggregate is the budget bucket; the per-call record is one structured
+   `[model-call]` line. On Vercel that is the function log and nothing else,
+   so it is not queryable after the log window.
+7. **Handoff §P items 3, 4 and 5 are not done**:
+   `docs/DEPLOYMENT_PREFLIGHT.md` has not been appended to, and `README.md`
+   still describes the studio as it was. `package.json`'s description was
+   corrected, because it asserted "pending live acceptance", which this
+   document disproves. None of these is a §Q gate item.

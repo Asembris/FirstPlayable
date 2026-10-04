@@ -1,7 +1,13 @@
 # FirstPlayable — build status
 
-**Completed phases:** Phase 1, Phase 2 and Phase 3.
-**Next authorized phase:** Phase 4 — bounded compilation and fresh playable generation.
+**Completed phases:** Phase 1, Phase 2, Phase 3 and **Phase 4**.
+**Next authorized phase:** Phase 5 — targeted revision, immutable sharing, and
+offline export. **Not started.**
+
+Phase 4 passed its binary gate on 4 October 2026 at code commit `2c12321`,
+after three failed attempts recorded in full below and in
+`docs/PHASE4_EVIDENCE.md`. See "The Phase 4 live acceptance" at the end of
+this file.
 
 This file is append-only across phases. The Phase 1 and Phase 2 records below
 are unchanged; the continuous-integration record and then the Phase 3 record
@@ -1305,3 +1311,155 @@ The next authorized work is finishing Phase 4, in this order:
    directions — see "The Phase 4 database constraint hardening" above.
 4. **Deploy and run `RUN_DEPLOY_VERIFY=1 npm run verify:deployment`**, whose
    Phase 4 sections are already written and committed.
+
+---
+
+## The Phase 4 live acceptance — 4 October 2026, final session
+
+**Branch:** `feat/phase-4-compilation` · **Last code commit:** `2c12321`,
+with this record committed immediately after it · **Nothing was pushed.**
+
+**Phase 4 PASSES.** Every item of the binary gate in
+`docs/PHASE4_LOCAL_HANDOFF.md` §Q is met, locally and against the deployment.
+The full record, including the two failed attempts that preceded it, is
+`docs/PHASE4_EVIDENCE.md` §16.
+
+### What this session found that the previous one had wrong
+
+The "Remaining local gates" list above, and `docs/PHASE4_EVIDENCE.md` §12.8,
+concluded that the live gate was blocked **solely** on the 40-calls-per-UTC-day
+model budget. That was half right. Once the cap was replaced, the gate was
+attempted twice and the **module** stage failed both times — while the base
+stage, which the recovery amendment had made deterministic, committed on its
+first attempt every time.
+
+| Attempt | `module_discovery` | Deterministic findings |
+|---|---|---|
+| 1 | failed, 2 / 2 | `FOREIGN_WRITE` — a module set `core.inspected` |
+| 2 | failed, 2 / 2 | `VARIABLE_NEVER_READ` — a flag set and never read |
+
+The recovery amendment had fixed the base stage and left the module stage
+asking a model to author a small state machine, which is the thing that had
+just been shown not to work.
+
+### The two changes
+
+**1. Cost-based protection replaced the 40-call cap.** A hard **cumulative
+$0.60** cap, enforced against an estimate computed from provider-reported
+usage, reusing the existing `budget_buckets` primitive under a new
+`model_cost_micros` scope with a non-rolling window. No migration, no new
+table, no new SQL function, no cost UI, no dashboard, no multi-provider
+abstraction. Call count is telemetry and gates nothing. Prior spend was not
+reconstructed: it is documented as approximate legacy spend of roughly
+**$0.02–$0.08** and is not counted against the cap.
+
+**2. The module amendment.** Every field of the module contract was classified
+as single-answer plumbing or genuine bounded mechanical choice. The plumbing —
+identifiers, namespaces, targets, conditions, effects, branches, the flag's
+initial value, the hook port, the absence of an ending binding — moved to the
+server. The choices stayed with the model: how many mechanics (1 to 3), each
+one's verb (`inspect` or `ask`), which base action it gates (enumerated from
+that slot's own ports, so commitment genuinely chooses between
+`core.ask_terms` and `core.withhold`), whether it adds a line on the effect
+port, whether its flag is visible, and all of the copy.
+
+The validator is **unchanged** — `fp-engine-validator-1.0`, while the compiler,
+prompt, and schema identifiers moved to `4.2`. The model is unchanged, no
+provider fallback was added, the 1-initial-plus-1-repair ceiling was not
+raised, no Qloo call was added to compilation, and slot isolation is unchanged.
+
+### The live results
+
+| Gate | Result |
+|---|---|
+| One-influence fresh compile | **PASS** — 2 provider calls, 3 advances, no repair |
+| Two-influence fresh compile | **PASS** — 3 provider calls, 4 advances, no repair |
+| Removal subsets | **PASS** — 2 of 2 and **4 of 4**, every one `ok` |
+| Mechanical witnesses | **PASS** — 1 and **2 independent** ones, naming different base actions |
+| Qloo calls during any compilation | **0**, measured rather than asserted |
+| `validate` stage provider calls | **0** |
+| Base and module reuse after an approval-only change | **PASS** — 1 provider call, not 3; identical base hash |
+| Live stale result, both checkpoints | **PASS** — `STALE_INPUT`; a stale activation refused with the previous version untouched |
+| Attempt ceiling | **PASS** — no stage above `attempts = 2` across 68 operations |
+| Row-level immutability trigger, live | **PASS** — `23001`, exercised for the first time |
+| Validated-version constraint, live, six negative shapes | **PASS** — all refused, `23514` |
+| Deployed verification | **PASS** — **78 of 78** checks against `https://firstplayable.vercel.app` |
+| Fresh-deployment persistence | **PASS** — same version, same scene byte for byte, strangers refused |
+
+### The offline gate at `2c12321`
+
+| Command | Result |
+|---|---|
+| `npm run typecheck` | **PASS** |
+| `npm test` | **PASS** — 628 tests in 30 files (was 614) |
+| `npm run check:fixtures` | **PASS** |
+| `npm run test:e2e` | **PASS** — 46 browser tests, building the assets it tests |
+| `npm run build` | **PASS** |
+| `npm run check:secrets` | **PASS** — 166 tracked files, 350 built assets |
+
+### Tracked OpenAI spend
+
+Read live from `public.budget_buckets`, scope `model_cost_micros`:
+
+| Fact | Value |
+|---|---|
+| Cap | **$0.60**, cumulative, no reset |
+| Spent | **$0.020985** (20,985 micro-USD, 95,419 tokens) |
+| Remaining | **$0.579015** |
+| Qloo calls, whole project history | **5**, unchanged by any compilation |
+
+Every figure is a labelled list-price estimate computed from provider-reported
+usage, not a billed amount read back from the account.
+
+### Commits
+
+| Commit | Subject |
+|---|---|
+| `97ecbad` | feat: cap OpenAI spend at a cumulative $0.60 instead of 40 calls a day |
+| `971278a` | fix: make a module effect name its own variable by index so a foreign write is unrepresentable |
+| `7402826` | fix: let a module choose its mechanics and own none of their wiring |
+| `7f02617` | test: read the compiler identifier from source in the compile smoke |
+| `2c12321` | fix: assert the right refusal for a fresh session in the deployed verifier |
+
+## Phase 4 exit gate
+
+| Gate (handoff §Q) | Result |
+|---|---|
+| 1. Offline gate green locally | **PASS** |
+| 2. Phase 4 migrations applied and verified live | **PASS** |
+| 3. One real approved influence produces a playable scene | **PASS** |
+| 4. Two real approved influences produce one | **PASS** |
+| 5. No pending, rejected, or other-slot evidence entered a module prompt | **PASS** |
+| 6. Mechanical witness per active module, stored on the version | **PASS** |
+| 7. Every supported removal subset validates, stored on the version | **PASS** |
+| 8. A live stale result cannot activate; the previous version survives | **PASS** |
+| 9. Repair never exceeded its declared ceiling | **PASS** |
+| 10. The deployed application satisfies every box of handoff §O | **PASS** |
+| 11. Evidence records the real numbers, including every failure | **PASS** |
+
+**Phase 4 is complete.**
+
+## What remains, and is not a gate item
+
+Three items of `docs/PHASE4_LOCAL_HANDOFF.md` §P are still outstanding:
+`docs/DEPLOYMENT_PREFLIGHT.md` has not been appended to, and `README.md` still
+describes the studio as it was before it could compile. `package.json`'s
+description was corrected, because it asserted "pending live acceptance" and
+that is no longer true.
+
+The honest limitations of what now passes are in `docs/PHASE4_EVIDENCE.md`
+§17. The two that matter most: a module's mechanical vocabulary is one shape
+repeated, which is a deliberate trade for reliability; and two live
+compilations plus one deployed one is a small sample, not a reliability
+measurement.
+
+## Next authorized phase
+
+**Phase 5 — targeted revision, immutable sharing, and offline export — is now
+unblocked by Phase 4's gate, but it is not started and was not started in this
+session.** No `POST /api/projects/:id/revisions` route, no revision command, no
+ending-copy override, no publication, no read token, no public player route,
+and no offline export exists. `tests/engine/fixtures.test.ts` asserts the route
+surface and `tests/server/migrations.test.ts` asserts the function surface, and
+both still pass, which is the mechanical proof that no Phase 5 capability was
+added.
