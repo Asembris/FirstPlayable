@@ -270,7 +270,8 @@ export type StageCheckpoint = z.infer<typeof StageCheckpointSchema>;
 export const CompilationCheckpointSchema = z.strictObject({
   snapshot: CompilationSnapshotSchema,
   state: CompilationStateSchema,
-  stages: z.record(CompilationStageSchema, StageCheckpointSchema),
+  /** Partial: only the stages this compilation actually has are present. */
+  stages: z.partialRecord(CompilationStageSchema, StageCheckpointSchema),
   /** The pending version this compilation produced, once it has one. */
   version_id: z.uuid().nullable(),
   failure: z
@@ -357,7 +358,7 @@ export const SceneVersionSummarySchema = z.strictObject({
   state: VersionStateSchema,
   created_at: z.string(),
   base_hash: z.string().min(16).max(64),
-  module_hashes: z.record(z.enum(SLOTS), z.string().min(16).max(64)),
+  module_hashes: z.partialRecord(z.enum(SLOTS), z.string().min(16).max(64)),
   active_slots: z.array(z.enum(SLOTS)),
   model_identifier: z.string().max(80).nullable(),
   compiler_identifier: z.string().max(80).nullable(),
