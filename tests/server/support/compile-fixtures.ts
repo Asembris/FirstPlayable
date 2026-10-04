@@ -19,13 +19,11 @@
 import type {
   BaseNarrativeCopy,
   ModuleCompilationOutput,
+  ModuleMechanic,
 } from "../../../src/domain/compile";
 import type { ApprovedInfluence, ApprovedInfluencePayload } from "../../../src/domain/influence";
-import type { Action, InfluenceModule } from "../../../src/domain/scene";
-import {
-  SECOND_COPY_BASE,
-  SECOND_COPY_DISCOVERY_V1,
-} from "../../../fixtures/second-copy";
+import { BUDGET } from "../../../src/domain/limits";
+import { SECOND_COPY_BASE } from "../../../fixtures/second-copy";
 
 /* --------------------------------------------------------------- sentinels */
 
@@ -157,34 +155,6 @@ export const COMMITMENT_APPROVAL = approvalRecord(COMMITMENT_APPROVAL_PAYLOAD);
  * An effect, back in the form a model writes it: the position of the variable
  * in the module's own declared array, which is the only way it can name one.
  */
-function toModelEffects(
-  effects: readonly { var_id: string }[],
-  declared: readonly { id: string }[],
-): { variable_index: number }[] {
-  return effects.map((effect) => ({
-    variable_index: declared.findIndex((variable) => variable.id === effect.var_id),
-  }));
-}
-
-/** Strips the server-assigned fields back out of a hand-authored action. */
-function toModelAction(
-  action: Action,
-  declared: readonly { id: string }[],
-): ModuleCompilationOutput["actions"][number] {
-  return {
-    id: action.id,
-    verb: action.verb,
-    label: action.label,
-    when: action.when,
-    branches: action.branches.map((branch) => ({
-      when: branch.when,
-      effects: toModelEffects(branch.effects, declared),
-      dialogue_id: branch.dialogue_id,
-      ending_id: branch.ending_id,
-    })),
-  };
-}
-
 /* ------------------------------------------------ base narrative copy */
 
 /**
@@ -251,224 +221,152 @@ export function forbiddenWordingBaseCopy(): BaseNarrativeCopy {
 /** The phrase {@link forbiddenWordingBaseCopy} uses, as a brief forbids it. */
 export const FORBIDDEN_PHRASE = "moral quandary";
 
-function moduleToModelOutput(module: InfluenceModule): ModuleCompilationOutput {
+/* -------------------------------------------------- influence modules */
+
+/**
+ * One mechanic in the module contract's own shape.
+ *
+ * The contract is now a list of mechanics and nothing else: the identifiers,
+ * conditions, effects, branches, dialogue node ids, and ports are all written
+ * by `moduleFromModelOutput`. These fixtures therefore author what a model
+ * authors and no more, which is the point — a fixture that could still spell
+ * out a condition would be testing a contract the provider is never given.
+ */
+function mechanic(
+  over: Partial<ModuleMechanic> & Pick<ModuleMechanic, "gate_port">,
+): ModuleMechanic {
   return {
-    variables: module.variables.map((variable) => ({
-      id: variable.id,
-      label: variable.label,
-      visible: variable.visible,
-    })),
-    actions: module.actions.map((action) => toModelAction(action, module.variables)),
-    dialogue: module.dialogue.map((node) => ({
-      id: node.id,
-      speaker_id: node.speaker_id,
-      text: node.text,
-    })),
-    gates: module.gates.map((gate) => ({
-      id: gate.id,
-      action_id: gate.action_id,
-      when: gate.when,
-      blocked_text: gate.blocked_text,
-    })),
-    on_actions: module.on_actions.map((hook) => ({
-      id: hook.id,
-      when: hook.when,
-      effects: toModelEffects(hook.effects, module.variables),
-      dialogue_id: hook.dialogue_id,
-    })),
+    verb: "ask",
+    action_label: "Ask what returning it will cost her",
+    flag_label: "Cost weighed",
+    flag_visible: false,
+    dialogue_speaker: "character",
+    dialogue_text: "It costs me the chance to change my mind. That is the whole of it.",
+    gate_blocked_text: "Ask what returning it costs her before promising.",
+    hook: null,
+    ...over,
   };
 }
 
-const DISCOVERY_FIXTURE = SECOND_COPY_DISCOVERY_V1.modules.find(
-  (module) => module.slot === "discovery",
-) as InfluenceModule;
-
-/** A Discovery module the real validator accepts, with a real witness. */
+/**
+ * A Discovery module the real validator accepts, with a real witness.
+ *
+ * One mechanic: inspecting the letter closely tells the player something, and
+ * `core.give` stays locked until they have done it. Closing `core.give`
+ * changes which actions are legal, which is what makes the witness mechanical
+ * rather than decorative.
+ */
 export function validDiscoveryOutput(): ModuleCompilationOutput {
-  return moduleToModelOutput(DISCOVERY_FIXTURE);
+  return {
+    mechanics: [
+      mechanic({
+        gate_port: "core.give",
+        verb: "inspect",
+        action_label: "Look at the handwriting on the envelope",
+        flag_label: "Handwriting read",
+        dialogue_speaker: "narrator",
+        dialogue_text:
+          "The address is written twice, once crossed out. Someone changed their mind about where this was going.",
+        gate_blocked_text: "Look at the envelope properly before handing it over.",
+        hook: {
+          dialogue_speaker: "narrator",
+          dialogue_text: "Held to the light, the second address shows through the first.",
+        },
+      }),
+    ],
+  };
 }
 
 /**
  * A Commitment module the real validator accepts, with a real witness.
  *
- * It attaches to its own two ports: a hook on `core.ask_context` records that
- * the cost was named, and a gate on `core.ask_terms` requires the cost to have
- * been named before the promise can be made. Because `core.withhold` requires
- * `core.promised` to still be false, closing `core.ask_terms` changes which
- * endings remain reachable, which is what makes the witness mechanical.
+ * One mechanic with a hook: a line on `core.ask_context` sets up the cost, and
+ * `core.ask_terms` stays locked until the player has asked what returning the
+ * letter costs her. Because `core.withhold` requires `core.promised` to still
+ * be false, closing `core.ask_terms` changes which endings remain reachable.
  */
 export function validCommitmentOutput(): ModuleCompilationOutput {
   return {
-    variables: [
-      { id: "commitment.cost_named", label: "Cost named", visible: false },
-      { id: "commitment.cost_weighed", label: "Cost weighed", visible: false },
-    ],
-    actions: [
-      {
-        id: "commitment.ask_cost",
-        verb: "ask",
-        label: "Ask what returning it will cost her",
-        when: {
-          kind: "any",
-          clauses: [
-            [
-              { var_id: "commitment.cost_named", equals: true },
-              { var_id: "commitment.cost_weighed", equals: false },
-            ],
-          ],
+    mechanics: [
+      mechanic({
+        gate_port: "core.ask_terms",
+        hook: {
+          dialogue_speaker: "character",
+          dialogue_text:
+            "If you promise, I will hold you to it. I would rather you said nothing than said it lightly.",
         },
-        branches: [
-          {
-            when: { kind: "always" },
-            // commitment.cost_weighed, the second variable declared above.
-            effects: [{ variable_index: 1 }],
-            dialogue_id: "commitment.cost_text",
-            ending_id: null,
-          },
-        ],
-      },
+      }),
     ],
-    dialogue: [
-      {
-        id: "commitment.named_text",
-        speaker_id: "nia",
-        text: "If you promise, I will hold you to it. I would rather you said nothing than said it lightly.",
-      },
-      {
-        id: "commitment.cost_text",
-        speaker_id: "nia",
-        text: "It costs me the chance to change my mind. That is the whole of it.",
-      },
-    ],
-    gates: [
-      {
-        id: "commitment.terms_gate",
-        action_id: "core.ask_terms",
-        when: {
-          kind: "any",
-          clauses: [[{ var_id: "commitment.cost_weighed", equals: true }]],
-        },
-        blocked_text: "Ask what returning it costs her before promising.",
-      },
-    ],
-    on_actions: [
-      {
-        id: "commitment.context_hook",
-        when: { kind: "always" },
-        // commitment.cost_named, the first variable declared above.
-        effects: [{ variable_index: 0 }],
-        dialogue_id: "commitment.named_text",
-      },
-    ],
-  };
-}
-
-/** A module that reads the other slot's variable. */
-export function crossSlotModuleOutput(): ModuleCompilationOutput {
-  const output = validCommitmentOutput();
-  return {
-    ...output,
-    gates: output.gates.map((gate) => ({
-      ...gate,
-      when: {
-        kind: "any" as const,
-        clauses: [[{ var_id: "discovery.disclosed", equals: true }]],
-      },
-    })),
   };
 }
 
 /**
- * A module whose effect names a variable it never declared.
+ * Two mechanics in one module, each gating a different commitment port.
  *
- * Writing a *foundation* variable is no longer expressible: an effect names a
- * position in the module's own `variables` array, so there is no field in
- * which to put `core.promised`. What remains representable is an index past
- * the end of that array, and this is it. The server resolves it to a reserved
- * undeclared id, so it lands as one readable `VAR_UNRESOLVED` finding rather
- * than as a silently dropped effect.
+ * It exercises the part of the contract that is genuinely the model's choice:
+ * how many mechanics to build, and which base action each one earns.
  */
-export function unresolvedEffectModuleOutput(): ModuleCompilationOutput {
-  const output = validCommitmentOutput();
+export function twoMechanicCommitmentOutput(): ModuleCompilationOutput {
   return {
-    ...output,
-    on_actions: output.on_actions.map((hook) => ({
-      ...hook,
-      effects: [{ variable_index: output.variables.length + 3 }],
-    })),
+    mechanics: [
+      validCommitmentOutput().mechanics[0] as ModuleMechanic,
+      mechanic({
+        gate_port: "core.withhold",
+        action_label: "Ask who else has come looking for it",
+        flag_label: "Other claimants asked about",
+        flag_visible: true,
+        dialogue_speaker: "character",
+        dialogue_text: "No one. That is what frightens me about it being here at all.",
+        gate_blocked_text: "Find out who else wants it before you decide to keep it.",
+      }),
+    ],
   };
 }
 
-/** A module that attaches to a port it does not own. */
+/**
+ * A module that gates a port belonging to the other slot.
+ *
+ * The contract the provider is given cannot express this: `gate_port` is
+ * enumerated from the asked-for slot's own ports, so a commitment module is
+ * offered only `core.ask_terms` and `core.withhold`. It stays representable in
+ * the slot-agnostic type, which is what lets this fixture prove that
+ * `GATE_PORT_INVALID` is still enforced underneath the narrowed schema rather
+ * than merely unreachable.
+ */
 export function wrongPortModuleOutput(): ModuleCompilationOutput {
-  const output = validCommitmentOutput();
-  return {
-    ...output,
-    gates: output.gates.map((gate) => ({ ...gate, action_id: "core.give" })),
-  };
+  return { mechanics: [mechanic({ gate_port: "core.give" })] };
 }
 
-/** A module whose own action ends the scene. */
-export function terminalModuleOutput(): ModuleCompilationOutput {
-  const output = validCommitmentOutput();
+/** More mechanics than the module variable budget allows. */
+export function overBudgetModuleOutput(): ModuleCompilationOutput {
   return {
-    ...output,
-    actions: output.actions.map((action) => ({
-      ...action,
-      branches: action.branches.map((branch) => ({ ...branch, ending_id: "end.keep" })),
-    })),
-  };
-}
-
-/**
- * A module that is schema-valid and structurally legal but mechanically empty.
- *
- * It introduces a flag, sets it from its own action, reads it in its own
- * condition, and gates nothing. No legal action availability and no reachable
- * ending changes, so the witness search finds nothing consequential.
- */
-export function mechanicallyEmptyModuleOutput(): ModuleCompilationOutput {
-  return {
-    variables: [{ id: "commitment.noted", label: "Noted", visible: false }],
-    actions: [
-      {
-        id: "commitment.ask_mood",
-        verb: "ask",
-        label: "Ask how her evening has been",
-        when: {
-          kind: "any",
-          clauses: [[{ var_id: "commitment.noted", equals: false }]],
-        },
-        branches: [
-          {
-            when: { kind: "always" },
-            // commitment.noted, the only variable this module declares.
-            effects: [{ variable_index: 0 }],
-            dialogue_id: "commitment.mood_text",
-            ending_id: null,
-          },
-        ],
-      },
-    ],
-    dialogue: [
-      {
-        id: "commitment.mood_text",
-        speaker_id: "nia",
-        text: "Long. The trains were late and the platform was cold. None of that matters now.",
-      },
-    ],
-    gates: [],
-    on_actions: [],
-  };
-}
-
-/** A module whose ids are outside its slot namespace. */
-export function badNamespaceModuleOutput(): ModuleCompilationOutput {
-  const output = validCommitmentOutput();
-  return {
-    ...output,
-    variables: output.variables.map((variable, index) =>
-      index === 0 ? { ...variable, id: "rogue.cost_named" } : variable,
+    mechanics: Array.from({ length: BUDGET.module_variables + 2 }, (_unused, index) =>
+      mechanic({
+        gate_port: "core.ask_terms",
+        action_label: `Ask her something else, the ${index + 1}th time`,
+        flag_label: `Asked ${index + 1}`,
+      }),
     ),
+  };
+}
+
+/** A module whose line uses {@link FORBIDDEN_PHRASE}. */
+export function forbiddenWordingModuleOutput(): ModuleCompilationOutput {
+  return {
+    mechanics: [
+      mechanic({
+        gate_port: "core.ask_terms",
+        dialogue_text: "She will not say. The whole affair is a moral quandary to her.",
+      }),
+    ],
+  };
+}
+
+/** A module whose line carries a control character the scene contract refuses. */
+export function nonPlainTextModuleOutput(): ModuleCompilationOutput {
+  return {
+    mechanics: [
+      mechanic({ gate_port: "core.ask_terms", dialogue_text: "She weighs it. Then nothing." }),
+    ],
   };
 }

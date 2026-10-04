@@ -30,8 +30,8 @@ import {
   SENTINELS,
   SENTINELS_FORBIDDEN_IN_COMMITMENT,
   SENTINELS_FORBIDDEN_IN_DISCOVERY,
-  crossSlotModuleOutput,
-  mechanicallyEmptyModuleOutput,
+  overBudgetModuleOutput,
+  wrongPortModuleOutput,
   nonPlainTextBaseCopy,
   validBaseCopy,
   validCommitmentOutput,
@@ -234,16 +234,26 @@ describe("the module stage", () => {
     }
   });
 
-  it("rejects a mechanically empty module, which is the point of the witness", async () => {
-    const compiler = fakeCompiler({ module: [{ output: mechanicallyEmptyModuleOutput() }] });
+  it("refuses the other slot's port before it can become a candidate", async () => {
+    // The slot's own contract is what the provider is given, so a foreign
+    // port is not a rejected candidate but an unparseable response. The
+    // validator still enforces the rule underneath; see compile-assemble.
+    const compiler = fakeCompiler({ module: [{ output: wrongPortModuleOutput() }] });
+    await expect(runModuleStage(moduleInput("commitment"), compiler)).rejects.toBeInstanceOf(
+      ModelError,
+    );
+  });
+
+  it("rejects a module that asks for more mechanics than its budget allows", async () => {
+    const compiler = fakeCompiler({ module: [{ output: overBudgetModuleOutput() }] });
     const outcome = await runModuleStage(moduleInput("commitment"), compiler);
     expect(outcome.kind).toBe("rejected");
     if (outcome.kind !== "rejected") return;
-    expect(outcome.errors.map((error) => error.code)).toContain("MODULE_WITNESS_MISSING");
+    expect(outcome.errors.map((error) => error.code)).toContain("SCHEMA_INVALID");
   });
 
-  it("rejects a cross-slot read and keeps the finding free of the other approval", async () => {
-    const compiler = fakeCompiler({ module: [{ output: crossSlotModuleOutput() }] });
+  it("keeps a rejection's findings free of the other approval", async () => {
+    const compiler = fakeCompiler({ module: [{ output: overBudgetModuleOutput() }] });
     const outcome = await runModuleStage(moduleInput("commitment"), compiler);
     expect(outcome.kind).toBe("rejected");
     if (outcome.kind !== "rejected") return;
@@ -252,15 +262,15 @@ describe("the module stage", () => {
   });
 
   it("shows a module repair its own context, candidate, and findings only", async () => {
-    const rejected = mechanicallyEmptyModuleOutput();
+    const rejected = overBudgetModuleOutput();
     const compiler = fakeCompiler({ module: [{ output: validCommitmentOutput() }] });
     const outcome = await runModuleStage(
       moduleInput("commitment", {
         candidate: rejected,
         errors: [
           {
-            code: "MODULE_WITNESS_MISSING",
-            detail: "the commitment module changes no legal action availability",
+            code: "SCHEMA_INVALID",
+            detail: "modules.0.variables: Too big: expected array to have <=3 items",
           },
         ],
       }),
@@ -279,9 +289,7 @@ describe("the module stage", () => {
     expect(payload.stage).toBe("repair");
     expect(payload.context.slot).toBe("commitment");
     expect(payload.rejected_output).toEqual(rejected);
-    expect(payload.findings.map((finding) => finding.code)).toEqual([
-      "MODULE_WITNESS_MISSING",
-    ]);
+    expect(payload.findings.map((finding) => finding.code)).toEqual(["SCHEMA_INVALID"]);
     const bytes = JSON.stringify(request);
     for (const sentinel of SENTINELS_FORBIDDEN_IN_COMMITMENT) {
       expect(bytes, `module repair leaked ${sentinel}`).not.toContain(sentinel);
@@ -445,13 +453,16 @@ describe("the base instruction block asks for writing and nothing else", () => {
  * shape was not, exactly as in the base block before it was corrected.
  */
 describe("the module block shows how a module variable is wired", () => {
-  it("names the set-once, read-in-the-gate shape for each slot", () => {
+  it("describes a mechanic as a flag, an action, and a gate, for each slot", () => {
     for (const slot of ["discovery", "commitment"] as const) {
       const block = moduleInstructions(slot);
-      expect(block, slot).toMatch(/only ever set, or only ever read, is\s+rejected/);
-      expect(block, slot).toContain(`${slot}.learned`);
-      expect(block, slot).toMatch(/taken once/);
-      expect(block, slot).toMatch(/gated base action opens only after/);
+      expect(block, slot).toMatch(/one hidden-or-shown flag/);
+      expect(block, slot).toMatch(/offered only while that flag is\s+false/);
+      expect(block, slot).toMatch(/locks that action and\s+shows your gate_blocked_text/);
+      // It must not ask for wiring the contract no longer accepts.
+      expect(block, slot).toMatch(
+        /You do not write identifiers, conditions, effects, branches, targets, or dialogue/,
+      );
     }
   });
 
@@ -463,11 +474,17 @@ describe("the module block shows how a module variable is wired", () => {
   });
 
   it("tells each module that its hook port is not its to name", () => {
-    expect(moduleInstructions("discovery")).toMatch(
-      /a hook has no action field, and this application\s+attaches every hook you return to core\.inspect/,
-    );
+    for (const slot of ["discovery", "commitment"] as const) {
+      expect(moduleInstructions(slot), slot).toMatch(
+        /You do not name that attachment point; this application attaches it\./,
+      );
+    }
+  });
+
+  it("tells each slot which base actions it may gate, and only those", () => {
+    expect(moduleInstructions("discovery")).toMatch(/Every mechanic you write gates core\.give/);
     expect(moduleInstructions("commitment")).toMatch(
-      /a hook has no action field, and this application\s+attaches every hook you return to core\.ask_context/,
+      /gates either core\.ask_terms or core\.withhold/,
     );
   });
 });

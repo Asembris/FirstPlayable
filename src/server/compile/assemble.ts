@@ -34,15 +34,18 @@
  */
 
 import type { Brief } from "@/domain/brief";
-import type { ModuleCompilationOutput } from "@/domain/compile";
+import type {
+  ModuleCompilationOutput,
+  ModuleMechanic,
+  ModuleSpeaker,
+} from "@/domain/compile";
 import type { ApprovedInfluence, Slot } from "@/domain/influence";
 import { FIXED_PORTS, SLOTS, VERB_TARGET_KIND } from "@/domain/limits";
 import type {
   Action,
-  ActionBranch,
+  Condition,
   CoreScene,
   DialogueNode,
-  Effect,
   Gate,
   InfluenceModule,
   InfluenceReference,
@@ -100,97 +103,166 @@ export function targetFor(verb: string, world: World): Target {
   }
 }
 
-/* ------------------------------------------------------------ conversions */
+/* ---------------------------------------------- the module, materialized */
 
 /**
- * The id a module's effect resolves to when it names a position that does not
- * exist in its own `variables` array.
+ * The identifiers one mechanic owns, derived from its position.
  *
- * It is deliberately a legal-looking identifier that is certain not to be
- * declared, so the Phase 1 validator reports it as `VAR_UNRESOLVED` against
- * this exact name. An out-of-range index therefore becomes one readable,
- * repairable finding rather than a thrown error or a silently dropped effect:
- * dropping it would change what the module does, and a branch that sets
- * nothing is a different failure with a misleading code.
+ * Every one is the server's. They are positional rather than slugged from the
+ * model's own labels, so no model text reaches an identifier and the same
+ * mechanics always hash the same way.
  */
-export function unresolvedEffectTargetId(slot: Slot): string {
-  return `${slot}.effect_target_out_of_range`;
-}
-
-/**
- * Effects, resolved against the module's own declared variables.
- *
- * `op: "set_true"` is written here, never read from model output, and the
- * target is looked up by the index the model gave rather than copied from a
- * string it chose. A module consequently cannot write the foundation's state,
- * or the other slot's, in any way the contract can express.
- */
-function toEffects(
-  effects: readonly { variable_index: number }[],
-  declared: readonly { id: string }[],
-  slot: Slot,
-): Effect[] {
-  return effects.map((effect) => ({
-    op: "set_true",
-    var_id: declared[effect.variable_index]?.id ?? unresolvedEffectTargetId(slot),
-  }));
-}
-
-function toVariables(
-  variables: readonly { id: string; label: string; visible: boolean }[],
-): StateVariable[] {
-  // `initial: false` is a contract literal: every flag begins false.
-  return variables.map((variable) => ({
-    id: variable.id,
-    label: variable.label,
-    initial: false,
-    visible: variable.visible,
-  }));
-}
-
-function toDialogue(
-  dialogue: readonly { id: string; speaker_id: string; text: string }[],
-): DialogueNode[] {
-  return dialogue.map((node) => ({
-    id: node.id,
-    speaker_id: node.speaker_id,
-    text: node.text,
-  }));
-}
-
-type ModelBranch = ModuleCompilationOutput["actions"][number]["branches"][number];
-type ModelAction = ModuleCompilationOutput["actions"][number];
-
-function toBranch(
-  branch: ModelBranch,
-  declared: readonly { id: string }[],
-  slot: Slot,
-): ActionBranch {
+export function mechanicIds(slot: Slot, index: number): {
+  flag: string;
+  action: string;
+  gate: string;
+  line: string;
+  hook: string;
+  hookLine: string;
+} {
+  const n = index + 1;
   return {
-    when: branch.when,
-    effects: toEffects(branch.effects, declared, slot),
-    dialogue_id: branch.dialogue_id,
-    ending_id: branch.ending_id,
+    flag: `${slot}.state_${n}`,
+    action: `${slot}.action_${n}`,
+    gate: `${slot}.gate_${n}`,
+    line: `${slot}.line_${n}`,
+    hook: `${slot}.hook_${n}`,
+    hookLine: `${slot}.hook_line_${n}`,
   };
 }
 
-function toAction(
-  action: ModelAction,
+/** The declared NPC's id, for the one speaker choice that is not reserved. */
+function speakerId(speaker: ModuleSpeaker, world: World): string {
+  return speaker === "character" ? world.characters[0].id : speaker;
+}
+
+/**
+ * One mechanic, wired into the engine.
+ *
+ * Everything here that is not a label or a line is written by this function
+ * from the product contract, and the wiring is what makes a whole class of
+ * live findings unrepresentable rather than merely illegal:
+ *
+ *   * the action's availability condition requires its own flag to be false,
+ *     and its single branch sets that flag, so the action always moves state
+ *     from false to true when it is offered (`NO_PROGRESS`) and can be taken
+ *     once;
+ *   * that same condition is a read of the flag, and the gate's condition is
+ *     a second one, so a declared flag is always both written and read
+ *     (`VARIABLE_NEVER_WRITTEN`, `VARIABLE_NEVER_READ`);
+ *   * the only variable an effect can name is this mechanic's own
+ *     (`FOREIGN_WRITE`, and a cross-slot `VAR_UNRESOLVED`);
+ *   * the branch has no ending binding at all
+ *     (`MODULE_ACTION_TERMINATES`, `NONTERMINAL_ACTION_ENDS`);
+ *   * there is exactly one branch and its condition is `always`, so exactly
+ *     one branch applies in every reachable state (`AMBIGUOUS_BRANCH`,
+ *     `DEAD_BRANCH`);
+ *   * the gate's port comes from the slot's own enumeration and the hook's is
+ *     the slot's single effect port (`GATE_PORT_INVALID`,
+ *     `HOOK_PORT_INVALID`);
+ *   * every identifier is this function's (`NAMESPACE_INVALID`), and the
+ *     speaker is resolved from a three-value enumeration
+ *     (`SPEAKER_UNRESOLVED`).
+ *
+ * The gate blocks while the flag is false and passes once it is true, which is
+ * what `GATE_NEVER_BLOCKS` and `GATE_NEVER_PASSES` require and what makes the
+ * mechanical witness a changed action availability rather than extra prose.
+ * None of this decides whether the result is *good*: the validator still runs
+ * unchanged over the composed scene and still rejects a module that breaks a
+ * budget, a reachability rule, or the brief's forbidden wording.
+ */
+function materializeMechanic(
+  mechanic: ModuleMechanic,
+  slot: Slot,
+  index: number,
   world: World,
-  declared: readonly { id: string }[],
-  slot: Slot,
-): Action {
+): {
+  variable: StateVariable;
+  action: Action;
+  gate: Gate;
+  dialogue: DialogueNode[];
+  hooks: OnAction[];
+} {
+  const ids = mechanicIds(slot, index);
+  // Reading its own flag as false: the availability condition and, with the
+  // effect below, the whole of this mechanic's progress guarantee.
+  const notYet: Condition = {
+    kind: "any",
+    clauses: [[{ var_id: ids.flag, equals: false }]],
+  };
+  const done: Condition = {
+    kind: "any",
+    clauses: [[{ var_id: ids.flag, equals: true }]],
+  };
+  const dialogue: DialogueNode[] = [
+    {
+      id: ids.line,
+      speaker_id: speakerId(mechanic.dialogue_speaker, world),
+      text: mechanic.dialogue_text,
+    },
+  ];
+  const hooks: OnAction[] = [];
+  if (mechanic.hook !== null) {
+    dialogue.push({
+      id: ids.hookLine,
+      speaker_id: speakerId(mechanic.hook.dialogue_speaker, world),
+      text: mechanic.hook.dialogue_text,
+    });
+    hooks.push({
+      id: ids.hook,
+      // The slot's one effect port. A mechanic has no field in which to name
+      // an attachment point, so it cannot attach to the other slot's.
+      action_id: FIXED_PORTS[slot].effect_action_ids[0],
+      when: { kind: "always" },
+      /*
+       * A line, and no state change.
+       *
+       * A hook that set this mechanic's own flag would defeat its own gate:
+       * the slot's effect port sits on the path to the action the gate
+       * guards, so the flag would always already be true by the time the
+       * gate could matter, and the engine would report `GATE_NEVER_BLOCKS`
+       * against a module that looks correct. That was observed as soon as
+       * the wiring moved here, which is the argument for the wiring being
+       * here. The mechanic's flag is set by the mechanic's own action and
+       * nothing else.
+       */
+      effects: [],
+      dialogue_id: ids.hookLine,
+    });
+  }
   return {
-    id: action.id,
-    verb: action.verb,
-    label: action.label,
-    target: targetFor(action.verb, world),
-    when: action.when,
-    branches: action.branches.map((branch) => toBranch(branch, declared, slot)),
+    // `initial: false` is a contract literal: every flag begins false.
+    variable: {
+      id: ids.flag,
+      label: mechanic.flag_label,
+      initial: false,
+      visible: mechanic.flag_visible,
+    },
+    action: {
+      id: ids.action,
+      verb: mechanic.verb,
+      label: mechanic.action_label,
+      target: targetFor(mechanic.verb, world),
+      when: notYet,
+      branches: [
+        {
+          when: { kind: "always" },
+          effects: [{ op: "set_true", var_id: ids.flag }],
+          dialogue_id: ids.line,
+          ending_id: null,
+        },
+      ],
+    },
+    gate: {
+      id: ids.gate,
+      action_id: mechanic.gate_port,
+      when: done,
+      blocked_text: mechanic.gate_blocked_text,
+    },
+    dialogue,
+    hooks,
   };
 }
-
-/* ------------------------------------------------------------ the module */
 
 /**
  * One module, with its slot and its approval binding written by the server.
@@ -207,31 +279,17 @@ export function moduleFromModelOutput(
   approvalId: string,
   world: World,
 ): InfluenceModule {
-  const gates: Gate[] = output.gates.map((gate) => ({
-    id: gate.id,
-    action_id: gate.action_id,
-    when: gate.when,
-    blocked_text: gate.blocked_text,
-  }));
-  // The slot's one effect port, written here rather than taken from the
-  // module. A module has no field in which to name an attachment point, so it
-  // cannot attach to the other slot's port even by mistake.
-  const hookPort = FIXED_PORTS[slot].effect_action_ids[0];
-  const hooks: OnAction[] = output.on_actions.map((hook) => ({
-    id: hook.id,
-    action_id: hookPort,
-    when: hook.when,
-    effects: toEffects(hook.effects, output.variables, slot),
-    dialogue_id: hook.dialogue_id,
-  }));
+  const materialized = output.mechanics.map((mechanic, index) =>
+    materializeMechanic(mechanic, slot, index, world),
+  );
   return {
     slot,
     approval_id: sceneApprovalId(approvalId),
-    variables: toVariables(output.variables),
-    actions: output.actions.map((action) => toAction(action, world, output.variables, slot)),
-    dialogue: toDialogue(output.dialogue),
-    gates,
-    on_actions: hooks,
+    variables: materialized.map((entry) => entry.variable),
+    actions: materialized.map((entry) => entry.action),
+    dialogue: materialized.flatMap((entry) => entry.dialogue),
+    gates: materialized.map((entry) => entry.gate),
+    on_actions: materialized.flatMap((entry) => entry.hooks),
   };
 }
 

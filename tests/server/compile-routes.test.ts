@@ -17,7 +17,7 @@ import {
 } from "./support/fake-compiler";
 import {
   SENTINELS,
-  mechanicallyEmptyModuleOutput,
+  wrongPortModuleOutput,
   nonPlainTextBaseCopy,
   validBaseCopy,
   validCommitmentOutput,
@@ -512,11 +512,11 @@ describe("the repair ceiling", () => {
     expect(compiler.calls()).toBe(2);
   });
 
-  it("repairs a mechanically empty module rather than accepting it", async () => {
+  it("repairs a module the validator refused rather than accepting it", async () => {
     const compiler = fakeCompiler({
       base: [{ output: validBaseCopy() }],
       module: [
-        { output: mechanicallyEmptyModuleOutput() },
+        { output: wrongPortModuleOutput() },
         { output: validCommitmentOutput() },
       ],
     });

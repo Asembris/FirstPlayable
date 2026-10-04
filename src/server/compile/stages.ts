@@ -23,7 +23,7 @@
 import type { Brief } from "@/domain/brief";
 import {
   BaseNarrativeCopySchema,
-  ModuleCompilationOutputSchema,
+  moduleOutputSchemaFor,
   type BaseNarrativeCopy,
   type ModuleCompilationOutput,
 } from "@/domain/compile";
@@ -243,7 +243,9 @@ export async function runModuleStage(
 
   const result = await compiler.generate({
     schemaName: MODULE_SCHEMA_NAME,
-    schema: ModuleCompilationOutputSchema,
+    // The slot's own contract, so `gate_port` enumerates only this slot's
+    // ports. Discovery has exactly one, so the provider forces it.
+    schema: moduleOutputSchemaFor(input.slot),
     instructions: repairing
       ? `${moduleInstructions(input.slot)}\n\n${repairNote(input.repair?.errors ?? [])}`
       : moduleInstructions(input.slot),

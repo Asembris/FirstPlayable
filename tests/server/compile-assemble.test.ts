@@ -6,9 +6,14 @@ import {
   SECOND_COPY_BRIEF,
   SECOND_COPY_DISCOVERY_V1,
 } from "../../fixtures/second-copy";
-import { FIXED_PORTS } from "../../src/domain/limits";
+import { FIXED_PORTS, RESERVED_SPEAKER_IDS } from "../../src/domain/limits";
 import { baseCoreFromCopy } from "../../src/server/compile/base";
-import { ModuleCompilationOutputSchema } from "../../src/domain/compile";
+import {
+  MODULE_SPEAKERS,
+  type ModuleCompilationOutput,
+  ModuleCompilationOutputSchema,
+  moduleOutputSchemaFor,
+} from "../../src/domain/compile";
 import {
   assembleScene,
   mechanicIdsOf,
@@ -17,7 +22,7 @@ import {
   sceneApprovalId,
   sceneIdFor,
   sceneReferenceId,
-  unresolvedEffectTargetId,
+  mechanicIds,
   worldFromBrief,
 } from "../../src/server/compile/assemble";
 import {
@@ -29,12 +34,9 @@ import {
 import {
   COMMITMENT_APPROVAL,
   DISCOVERY_APPROVAL,
-  badNamespaceModuleOutput,
-  unresolvedEffectModuleOutput,
-  crossSlotModuleOutput,
-  mechanicallyEmptyModuleOutput,
+  overBudgetModuleOutput,
+  twoMechanicCommitmentOutput,
   nonPlainTextBaseCopy,
-  terminalModuleOutput,
   validBaseCopy,
   validCommitmentOutput,
   validDiscoveryOutput,
@@ -274,92 +276,181 @@ describe("module generation", () => {
     expect(verdict.report.module_witnesses.commitment?.mechanical).toBe(true);
   });
 
-  it("rejects a module that reads the other slot's state", () => {
-    const verdict = moduleVerdict("commitment", crossSlotModuleOutput());
-    expect(verdict.ok).toBe(false);
-    expect(verdict.errors.map((error) => error.code)).toContain("VAR_UNRESOLVED");
+  it("accepts two mechanics in one module, each earning a different base action", () => {
+    const verdict = moduleVerdict("commitment", twoMechanicCommitmentOutput());
+    expect(verdict.ok, verdict.errors.map((error) => error.code).join(",")).toBe(true);
+    expect(verdict.report.module_witnesses.commitment?.mechanical).toBe(true);
   });
 
-  it("cannot express writing a foundation variable at all", () => {
-    // An effect has exactly one field, and it is an index. A condition still
-    // names a variable by id, because reading the foundation is allowed; it is
-    // writing that has nowhere to put a foundation id.
-    const schema = z.toJSONSchema(ModuleCompilationOutputSchema) as Record<string, unknown>;
-    const effectItems = (path: string[]): Record<string, unknown> => {
-      let node: Record<string, unknown> = schema;
-      for (const key of path) node = node[key] as Record<string, unknown>;
-      return node;
-    };
-    for (const path of [
-      ["properties", "actions", "items", "properties", "branches", "items", "properties", "effects", "items"],
-      ["properties", "on_actions", "items", "properties", "effects", "items"],
-    ]) {
-      const effect = effectItems(path);
-      expect(Object.keys(effect["properties"] as object)).toEqual(["variable_index"]);
-      expect((effect["properties"] as Record<string, Record<string, unknown>>)["variable_index"]?.["type"]).toBe(
-        "integer",
-      );
-      expect(effect["additionalProperties"]).toBe(false);
-    }
+  /**
+   * The live failure classes, each one now unrepresentable.
+   *
+   * These are the exact deterministic codes the real provider produced against
+   * the previous module contract, recorded in `docs/PHASE4_EVIDENCE.md`. Each
+   * assertion is about the contract rather than the validator: the validator
+   * still contains every one of these checks, and the engine suite still
+   * exercises them against directly constructed scenes. What changed is that a
+   * module can no longer express the mistake.
+   */
+  it("gives a module no field in which to write a foundation variable", () => {
+    const schema = z.toJSONSchema(ModuleCompilationOutputSchema);
+    const mechanic = ((schema as Record<string, Record<string, Record<string, Record<string, unknown>>>>)[
+      "properties"
+    ]?.["mechanics"]?.["items"] ?? {}) as Record<string, unknown>;
+    const fields = Object.keys((mechanic["properties"] ?? {}) as object).sort();
 
-    // Every effect in a legal module resolves to one of its own variables.
+    // The whole model-facing surface of a module, in one assertion.
+    expect(fields).toEqual(
+      [
+        "action_label",
+        "dialogue_speaker",
+        "dialogue_text",
+        "flag_label",
+        "flag_visible",
+        "gate_port",
+        "gate_blocked_text",
+        "hook",
+        "verb",
+      ].sort(),
+    );
+    expect(mechanic["additionalProperties"]).toBe(false);
+
+    // Nothing anywhere in the contract can carry an identifier, a condition,
+    // an effect, a branch, or an ending binding.
+    const whole = JSON.stringify(schema);
+    for (const absent of [
+      "var_id",
+      "variable_index",
+      "effects",
+      "branches",
+      "ending_id",
+      "dialogue_id",
+      "action_id",
+      "clauses",
+      "initial",
+      "target",
+    ]) {
+      expect(whole, `a module must not be able to name ${absent}`).not.toContain(`"${absent}"`);
+    }
+  });
+
+  it("writes every identifier, condition, and effect itself", () => {
     const module = moduleFromModelOutput(
-      validCommitmentOutput(),
+      twoMechanicCommitmentOutput(),
       "commitment",
       COMMITMENT_APPROVAL.approval_id,
       worldFromBrief(SECOND_COPY_BRIEF),
     );
+
     const own = new Set(module.variables.map((variable) => variable.id));
+    expect(own.size).toBe(2);
+    for (const [index, variable] of module.variables.entries()) {
+      expect(variable.id).toBe(mechanicIds("commitment", index).flag);
+      // Every flag begins false; that is a contract literal, not a choice.
+      expect(variable.initial).toBe(false);
+    }
+
     const written = [
-      ...module.actions.flatMap((action) => action.branches).flatMap((b) => b.effects),
+      ...module.actions.flatMap((action) => action.branches).flatMap((branch) => branch.effects),
       ...module.on_actions.flatMap((hook) => hook.effects),
     ];
     expect(written.length).toBeGreaterThan(0);
     for (const effect of written) {
       expect(effect.op).toBe("set_true");
+      // FOREIGN_WRITE, and a cross-slot VAR_UNRESOLVED, are unreachable: the
+      // only variable an effect can name is one this module declared.
       expect(own.has(effect.var_id)).toBe(true);
+    }
+
+    // Every declared flag is both written and read, which is what
+    // VARIABLE_NEVER_WRITTEN and VARIABLE_NEVER_READ check.
+    const read = new Set<string>();
+    const collect = (condition: { kind: string; clauses?: { var_id: string }[][] }): void => {
+      for (const clause of condition.clauses ?? []) {
+        for (const atom of clause) read.add(atom.var_id);
+      }
+    };
+    for (const action of module.actions) {
+      collect(action.when);
+      // No module action may end the scene, and none can say it does.
+      for (const branch of action.branches) expect(branch.ending_id).toBeNull();
+      // Exactly one branch, whose condition always applies.
+      expect(action.branches).toHaveLength(1);
+      expect(action.branches[0]?.when).toEqual({ kind: "always" });
+    }
+    for (const gate of module.gates) collect(gate.when);
+    for (const id of own) {
+      expect(
+        written.some((effect) => effect.var_id === id),
+        `${id} is written`,
+      ).toBe(true);
+      expect(read.has(id), `${id} is read`).toBe(true);
+    }
+
+    // Every identifier is this application's, inside the slot's namespace.
+    for (const id of [
+      ...module.variables.map((variable) => variable.id),
+      ...module.actions.map((action) => action.id),
+      ...module.gates.map((gate) => gate.id),
+      ...module.on_actions.map((hook) => hook.id),
+      ...module.dialogue.map((node) => node.id),
+    ]) {
+      expect(id.startsWith("commitment.")).toBe(true);
     }
   });
 
-  it("rejects a module whose effect names a variable it never declared", () => {
-    const verdict = moduleVerdict("commitment", unresolvedEffectModuleOutput());
-    expect(verdict.ok).toBe(false);
-    expect(verdict.errors.map((error) => error.code)).toContain("VAR_UNRESOLVED");
-    expect(verdict.errors.map((error) => error.detail).join(" ")).toContain(
-      unresolvedEffectTargetId("commitment"),
-    );
+  it("resolves the speaker from its enumeration, so an unresolved one cannot occur", () => {
+    const world = worldFromBrief(SECOND_COPY_BRIEF);
+    const allowed = new Set<string>([...RESERVED_SPEAKER_IDS, world.characters[0].id]);
+    for (const speaker of MODULE_SPEAKERS) {
+      const first = validCommitmentOutput().mechanics[0] as ModuleCompilationOutput["mechanics"][number];
+      const module = moduleFromModelOutput(
+        { mechanics: [{ ...first, dialogue_speaker: speaker }] },
+        "commitment",
+        COMMITMENT_APPROVAL.approval_id,
+        world,
+      );
+      for (const node of module.dialogue) expect(allowed.has(node.speaker_id)).toBe(true);
+    }
   });
 
-  it("rejects a module attached to a port it does not own", () => {
+  it("offers each slot only its own gate ports", () => {
+    for (const slot of ["discovery", "commitment"] as const) {
+      const schema = JSON.stringify(z.toJSONSchema(moduleOutputSchemaFor(slot)));
+      for (const port of FIXED_PORTS[slot].gate_action_ids) {
+        expect(schema, `${slot} may gate ${port}`).toContain(port);
+      }
+      const foreign = slot === "discovery" ? "commitment" : "discovery";
+      for (const port of FIXED_PORTS[foreign].gate_action_ids) {
+        expect(schema, `${slot} may not gate ${port}`).not.toContain(port);
+      }
+    }
+  });
+
+  it("still enforces the port rule underneath the narrowed contract", () => {
+    // Unrepresentable in what the provider is given, and still a finding if it
+    // ever arrives: the validator was not relieved of the check.
     const verdict = moduleVerdict("commitment", wrongPortModuleOutput());
     expect(verdict.ok).toBe(false);
     expect(verdict.errors.map((error) => error.code)).toContain("GATE_PORT_INVALID");
   });
 
-  it("rejects a module action that ends the scene directly", () => {
-    const verdict = moduleVerdict("commitment", terminalModuleOutput());
-    expect(verdict.ok).toBe(false);
-    expect(verdict.errors.map((error) => error.code)).toContain("MODULE_ACTION_TERMINATES");
-  });
-
-  it("rejects an identifier outside the module's slot namespace", () => {
-    const verdict = moduleVerdict("commitment", badNamespaceModuleOutput());
-    expect(verdict.ok).toBe(false);
-    expect(verdict.errors.map((error) => error.code)).toContain("NAMESPACE_INVALID");
-  });
-
-  it("rejects a mechanically empty module even though it is structurally legal", () => {
-    const verdict = moduleVerdict("commitment", mechanicallyEmptyModuleOutput());
-    expect(verdict.ok).toBe(false);
-    expect(verdict.errors.map((error) => error.code)).toContain("MODULE_WITNESS_MISSING");
-    expect(verdict.report.module_witnesses.commitment?.mechanical).toBe(false);
+  it("refuses more mechanics than the module budget allows, during assembly", () => {
+    // The budgets live in the authoritative scene contract, so an over-budget
+    // module never reaches the validator: assembly refuses to carry it.
+    const result = assemble(validBaseCopy(), [
+      { slot: "commitment", output: overBudgetModuleOutput() },
+    ]);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.findings.map((finding) => finding.code)).toContain("SCHEMA_INVALID");
   });
 
   it("validates one module against the clean base alone, so no finding can name the other slot", () => {
     const both = sceneOf(
       assemble(validBaseCopy(), [
         { slot: "discovery", output: validDiscoveryOutput() },
-        { slot: "commitment", output: crossSlotModuleOutput() },
+        { slot: "commitment", output: wrongPortModuleOutput() },
       ]),
     );
     const isolated = sceneWithOnlySlot(both, "commitment");
@@ -410,12 +501,35 @@ describe("subset validation", () => {
   });
 
   it("requires a witness for every active module", () => {
-    const scene = sceneOf(
+    /*
+     * A module that changes nothing mechanical is no longer expressible: every
+     * mechanic a module can return gates a base action. The check it would
+     * have tripped is still in the validator, so this builds the gateless
+     * module directly instead of asking the contract for one — the validator
+     * level is where the rule lives and where it has to keep holding.
+     */
+    const composed = sceneOf(
       assemble(validBaseCopy(), [
         { slot: "discovery", output: validDiscoveryOutput() },
-        { slot: "commitment", output: mechanicallyEmptyModuleOutput() },
+        { slot: "commitment", output: validCommitmentOutput() },
       ]),
     );
+    const scene = {
+      ...composed,
+      modules: composed.modules.map((module) =>
+        module.slot === "commitment"
+          ? {
+              ...module,
+              // A gate that always allows its action blocks nothing, so the
+              // module changes no availability and no reachable ending.
+              gates: module.gates.map((gate) => ({
+                ...gate,
+                when: { kind: "always" } as const,
+              })),
+            }
+          : module,
+      ),
+    };
     const verdict = verifyCandidate(
       scene,
       SECOND_COPY_BRIEF,
@@ -468,16 +582,18 @@ describe("subset validation", () => {
  */
 describe("a module cannot name the port it attaches to", () => {
   it("has no action field on a hook in the model-facing contract", () => {
+    const first = validCommitmentOutput().mechanics[0] as ModuleCompilationOutput["mechanics"][number];
     const withPort = {
-      ...validCommitmentOutput(),
-      on_actions: [
+      mechanics: [
         {
-          id: "commitment.context_hook",
-          // The field a live attempt mis-filled. It is no longer accepted.
-          action_id: "core.inspect",
-          when: { kind: "always" } as const,
-          effects: [{ var_id: "commitment.cost_named" }],
-          dialogue_id: "commitment.named_text",
+          ...first,
+          // The field a live attempt mis-filled. It is no longer accepted, and
+          // the hook object it lived on no longer has anywhere to put it.
+          hook: {
+            action_id: "core.inspect",
+            dialogue_speaker: "narrator" as const,
+            dialogue_text: "A line.",
+          },
         },
       ],
     };

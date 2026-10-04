@@ -29,81 +29,9 @@
  */
 
 import { z } from "zod";
-import { ConditionSchema, SceneSchema, VerbSchema } from "./scene";
-import { SLOTS, TEXT } from "./limits";
+import { SceneSchema } from "./scene";
+import { FIXED_PORTS, SLOTS, TEXT } from "./limits";
 import { ProjectViewSchema, ReferencesViewSchema, WorkflowStateSchema } from "./project";
-
-/* ------------------------------------------------------- model-facing ids */
-
-/**
- * An identifier as a model writes it: bounded, but not pattern-checked here.
- *
- * The authoritative `IdSchema` pattern and the namespace rules of
- * specification section 4 are applied by the server when it assembles the
- * candidate scene, so a malformed identifier becomes a readable validation
- * finding rather than a provider-side schema rejection this application
- * cannot see into.
- */
-const ModelIdSchema = z.string().min(1).max(64);
-
-/**
- * A variable reference in an effect, as a **position in the module's own
- * `variables` array** rather than an identifier.
- *
- * This is the same move the base amendment made, applied to the one authority
- * that was still spelled as a free string. A module may *read* the
- * foundation's variables, so a condition names a variable by id; a module may
- * never *write* one, and the only variables it may write are the ones it
- * declared in this same response. Naming the write target by its own index
- * makes `core.inspected` — or any other foundation flag — not a rejected value
- * but an unrepresentable one.
- *
- * It is a `FOREIGN_WRITE` finding that produced this: the live run recorded in
- * `docs/PHASE4_EVIDENCE.md` had a module set `core.inspected` on both of its
- * permitted attempts, with instructions that forbade it in two separate
- * sentences. The validator caught it both times. The contract now makes the
- * mistake impossible to express instead of merely illegal to make.
- *
- * The server supplies `op: "set_true"`, as it always did. Bounds are checked
- * server-side rather than with a schema keyword, for the same
- * provider-compatibility reason the rest of this file states.
- */
-const ModelEffectSchema = z.strictObject({ variable_index: z.number().int() });
-
-const ModelVariableSchema = z.strictObject({
-  id: ModelIdSchema,
-  label: z.string().min(1).max(TEXT.variable_label),
-  visible: z.boolean(),
-});
-
-const ModelDialogueSchema = z.strictObject({
-  id: ModelIdSchema,
-  speaker_id: ModelIdSchema,
-  text: z.string().min(1).max(TEXT.dialogue),
-});
-
-const ModelBranchSchema = z.strictObject({
-  when: ConditionSchema,
-  effects: z.array(ModelEffectSchema),
-  dialogue_id: ModelIdSchema.nullable(),
-  ending_id: ModelIdSchema.nullable(),
-});
-
-/**
- * One action as a model writes it.
- *
- * `target` is absent on purpose. The action grammar of specification section 4
- * fixes it — `inspect`, `give`, and `withhold` address the object, `ask`
- * addresses the NPC, `leave` addresses the room — and the ids come from the
- * frozen brief, so the server derives the whole target.
- */
-const ModelActionSchema = z.strictObject({
-  id: ModelIdSchema,
-  verb: VerbSchema,
-  label: z.string().min(1).max(TEXT.action_label),
-  when: ConditionSchema,
-  branches: z.array(ModelBranchSchema),
-});
 
 /**
  * The brief-only base call's whole output: **narrative copy, and nothing else.**
@@ -165,32 +93,87 @@ export const BASE_NARRATIVE_COPY_FIELDS = Object.keys(
   BaseNarrativeCopySchema.shape,
 ) as readonly (keyof BaseNarrativeCopy)[];
 
-const ModelGateSchema = z.strictObject({
-  id: ModelIdSchema,
-  action_id: ModelIdSchema,
-  when: ConditionSchema,
-  blocked_text: z.string().min(1).max(TEXT.gate_blocked_text),
+/* --------------------------------------------- the influence module contract */
+
+/**
+ * Who speaks a line a module writes.
+ *
+ * Three legal answers, so this is a real choice with a strict enumeration
+ * rather than a free identifier. `character` resolves to the brief's one
+ * declared NPC; the server substitutes its id, so `SPEAKER_UNRESOLVED` is not
+ * a rejected value but an unrepresentable one.
+ */
+export const MODULE_SPEAKERS = ["player", "narrator", "character"] as const;
+export const ModuleSpeakerSchema = z.enum(MODULE_SPEAKERS);
+export type ModuleSpeaker = z.infer<typeof ModuleSpeakerSchema>;
+
+/** The two verbs a module action may use. The other three are terminal. */
+export const MODULE_VERBS = ["inspect", "ask"] as const;
+
+/** Every gate port, across both slots, for the slot-agnostic exported type. */
+const ALL_GATE_PORTS = [
+  ...FIXED_PORTS.discovery.gate_action_ids,
+  ...FIXED_PORTS.commitment.gate_action_ids,
+] as const;
+
+/** An extra line a mechanic attaches to its slot's one effect port. */
+const ModuleHookSchema = z.strictObject({
+  dialogue_speaker: ModuleSpeakerSchema,
+  dialogue_text: z.string().min(1).max(TEXT.dialogue),
 });
 
 /**
- * One hook, without the action it attaches to.
+ * One mechanic: a flag, the action that sets it, and the base action it gates.
  *
- * A slot has exactly one effect port — `core.inspect` for discovery,
- * `core.ask_context` for commitment — so there is nothing for a module to
- * choose and no reason to let it name one. The server writes `action_id` from
- * {@link FIXED_PORTS} when it builds the module, for the same reason it writes
- * `slot` and `approval_id`: it already knows the only legal answer, and a field
- * a module cannot fill is a port it cannot mis-attach to.
+ * This is the Phase 4 module amendment, and it is the base amendment's
+ * principle applied to the one stage that still had the model author a state
+ * machine. The classification it comes from is in
+ * `docs/PHASE4_EVIDENCE.md`: every field below is one of
  *
- * Gates keep their `action_id`, because the commitment slot really does have
- * two gate ports to choose between, and `GATE_PORT_INVALID` still checks it.
+ *   * **single-answer plumbing, now server-owned and absent here** — every
+ *     identifier and namespace, the action's target, the action's availability
+ *     condition, its single branch and that branch's `when`, the effect that
+ *     sets the flag, the flag's `initial: false`, the gate's condition, the
+ *     hook's port, the absence of an ending binding, and the dialogue node
+ *     ids. Each had exactly one legal form under the product contract, and the
+ *     live record shows the model failing to reproduce several of them:
+ *     `FOREIGN_WRITE`, `VARIABLE_NEVER_READ`, `VARIABLE_NEVER_WRITTEN`,
+ *     `HOOK_PORT_INVALID`, `NAMESPACE_INVALID`, `MODULE_ACTION_TERMINATES`.
+ *   * **a genuine bounded mechanical choice, kept here** — how many mechanics
+ *     to build, whether each is an `inspect` or an `ask`, which base action it
+ *     gates (the commitment slot really has two), whether it also attaches a
+ *     line to its slot's effect port, and whether its flag is shown to the
+ *     player.
+ *   * **copy** — the labels and the lines.
+ *
+ * What the module does mechanically is therefore still the model's decision,
+ * made from its isolated approved-influence context; how that decision is
+ * wired into the engine is not. The validator is unchanged, and still decides
+ * whether the result is acceptable: a mechanic that gates nothing reachable,
+ * a module that exceeds a budget, or forbidden wording are all still findings.
  */
-const ModelOnActionSchema = z.strictObject({
-  id: ModelIdSchema,
-  when: ConditionSchema,
-  effects: z.array(ModelEffectSchema),
-  dialogue_id: ModelIdSchema.nullable(),
-});
+function moduleMechanicSchema<P extends readonly [string, ...string[]]>(ports: P) {
+  return z.strictObject({
+    /** `inspect` or `ask`. The terminal verbs belong to the foundation. */
+    verb: z.enum(MODULE_VERBS),
+    action_label: z.string().min(1).max(TEXT.action_label),
+    /** The flag's human label. Its identifier is the server's. */
+    flag_label: z.string().min(1).max(TEXT.variable_label),
+    /** Whether the player sees this flag in the state readout. */
+    flag_visible: z.boolean(),
+    dialogue_speaker: ModuleSpeakerSchema,
+    dialogue_text: z.string().min(1).max(TEXT.dialogue),
+    /**
+     * The foundation action this mechanic gates, which is what makes it
+     * mechanical rather than decorative. The enumeration is this slot's own
+     * ports, so `GATE_PORT_INVALID` cannot be expressed.
+     */
+    gate_port: z.enum(ports),
+    gate_blocked_text: z.string().min(1).max(TEXT.gate_blocked_text),
+    /** An extra line on the slot's effect port, or null for none. */
+    hook: ModuleHookSchema.nullable(),
+  });
+}
 
 /**
  * One influence module call's whole output.
@@ -201,14 +184,22 @@ const ModelOnActionSchema = z.strictObject({
  * module cannot assert its own source or its own provenance binding.
  */
 export const ModuleCompilationOutputSchema = z.strictObject({
-  variables: z.array(ModelVariableSchema),
-  actions: z.array(ModelActionSchema),
-  dialogue: z.array(ModelDialogueSchema),
-  gates: z.array(ModelGateSchema),
-  on_actions: z.array(ModelOnActionSchema),
+  mechanics: z.array(moduleMechanicSchema(ALL_GATE_PORTS)),
 });
 
 export type ModuleCompilationOutput = z.infer<typeof ModuleCompilationOutputSchema>;
+export type ModuleMechanic = ModuleCompilationOutput["mechanics"][number];
+
+/**
+ * The contract for one slot, with `gate_port` narrowed to that slot's own
+ * ports. Discovery has exactly one, so Structured Outputs forces it; the
+ * commitment slot has two, so the choice is the model's.
+ */
+export function moduleOutputSchemaFor(slot: (typeof SLOTS)[number]) {
+  return z.strictObject({
+    mechanics: z.array(moduleMechanicSchema(FIXED_PORTS[slot].gate_action_ids)),
+  });
+}
 
 /* ---------------------------------------------------- compilation stages */
 
