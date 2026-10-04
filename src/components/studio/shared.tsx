@@ -53,9 +53,11 @@ function asFailure(status: number, body: unknown): RequestFailure {
   return { ...UNREACHABLE, code: `HTTP_${status}` };
 }
 
-async function send<T>(path: string, method: "GET" | "POST", body?: unknown): Promise<
-  RequestResult<T>
-> {
+async function send<T>(
+  path: string,
+  method: "GET" | "POST" | "PUT",
+  body?: unknown,
+): Promise<RequestResult<T>> {
   let response: Response;
   try {
     response = await fetch(path, {
@@ -86,8 +88,33 @@ export function postJson<T>(path: string, body: unknown): Promise<RequestResult<
   return send<T>(path, "POST", body);
 }
 
+export function putJson<T>(path: string, body: unknown): Promise<RequestResult<T>> {
+  return send<T>(path, "PUT", body);
+}
+
 export function getJson<T>(path: string): Promise<RequestResult<T>> {
   return send<T>(path, "GET");
+}
+
+/**
+ * The inline failure line used beside a step, where a whole panel would be
+ * too much. It is still a finished state: a code, a sentence, and a request id.
+ */
+export function InlineFailure({
+  failure,
+  testId,
+}: {
+  failure: RequestFailure;
+  testId?: string;
+}): React.JSX.Element {
+  return (
+    <p className="studio__error-message" role="alert" data-testid={testId ?? "inline-failure"}>
+      {failure.message}{" "}
+      <span className="studio__hint">
+        ({failure.code} · request {failure.request_id})
+      </span>
+    </p>
+  );
 }
 
 export function ErrorPanel({

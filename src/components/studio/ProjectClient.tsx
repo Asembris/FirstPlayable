@@ -1,30 +1,43 @@
 "use client";
 
 /**
- * The persistent project view.
+ * The persistent project view, extended for the phase 3 workflow.
  *
- * It reads `GET /api/projects/:id` and nothing else. That one request is what
- * makes the phase 2 acceptance criteria observable in a browser:
+ * It reads `GET /api/projects/:id` and renders, in order: the frozen brief,
+ * the cultural anchor, the two reference rows with their proposals and
+ * decision controls, and the approved-influence chips. Every mutation goes
+ * through this application's own same-origin API and is followed by a re-read,
+ * so what the creator sees is always the persisted state rather than an
+ * optimistic guess.
+ *
+ * Still true from phase 2, and still load-bearing:
  *
  *   * a reload re-fetches the project and the frozen brief is still there;
- *   * a different browser, with a different owner cookie or none at all, gets
- *     the same "not available here" state and learns nothing about whether the
- *     id exists;
- *   * a database outage produces a finished error with the saved example still
- *     one click away.
+ *   * a different browser gets the same "not available here" state and learns
+ *     nothing about whether the id exists;
+ *   * a database outage produces a finished error with the saved example one
+ *     click away;
+ *   * this component creates no session, so opening somebody else's link does
+ *     not quietly acquire one.
  *
- * It deliberately does *not* create a session. A clean browser opening somebody
- * else's project link must not quietly acquire one.
+ * What it deliberately does not render: a playable scene. Phase 3 freezes
+ * approvals; it compiles nothing, and the panel below says so rather than
+ * showing an empty stage that looks broken.
  */
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import type { ProjectView } from "@/domain/project";
+import type { ProjectView, ReferencesView } from "@/domain/project";
+import { AnchorPanel } from "./AnchorPanel";
+import { ApprovedInfluences } from "./ApprovedInfluences";
+import { ReferenceRows } from "./ReferenceRows";
 import { ErrorPanel, getJson, type RequestFailure } from "./shared";
+
+type Loaded = { project: ProjectView; references: ReferencesView | null };
 
 type State =
   | { status: "loading" }
-  | { status: "loaded"; project: ProjectView }
+  | { status: "loaded"; data: Loaded }
   | { status: "unavailable"; failure: RequestFailure }
   | { status: "failed"; failure: RequestFailure };
 
@@ -35,12 +48,9 @@ export function ProjectClient({ projectId }: { projectId: string }): React.JSX.E
   const [state, setState] = useState<State>({ status: "loading" });
 
   const load = useCallback(async () => {
-    setState({ status: "loading" });
-    const result = await getJson<{ project: ProjectView }>(
-      `/api/projects/${encodeURIComponent(projectId)}`,
-    );
+    const result = await getJson<Loaded>(`/api/projects/${encodeURIComponent(projectId)}`);
     if (result.ok) {
-      setState({ status: "loaded", project: result.value.project });
+      setState({ status: "loaded", data: result.value });
       return;
     }
     setState({
@@ -96,18 +106,18 @@ export function ProjectClient({ projectId }: { projectId: string }): React.JSX.E
     );
   }
 
-  const { project } = state;
+  const { project, references } = state.data;
   return (
     <main className="studio">
       <header className="studio__header">
-        <p className="cover__eyebrow">Persisted project · phase 2 shell</p>
+        <p className="cover__eyebrow">Persisted project · phase 3 influence approval</p>
         <h1 className="cover__title" data-testid="project-title">
           {project.title}
         </h1>
         <p className="studio__hint">
           Project <span data-testid="project-id">{project.id}</span> · revision{" "}
           <span data-testid="project-revision">{project.revision}</span> ·{" "}
-          {project.workflow_state}
+          <span data-testid="project-state">{project.workflow_state}</span>
         </p>
       </header>
 
@@ -146,22 +156,36 @@ export function ProjectClient({ projectId }: { projectId: string }): React.JSX.E
         </ul>
       </section>
 
+      <AnchorPanel
+        projectId={project.id}
+        revision={project.revision}
+        anchor={project.anchor}
+        onConfirmed={() => void load()}
+      />
+
+      <ReferenceRows
+        projectId={project.id}
+        project={project}
+        references={references}
+        onChanged={() => void load()}
+      />
+
+      <ApprovedInfluences
+        projectId={project.id}
+        project={project}
+        onChanged={() => void load()}
+      />
+
       <section className="panel">
         <h2 className="panel__heading">Not generated yet</h2>
         <ul className="panel__list">
-          <li>
-            Cultural anchor:{" "}
-            {project.anchor_confirmed ? "confirmed" : "not confirmed — phase 3 retrieves references"}
-          </li>
-          <li>
-            Approved influences:{" "}
-            {project.approved_slots.length === 0
-              ? "none — approval arrives in phase 3"
-              : project.approved_slots.join(", ")}
-          </li>
-          <li>
-            Playable version:{" "}
+          <li data-testid="not-generated-scene">
+            Playable scene:{" "}
             {project.active_version_id ?? "none — compilation arrives in phase 4"}
+          </li>
+          <li>
+            Provenance shows retrieval, interpretation and your decision. It does
+            not yet show a scene change, because no scene has been compiled.
           </li>
         </ul>
       </section>
