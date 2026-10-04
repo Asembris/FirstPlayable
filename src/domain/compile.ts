@@ -46,8 +46,29 @@ import { ProjectViewSchema, ReferencesViewSchema, WorkflowStateSchema } from "./
  */
 const ModelIdSchema = z.string().min(1).max(64);
 
-/** A variable reference in an effect. The server supplies `op: "set_true"`. */
-const ModelEffectSchema = z.strictObject({ var_id: ModelIdSchema });
+/**
+ * A variable reference in an effect, as a **position in the module's own
+ * `variables` array** rather than an identifier.
+ *
+ * This is the same move the base amendment made, applied to the one authority
+ * that was still spelled as a free string. A module may *read* the
+ * foundation's variables, so a condition names a variable by id; a module may
+ * never *write* one, and the only variables it may write are the ones it
+ * declared in this same response. Naming the write target by its own index
+ * makes `core.inspected` — or any other foundation flag — not a rejected value
+ * but an unrepresentable one.
+ *
+ * It is a `FOREIGN_WRITE` finding that produced this: the live run recorded in
+ * `docs/PHASE4_EVIDENCE.md` had a module set `core.inspected` on both of its
+ * permitted attempts, with instructions that forbade it in two separate
+ * sentences. The validator caught it both times. The contract now makes the
+ * mistake impossible to express instead of merely illegal to make.
+ *
+ * The server supplies `op: "set_true"`, as it always did. Bounds are checked
+ * server-side rather than with a schema keyword, for the same
+ * provider-compatibility reason the rest of this file states.
+ */
+const ModelEffectSchema = z.strictObject({ variable_index: z.number().int() });
 
 const ModelVariableSchema = z.strictObject({
   id: ModelIdSchema,

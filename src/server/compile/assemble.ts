@@ -102,11 +102,38 @@ export function targetFor(verb: string, world: World): Target {
 
 /* ------------------------------------------------------------ conversions */
 
+/**
+ * The id a module's effect resolves to when it names a position that does not
+ * exist in its own `variables` array.
+ *
+ * It is deliberately a legal-looking identifier that is certain not to be
+ * declared, so the Phase 1 validator reports it as `VAR_UNRESOLVED` against
+ * this exact name. An out-of-range index therefore becomes one readable,
+ * repairable finding rather than a thrown error or a silently dropped effect:
+ * dropping it would change what the module does, and a branch that sets
+ * nothing is a different failure with a misleading code.
+ */
+export function unresolvedEffectTargetId(slot: Slot): string {
+  return `${slot}.effect_target_out_of_range`;
+}
+
+/**
+ * Effects, resolved against the module's own declared variables.
+ *
+ * `op: "set_true"` is written here, never read from model output, and the
+ * target is looked up by the index the model gave rather than copied from a
+ * string it chose. A module consequently cannot write the foundation's state,
+ * or the other slot's, in any way the contract can express.
+ */
 function toEffects(
-  effects: readonly { var_id: string }[],
+  effects: readonly { variable_index: number }[],
+  declared: readonly { id: string }[],
+  slot: Slot,
 ): Effect[] {
-  // `set_true` is written here, never read from model output.
-  return effects.map((effect) => ({ op: "set_true", var_id: effect.var_id }));
+  return effects.map((effect) => ({
+    op: "set_true",
+    var_id: declared[effect.variable_index]?.id ?? unresolvedEffectTargetId(slot),
+  }));
 }
 
 function toVariables(
@@ -134,23 +161,32 @@ function toDialogue(
 type ModelBranch = ModuleCompilationOutput["actions"][number]["branches"][number];
 type ModelAction = ModuleCompilationOutput["actions"][number];
 
-function toBranch(branch: ModelBranch): ActionBranch {
+function toBranch(
+  branch: ModelBranch,
+  declared: readonly { id: string }[],
+  slot: Slot,
+): ActionBranch {
   return {
     when: branch.when,
-    effects: toEffects(branch.effects),
+    effects: toEffects(branch.effects, declared, slot),
     dialogue_id: branch.dialogue_id,
     ending_id: branch.ending_id,
   };
 }
 
-function toAction(action: ModelAction, world: World): Action {
+function toAction(
+  action: ModelAction,
+  world: World,
+  declared: readonly { id: string }[],
+  slot: Slot,
+): Action {
   return {
     id: action.id,
     verb: action.verb,
     label: action.label,
     target: targetFor(action.verb, world),
     when: action.when,
-    branches: action.branches.map(toBranch),
+    branches: action.branches.map((branch) => toBranch(branch, declared, slot)),
   };
 }
 
@@ -185,14 +221,14 @@ export function moduleFromModelOutput(
     id: hook.id,
     action_id: hookPort,
     when: hook.when,
-    effects: toEffects(hook.effects),
+    effects: toEffects(hook.effects, output.variables, slot),
     dialogue_id: hook.dialogue_id,
   }));
   return {
     slot,
     approval_id: sceneApprovalId(approvalId),
     variables: toVariables(output.variables),
-    actions: output.actions.map((action) => toAction(action, world)),
+    actions: output.actions.map((action) => toAction(action, world, output.variables, slot)),
     dialogue: toDialogue(output.dialogue),
     gates,
     on_actions: hooks,

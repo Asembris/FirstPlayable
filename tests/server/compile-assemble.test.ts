@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 
 import {
   SECOND_COPY_BASE,
@@ -16,6 +17,7 @@ import {
   sceneApprovalId,
   sceneIdFor,
   sceneReferenceId,
+  unresolvedEffectTargetId,
   worldFromBrief,
 } from "../../src/server/compile/assemble";
 import {
@@ -28,7 +30,7 @@ import {
   COMMITMENT_APPROVAL,
   DISCOVERY_APPROVAL,
   badNamespaceModuleOutput,
-  coreWriteModuleOutput,
+  unresolvedEffectModuleOutput,
   crossSlotModuleOutput,
   mechanicallyEmptyModuleOutput,
   nonPlainTextBaseCopy,
@@ -278,10 +280,54 @@ describe("module generation", () => {
     expect(verdict.errors.map((error) => error.code)).toContain("VAR_UNRESOLVED");
   });
 
-  it("rejects a module that writes a core variable", () => {
-    const verdict = moduleVerdict("commitment", coreWriteModuleOutput());
+  it("cannot express writing a foundation variable at all", () => {
+    // An effect has exactly one field, and it is an index. A condition still
+    // names a variable by id, because reading the foundation is allowed; it is
+    // writing that has nowhere to put a foundation id.
+    const schema = z.toJSONSchema(ModuleCompilationOutputSchema) as Record<string, unknown>;
+    const effectItems = (path: string[]): Record<string, unknown> => {
+      let node: Record<string, unknown> = schema;
+      for (const key of path) node = node[key] as Record<string, unknown>;
+      return node;
+    };
+    for (const path of [
+      ["properties", "actions", "items", "properties", "branches", "items", "properties", "effects", "items"],
+      ["properties", "on_actions", "items", "properties", "effects", "items"],
+    ]) {
+      const effect = effectItems(path);
+      expect(Object.keys(effect["properties"] as object)).toEqual(["variable_index"]);
+      expect((effect["properties"] as Record<string, Record<string, unknown>>)["variable_index"]?.["type"]).toBe(
+        "integer",
+      );
+      expect(effect["additionalProperties"]).toBe(false);
+    }
+
+    // Every effect in a legal module resolves to one of its own variables.
+    const module = moduleFromModelOutput(
+      validCommitmentOutput(),
+      "commitment",
+      COMMITMENT_APPROVAL.approval_id,
+      worldFromBrief(SECOND_COPY_BRIEF),
+    );
+    const own = new Set(module.variables.map((variable) => variable.id));
+    const written = [
+      ...module.actions.flatMap((action) => action.branches).flatMap((b) => b.effects),
+      ...module.on_actions.flatMap((hook) => hook.effects),
+    ];
+    expect(written.length).toBeGreaterThan(0);
+    for (const effect of written) {
+      expect(effect.op).toBe("set_true");
+      expect(own.has(effect.var_id)).toBe(true);
+    }
+  });
+
+  it("rejects a module whose effect names a variable it never declared", () => {
+    const verdict = moduleVerdict("commitment", unresolvedEffectModuleOutput());
     expect(verdict.ok).toBe(false);
-    expect(verdict.errors.map((error) => error.code)).toContain("FOREIGN_WRITE");
+    expect(verdict.errors.map((error) => error.code)).toContain("VAR_UNRESOLVED");
+    expect(verdict.errors.map((error) => error.detail).join(" ")).toContain(
+      unresolvedEffectTargetId("commitment"),
+    );
   });
 
   it("rejects a module attached to a port it does not own", () => {

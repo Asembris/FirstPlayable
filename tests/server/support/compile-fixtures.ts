@@ -153,8 +153,24 @@ export const COMMITMENT_APPROVAL = approvalRecord(COMMITMENT_APPROVAL_PAYLOAD);
 
 /* ------------------------------------------------------- model candidates */
 
+/**
+ * An effect, back in the form a model writes it: the position of the variable
+ * in the module's own declared array, which is the only way it can name one.
+ */
+function toModelEffects(
+  effects: readonly { var_id: string }[],
+  declared: readonly { id: string }[],
+): { variable_index: number }[] {
+  return effects.map((effect) => ({
+    variable_index: declared.findIndex((variable) => variable.id === effect.var_id),
+  }));
+}
+
 /** Strips the server-assigned fields back out of a hand-authored action. */
-function toModelAction(action: Action): ModuleCompilationOutput["actions"][number] {
+function toModelAction(
+  action: Action,
+  declared: readonly { id: string }[],
+): ModuleCompilationOutput["actions"][number] {
   return {
     id: action.id,
     verb: action.verb,
@@ -162,7 +178,7 @@ function toModelAction(action: Action): ModuleCompilationOutput["actions"][numbe
     when: action.when,
     branches: action.branches.map((branch) => ({
       when: branch.when,
-      effects: branch.effects.map((effect) => ({ var_id: effect.var_id })),
+      effects: toModelEffects(branch.effects, declared),
       dialogue_id: branch.dialogue_id,
       ending_id: branch.ending_id,
     })),
@@ -242,7 +258,7 @@ function moduleToModelOutput(module: InfluenceModule): ModuleCompilationOutput {
       label: variable.label,
       visible: variable.visible,
     })),
-    actions: module.actions.map(toModelAction),
+    actions: module.actions.map((action) => toModelAction(action, module.variables)),
     dialogue: module.dialogue.map((node) => ({
       id: node.id,
       speaker_id: node.speaker_id,
@@ -257,7 +273,7 @@ function moduleToModelOutput(module: InfluenceModule): ModuleCompilationOutput {
     on_actions: module.on_actions.map((hook) => ({
       id: hook.id,
       when: hook.when,
-      effects: hook.effects.map((effect) => ({ var_id: effect.var_id })),
+      effects: toModelEffects(hook.effects, module.variables),
       dialogue_id: hook.dialogue_id,
     })),
   };
@@ -304,7 +320,8 @@ export function validCommitmentOutput(): ModuleCompilationOutput {
         branches: [
           {
             when: { kind: "always" },
-            effects: [{ var_id: "commitment.cost_weighed" }],
+            // commitment.cost_weighed, the second variable declared above.
+            effects: [{ variable_index: 1 }],
             dialogue_id: "commitment.cost_text",
             ending_id: null,
           },
@@ -338,7 +355,8 @@ export function validCommitmentOutput(): ModuleCompilationOutput {
       {
         id: "commitment.context_hook",
         when: { kind: "always" },
-        effects: [{ var_id: "commitment.cost_named" }],
+        // commitment.cost_named, the first variable declared above.
+        effects: [{ variable_index: 0 }],
         dialogue_id: "commitment.named_text",
       },
     ],
@@ -360,14 +378,23 @@ export function crossSlotModuleOutput(): ModuleCompilationOutput {
   };
 }
 
-/** A module that writes a core variable. */
-export function coreWriteModuleOutput(): ModuleCompilationOutput {
+/**
+ * A module whose effect names a variable it never declared.
+ *
+ * Writing a *foundation* variable is no longer expressible: an effect names a
+ * position in the module's own `variables` array, so there is no field in
+ * which to put `core.promised`. What remains representable is an index past
+ * the end of that array, and this is it. The server resolves it to a reserved
+ * undeclared id, so it lands as one readable `VAR_UNRESOLVED` finding rather
+ * than as a silently dropped effect.
+ */
+export function unresolvedEffectModuleOutput(): ModuleCompilationOutput {
   const output = validCommitmentOutput();
   return {
     ...output,
     on_actions: output.on_actions.map((hook) => ({
       ...hook,
-      effects: [{ var_id: "core.promised" }],
+      effects: [{ variable_index: output.variables.length + 3 }],
     })),
   };
 }
@@ -415,7 +442,8 @@ export function mechanicallyEmptyModuleOutput(): ModuleCompilationOutput {
         branches: [
           {
             when: { kind: "always" },
-            effects: [{ var_id: "commitment.noted" }],
+            // commitment.noted, the only variable this module declares.
+            effects: [{ variable_index: 0 }],
             dialogue_id: "commitment.mood_text",
             ending_id: null,
           },
