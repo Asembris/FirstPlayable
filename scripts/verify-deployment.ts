@@ -321,10 +321,25 @@ async function inContext(
   return { requests, html };
 }
 
+/**
+ * The Vercel preview toolbar's loader. Vercel's build adds it to a client chunk
+ * and activates it on preview deployments only; production never requests it,
+ * and neither the request header nor anything in this repository turns it off.
+ * It is exempted only on a protected preview (the bypass is in use), and only
+ * this exact path — every other foreign request still fails the check.
+ */
+const PREVIEW_TOOLBAR_PREFIX = "https://vercel.live/_next-live/feedback/";
+let previewToolbarExempted = 0;
+
 function foreignRequests(requests: readonly string[], base: string): string[] {
-  return requests.filter(
-    (url) => !url.startsWith(base) && !url.startsWith("data:") && !url.startsWith("blob:"),
-  );
+  return requests.filter((url) => {
+    if (url.startsWith(base) || url.startsWith("data:") || url.startsWith("blob:")) return false;
+    if (bypassSecret() !== null && url.startsWith(PREVIEW_TOOLBAR_PREFIX)) {
+      previewToolbarExempted += 1;
+      return false;
+    }
+    return true;
+  });
 }
 
 async function browserChecks(base: string): Promise<void> {
@@ -2166,12 +2181,17 @@ async function phase5Flow(base: string): Promise<void> {
         await enabled.first().click();
         offlineEnded = (await offlinePage.locator(".fp-ending").count()) > 0;
       }
-      await offlinePage.locator("button", { hasText: "Start over" }).first().click();
+      // At an ending the player offers "Play it again"; mid-scene, "Start over".
+      await offlinePage
+        .locator("button", { hasText: offlineEnded ? "Play it again" : "Start over" })
+        .first()
+        .click();
       const resetTranscript = await offlinePage.locator(".fp-transcript li").count();
+      const resetChoices = await offlinePage.locator(".fp-choice").count();
       record(
         "the exported file plays from file:// to an ending and resets, with the network offline",
-        offlineEnded && resetTranscript === 0,
-        `ended ${offlineEnded}, transcript after reset ${resetTranscript}`,
+        offlineEnded && resetTranscript === 0 && resetChoices > 0,
+        `ended ${offlineEnded}, transcript after reset ${resetTranscript}, ${resetChoices} choices offered`,
       );
       record(
         "and it requested nothing at all — no OpenAI, Qloo, Supabase, or any other host",
@@ -2259,6 +2279,11 @@ async function main(): Promise<void> {
 
   const failed = checks.filter((check) => !check.ok).length;
   console.log("");
+  if (previewToolbarExempted > 0) {
+    console.log(
+      `  note: ${previewToolbarExempted} request(s) to the Vercel preview toolbar (${PREVIEW_TOOLBAR_PREFIX}) were exempted from the same-origin checks; production is checked without this exemption`,
+    );
+  }
   console.log(
     failed === 0
       ? `verify:deployment OK — ${checks.length} checks passed`
