@@ -69,6 +69,7 @@ import {
   handleCompile,
   handleOperationStatus,
 } from "../src/server/api/compile";
+import { COMPILER_IDENTIFIER } from "../src/server/compile/identifiers";
 import { estimateUsdCost, openAiClient, type ResponsesClient } from "../src/server/model/openai";
 import { OWNER_COOKIE_NAME } from "../src/server/security/session";
 
@@ -1012,7 +1013,13 @@ async function main(): Promise<number> {
   check(
     "the version records the pinned model and the phase 4 identifiers",
     reloadedOne.versions[0]?.model_identifier === PINNED_CHAT_MODEL &&
-      reloadedOne.versions[0]?.compiler_identifier === "fp-compiler-4.1" &&
+      // Read from the source rather than spelled out, so an amendment that
+      // moves it does not fail this check for the wrong reason. What it
+      // catches is a stored row produced by a different build than this one.
+      reloadedOne.versions[0]?.compiler_identifier === COMPILER_IDENTIFIER &&
+      // The validator identifier is spelled out on purpose: an amendment that
+      // moved it would mean the validator itself had changed, and that is the
+      // one thing no Phase 4 fix is allowed to do.
       reloadedOne.versions[0]?.validator_identifier === "fp-engine-validator-1.0",
     `${reloadedOne.versions[0]?.model_identifier} / ${reloadedOne.versions[0]?.compiler_identifier} / ${reloadedOne.versions[0]?.validator_identifier}`,
   );
