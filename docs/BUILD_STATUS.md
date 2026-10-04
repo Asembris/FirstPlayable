@@ -1228,18 +1228,24 @@ reset window.
 live database was probed with, including that a summary a real two-module
 compilation produced is still accepted.
 
-### One open bookkeeping item
+### Migration history reconciled
 
-The remote migration history row for this migration is recorded as
-`20261004135243`, the timestamp the management connection assigned, not the
-`20261004173000` its filename declares. The schema is correct and live-proven;
-this is a bookkeeping disagreement. Correcting it is a one-line `update` on
-`supabase_migrations.schema_migrations` which this session's tooling refused as
-a shared-resource write, so it was not performed. The committed filename was
-deliberately **not** renamed to match, because `20261004135243` sorts before
-`20261004160000` and a fresh database replaying the files in order would then
-try to drop a constraint that did not exist yet. See
-`docs/PHASE4_EVIDENCE.md` §14.7 for the exact statement.
+The management connection stamps its own timestamp on an applied migration and
+had recorded this one as `20261004135243`, disagreeing with the committed
+filename and sorting before `20261004160000`. That history row has since been
+corrected to `20261004173000`, exactly as Phase 4's own application was (the
+committed filename was deliberately not renamed to the temporary stamp, because
+a fresh database replaying in that order would have tried to drop a constraint
+that did not exist yet).
+
+Verified live against the history table: `20261004160000 phase4_compilation`
+and `20261004173000 phase4_validation_boolean` are both present, exactly one
+row each, no row remains at `20261004135243`, no duplicate
+`phase4_validation_boolean` was left behind, and the five rows match the five
+committed files in the committed order. The hardened constraint, the eight-table
+RLS posture, the twenty functions, the zero policies and browser grants, and
+every row count are unchanged. `docs/PHASE4_EVIDENCE.md` §14.7 has the full
+read-back.
 
 ### Gate status, unchanged
 

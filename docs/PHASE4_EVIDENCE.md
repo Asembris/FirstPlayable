@@ -9,7 +9,8 @@
 > uncovered. Both re-ran the whole offline gate. The live acceptance gate is
 > still not met. Sections 1–11 are the original record and are preserved
 > unchanged; §12–13 are the architectural amendment and the budget reason the
-> live gate is still open, and §14–15 are the constraint hardening.
+> live gate is still open, and §14–15 are the constraint hardening, applied and
+> verified live with its migration history reconciled.
 
 Every figure in this document was observed on this machine against the real
 Supabase project and the real OpenAI account. Nothing here is a projection.
@@ -1035,41 +1036,62 @@ one in `migrations.test.ts`.
 | `9e88b1f` | `fix: enforce boolean validation status in scene versions` |
 | `fcac34a` | `test: cover scene version validation constraint types` |
 
-### 14.7 One open bookkeeping item, not a schema issue
+### 14.7 Migration-history bookkeeping — reconciled and verified
 
-**The remote migration history row carries the wrong version number.**
+**Resolved.** The committed files and the remote migration history now agree.
 
-The management connection records its own timestamp for an applied migration,
-and stamped this one `20261004135243`. The committed filename is
-`20261004173000_phase4_validation_boolean.sql`. Phase 4's own application had
-the same problem and resolved it by setting the history row to the version its
-filename declares (§4); here that update was **refused by this session's
-tooling as a write to a shared resource**, so it was not performed.
+The management connection records its own timestamp for an applied migration
+and had stamped this one `20261004135243`, which both disagreed with the
+committed filename and sorted *before* `20261004160000`. Phase 4's own
+application hit the same thing and resolved it the same way (§4): the history
+row was set to the version its filename declares. The committed filename was
+deliberately **not** renamed to match the temporary stamp, because a fresh
+database replaying the files in `20261004135243` order would have tried to drop
+a constraint that did not exist yet.
 
-| | Value |
+The correction was applied outside this session and then verified here against
+the live history table:
+
+| Check | Observed |
 |---|---|
-| Recorded remote version | `20261004135243` |
-| Committed filename version | `20261004173000` |
+| `20261004160000` / `phase4_compilation` present | **yes**, exactly 1 row |
+| `20261004173000` / `phase4_validation_boolean` present | **yes**, exactly 1 row |
+| Rows at the temporary `20261004135243` | **0** — no longer present |
+| Rows named `phase4_validation_boolean` | **1** — no duplicate was left behind |
+| Total migration rows | **5**, matching the five committed files |
 
-Why this matters, and why it was not worked around:
-
-- **The schema is correct.** The constraint is applied and live-proven (§14.3).
-  This is a bookkeeping row, not DDL.
-- **Renaming the committed file to match would be worse.** `20261004135243`
-  sorts *before* `20261004160000`, so a fresh database replaying the files in
-  order would try to drop a constraint that did not exist yet and fail. The
-  filename is correct and was left correct.
-
-**The one action required**, for the committed files and the remote history to
-agree, exactly as Phase 4 did:
-
-```sql
-update supabase_migrations.schema_migrations
-set version = '20261004173000'
-where version = '20261004135243' and name = 'phase4_validation_boolean';
+```
+20261003222350  phase2_schema
+20261003222456  phase2_atomic_functions
+20261004085412  phase3_qloo
+20261004160000  phase4_compilation
+20261004173000  phase4_validation_boolean
 ```
 
-Recorded as limitation §15.1 until it is run.
+The order is now the committed order, so a replay from the files and the
+applied history describe the same database.
+
+**Re-verified at the same time, all unchanged:** the hardened constraint is
+still live, read back from `pg_constraint` as
+
+```
+CHECK (((validation_summary ? 'ok'::text)
+   AND (jsonb_typeof((validation_summary -> 'ok'::text)) = 'boolean'::text)
+   AND ((validation_summary -> 'ok'::text) = 'true'::jsonb)
+   AND (validation_summary ? 'subsets'::text)
+   AND (validation_summary ? 'witnesses'::text)))
+```
+
+and the posture and data are exactly as §14.3 recorded them: **8** tables, **8**
+with RLS, **0** policies, **20** functions, **0** table grants to `anon`,
+`authenticated`, or `PUBLIC`, **1** non-internal trigger on `scene_versions`,
+**0** `scene_versions` rows, **0** publications, and 29 projects / 14 decisions
+/ 6 captures / 30 operations / 42 sessions intact.
+
+`model_calls.used_calls` is **31 of 40** and `used_tokens` is **129,089**, and
+`qloo_calls.used_calls` is **5** — byte-identical to the §12.8 reading taken
+before any of this work began. **No OpenAI call and no Qloo call has been spent
+since.** The budget remains intact for the reset window.
 
 ### 14.8 Phase 4 is still incomplete
 
@@ -1092,11 +1114,13 @@ this document reports on.
 
 ## 15. Known limitations, after the constraint hardening
 
-Section 13 stands, with §13.4 now **resolved** by §14. One new item.
+Section 13 stands, with §13.4 now **resolved** by §14. The migration-history
+bookkeeping item raised when §14 was written is **also resolved and verified**
+(§14.7), so it is no longer a limitation. Nothing new was added.
 
-1. **The remote migration history row for `phase4_validation_boolean` is
-   recorded as `20261004135243`, not the `20261004173000` its filename
-   declares** (§14.7). The schema is correct and live-proven; this is a
-   bookkeeping disagreement between the committed files and the remote history.
-   One `update` fixes it, and it needs an explicit authorisation this session
-   did not have.
+The open items that still block Phase 4 are therefore unchanged from §13: no
+fresh scene has ever been compiled (§13.1), the deterministic base's
+reliability is proven offline but not yet observed against the real provider
+(§13.2), the row-level immutability trigger is still unexercised because that
+probe needs a committed version row, and the live stale-result compare-and-swap
+is still unexercised for the same reason.
