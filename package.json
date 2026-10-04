@@ -2,7 +2,7 @@
   "name": "firstplayable",
   "version": "0.1.0",
   "private": true,
-  "description": "FirstPlayable \u2014 playable-pitch studio. Phase 3: real Qloo references, bounded proposals, explicit influence approval.",
+  "description": "FirstPlayable \u2014 playable-pitch studio. Phase 4: bounded compilation of approved influences into a validated playable scene, pending live acceptance.",
   "license": "MIT",
   "engines": {
     "node": ">=22.12.0"

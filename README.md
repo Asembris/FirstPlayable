@@ -92,13 +92,14 @@ and the proposal smoke is never re-rolled because its prose reads weakly.
 src/domain/           Zod contracts for the brief, the scene, and the project
 src/engine/           pure interpreter, composer, validator, diff, canonical hashing
 src/components/player trusted React player for the offline slice
-src/components/studio  the studio: brief, artist confirmation, reference rows, provenance
-src/app/              Next.js App Router pages and the eight API routes
+src/components/studio  the studio: brief, artist confirmation, reference rows, provenance, build and review
+src/app/              Next.js App Router pages and the twelve API routes
 src/server/db/        owner-scoped repositories and the one server-only Supabase client
 src/server/security/  sessions, origin checks, body caps, error redaction
 src/server/model/     the pinned OpenAI Structured Outputs adapter
 src/server/qloo/      the three-operation adapter, normalization, cache, launch limiter
 src/server/influence/ the context firewall, the proposal stage, approvals, provenance
+src/server/compile/   the isolated payload builders, both compilers, and the bounded controller
 src/server/api/       route handlers, testable as plain Request handlers
 supabase/migrations/  the eight tables, their access posture, and the atomic functions
 fixtures/             hand-authored design fixtures, and redacted real Qloo captures
@@ -117,7 +118,7 @@ implementation.
 A project is owned by one anonymous session held in an `HttpOnly` cookie. There
 is no account, no password, and no recovery: **losing that cookie loses editing
 access.** Only a hash of the cookie's secret is stored. Published links and
-account recovery are not part of Phase 3.
+account recovery are not part of Phase 4.
 
 The browser never calls Qloo, OpenAI, or Supabase. Every external request is
 made server-side, behind this application's own owner-scoped routes, and no

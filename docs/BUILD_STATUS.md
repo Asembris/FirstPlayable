@@ -783,3 +783,215 @@ in any tracked file, built asset, client chunk, or response body.
 **Phase 4 — bounded compilation and fresh playable generation**, as specified in
 section 17. Phase 3's exit gate passed, so Phase 4 is authorized to begin; it is
 **not** implemented. No later phase is authorized.
+
+---
+
+# Phase 4 — bounded compilation and fresh playable generation
+
+**Branch of this record:** `feat/phase-4-compilation`
+**Date of this record:** 4 October 2026
+**Status:** **cloud implementation complete — OVERALL PHASE 4 IS NOT YET COMPLETE**
+**Local handoff:** `docs/PHASE4_LOCAL_HANDOFF.md`
+
+This section appends to the record. The Phase 1, Phase 2, continuous
+integration, and Phase 3 sections above are unchanged, and nothing here revises
+a figure any of them reported.
+
+**Read this first.** Phase 4 was implemented in two halves by design. A Claude
+**Cloud** session wrote everything that can be completed and verified
+offline — contracts, payload isolation, both compilers, the repair discipline,
+the persisted controller, the four routes, the migration, immutable version
+persistence, the compare-and-swap, review and activation, the UI, and the whole
+offline test matrix — and deliberately received, read, and used **no**
+production credential. It made no Qloo request, no OpenAI request, no Supabase
+mutation, no Supabase management call, and no Vercel deployment. Every number
+below comes from a command actually run in this repository, offline.
+
+## What the Phase 4 cloud session implemented
+
+| Deliverable | Where |
+|---|---|
+| Model-facing output contracts, compilation states, and view projections | `src/domain/compile.ts` |
+| Brief-only base payload builder, one parameter and no other reachable input | `src/server/compile/payloads.ts` |
+| Per-slot module payload builder over the Phase 3 approval boundary | `src/server/compile/payloads.ts`, `src/server/influence/payload.ts` |
+| Repair payload builder that cannot widen its original context | `src/server/compile/payloads.ts` |
+| Fixed instruction blocks, built from constants only | `src/server/compile/instructions.ts` |
+| Scene assembly: the server assigns every authority | `src/server/compile/assemble.ts` |
+| Verification over the Phase 1 engine, with subsets and witnesses | `src/server/compile/verify.ts` |
+| The narrow injectable compiler boundary and the pinned adapter | `src/server/compile/compiler.ts` |
+| Base and module stages, one provider attempt each | `src/server/compile/stages.ts` |
+| The persisted, resumable compilation controller | `src/server/compile/controller.ts` |
+| What a compilation stores between advances | `src/server/compile/state.ts` |
+| Compiler, prompt, schema, and validator identifiers | `src/server/compile/identifiers.ts` |
+| The four locked Phase 4 routes | `src/server/api/compile.ts` |
+| Owner-scoped immutable version repository and the playable projection | `src/server/db/versions.ts` |
+| Nine new gateway primitives, every one owner-scoped | `src/server/db/gateway.ts`, `src/server/db/supabase-gateway.ts` |
+| One forward migration | `supabase/migrations/20261004160000_phase4_compilation.sql` |
+| Compile, stage status, review, activation, and the local playable | `src/components/studio/CompilePanel.tsx`, `src/components/player/ScenePlayer.tsx` |
+| Deterministic compiler fakes and sentinel fixtures | `tests/server/support/fake-compiler.ts`, `tests/server/support/compile-fixtures.ts` |
+
+## Commands run, and their results
+
+Every one of these was run in the cloud session with no credential configured.
+
+| Command | Result |
+|---|---|
+| `npm run typecheck` | passed, exit 0 |
+| `npm test` | passed, exit 0 — 29 files, 562 tests, 0 failures |
+| `npm run check:fixtures` | passed, exit 0 |
+| `npm run build` | passed, exit 0 — 17 routes, 5 static and 12 server-rendered on demand |
+| `npm run check:secrets` | passed, exit 0 — 150 tracked and 350 built files scanned |
+| `npm run test:e2e` | passed, exit 0 — 46 Playwright tests, 0 failures |
+
+Phase 3 recorded 425 unit tests and 33 browser tests; Phase 4 adds 137 unit
+tests and 13 browser tests, and does not change an earlier one's meaning.
+
+## The compilation chain, as implemented
+
+```
+frozen brief
+  → creator-approved influence(s), read from immutable decision rows
+  → brief-only clean foundation           (stage `base`,  1 provider call)
+  → independent module per approved slot  (stage `module_<slot>`, 1 call each)
+  → deterministic composition             (assembleScene, server-assigned authority)
+  → exhaustive validation + every subset   (stage `validate`, 0 provider calls)
+  → mechanical witness per active module   (findMechanicalWitness)
+  → immutable pending SceneVersion         (commit_scene_version, under CAS)
+  → explicit creator review and activation (activate_scene_version, under CAS)
+  → local gameplay through the Phase 1 engine, zero upstream calls
+```
+
+## Isolation, as it is enforced rather than hoped for
+
+The base payload builder takes **one** parameter, the frozen brief. An artist
+query, a reference title, an evidence excerpt, a dismissed proposal, and an
+approval are therefore not *filtered out* of its result — they are unreachable
+from it. The module builder takes the clean base and exactly one
+`ApprovedInfluencePayload`, which Phase 3 had already narrowed to one approval,
+its own reference, and the evidence that approval cited.
+
+`tests/server/compile-payloads.test.ts` plants eight distinct sentinels and
+asserts their absence in the **serialized bytes** that would be sent, and
+`tests/server/compile-stages.test.ts` asserts the same against the requests the
+stages actually hand the compiler. A module stage's verification composes the
+clean base with that module **alone**, so a rejection's findings — and
+therefore the repair payload — are structurally incapable of naming the other
+slot.
+
+What this establishes is **dataflow and ownership isolation**. It does not
+establish that a language model could never independently invent a semantically
+similar idea from the brief alone, and nothing in this repository claims it
+does.
+
+## The attempt ceiling, as the database enforces it
+
+Each model stage has its own `operations` row with `max_attempts = 2`. A
+rejected candidate **parks** the row — the lease is released, the status stays
+`reserved`, and the rejected candidate and findings are stored — so the next
+advance's `reserve_operation` spends attempt two as the one permitted repair. A
+third advance receives `attempts_exhausted` from `reserve_operation` itself.
+There is no counter in application code that could drift from that, and a
+transport failure, a refusal, a truncation, and a structural repair all consume
+the same two attempts.
+
+The controller row (`stage = 'compile'`) is leased by a separate function that
+spends no attempt and refuses any other stage, so the mutex that makes one
+advance exclusive cannot be mistaken for permission to call a provider.
+
+## No new Qloo call during compilation
+
+Compilation reads the frozen approvals and the immutable captures those
+approvals point at, by id, regardless of lookup TTL. When an approval's cited
+evidence cannot be rebuilt from the capture it names, the compilation fails with
+`MISSING_APPROVED_EVIDENCE`; there is no code path that retrieves a
+replacement. `tests/server/compile-failures.test.ts` asserts the upstream
+transport call count is unchanged across a whole two-slot build.
+
+## Provenance gains its fourth layer, from deterministic evidence only
+
+`ProvenanceView` is unchanged: it still exposes exactly *Qloo retrieved →
+FirstPlayable proposed → Creator approved*, and still has no field for a scene
+change. The fourth layer lives on the **playable**, as
+`PlayableView.scene_changed`, and it exists only where a validated module and a
+computed mechanical witness both exist. Its sentence is generated by
+`describeWitness` from the engine's own paired-replay observation — for example
+"After core.ask_context then core.inspect, `core.give` is locked with the
+discovery influence and enabled without it." No model writes it, and the
+browser test asserts the rendered sentence claims nothing about quality,
+originality, or what produced the idea.
+
+## Migration created, and NOT applied
+
+| Version | File | Applied live |
+|---|---|---|
+| `20261004160000` | `supabase/migrations/20261004160000_phase4_compilation.sql` | **NO** |
+
+It is additive: no new table, no dropped column, no rewritten earlier function.
+It swaps one check constraint to admit the `compile` stage, adds
+`projects.pending_version_id` and `projects.compiled_modules`, adds five
+columns and two constraints to `scene_versions`, and defines seven
+`service_role`-only functions. The constraint
+`scene_versions_validation_passed` refuses a row whose validation summary does
+not say `ok` and does not carry its subset and witness reports, so "only
+validated versions are inserted" is a database guarantee.
+`tests/server/migrations.test.ts` checks all of this statically, offline.
+
+## What the cloud session deliberately did not do
+
+- No Qloo request, no OpenAI request, no Supabase mutation, no Supabase
+  management API call, no Vercel deployment, no deployed verification.
+- No `.env` was read, no credential was requested, received, printed, or used.
+- `smoke:qloo`, `smoke:proposal`, `smoke:supabase`, `smoke:openai`, and
+  `verify:deployment` were not run.
+- CI was not changed and still requires no secret.
+
+## OVERALL PHASE 4 IS NOT YET COMPLETE
+
+The following gates can only be satisfied by a local session with real
+credentials, and **none** of them has been satisfied:
+
+1. **Real database migration application.** `20261004160000` is committed and
+   statically tested, and has not been applied to the live project.
+2. **Real provider generation.** No real OpenAI call has produced a base or a
+   module. The compilation schemas have never been sent to the provider.
+3. **Live SceneVersion persistence.** `scene_versions` has never been written
+   against real Postgres; the compare-and-swap is proven only against the
+   in-memory gateway that re-implements the committed SQL.
+4. **Live one-influence compilation** on a fresh brief, end to end.
+5. **Live two-influence compilation** on a fresh brief, end to end.
+6. **Vercel deployment**, including deploying `OPENAI_API_KEY`, which Phase 2
+   deliberately withheld because no deployed route then made a model call.
+7. **Deployed Phase 4 verification**, against the production URL with real
+   services.
+8. **Final Phase 4 evidence** in `docs/PHASE4_EVIDENCE.md`, with the real
+   stage-by-stage call counts, token usage, verbatim witness sentences, and
+   every failure encountered.
+
+`docs/PHASE4_LOCAL_HANDOFF.md` states each of these as an exact task, with the
+verification queries, the expected provider-call counts, and the binary gate.
+
+## What Phase 4 did not build
+
+No revision command of any kind: no remove, edit, replace, or ending-copy
+override route, and no `POST /api/projects/:id/revisions`. No publication, read
+token, revocation, public player route, or offline HTML export. No version
+comparison beyond reviewing one pending scene, no common-choice replay between
+historical revisions, and no model-selected comparator. No third influence
+slot, no third Qloo domain, no new Qloo call during compilation, no multi-hop
+retrieval, and no additional cultural retrieval. No generated images, audio,
+music, voice, or 3D. No arbitrary scene patch, JSON Patch, generated
+JavaScript, `eval`, `Function`, or model tool execution. No background worker,
+job queue, LangChain, LangGraph, multi-agent architecture, RAG, vector
+database, Redis, or FastAPI.
+
+`tests/engine/fixtures.test.ts` asserts the exact route file list and the
+absence of any Phase 5 route, and `tests/server/migrations.test.ts` asserts the
+absence of any publication, share, token, or export function in SQL.
+
+## Next authorized phase
+
+**None.** Phase 4's own gate has not passed. The next authorized work is the
+local live-acceptance half of Phase 4, as specified in
+`docs/PHASE4_LOCAL_HANDOFF.md`. **Phase 5 is not authorized** and must not be
+started, not even partially, until Phase 4's binary gate passes and this
+document records it.
