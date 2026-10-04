@@ -38,7 +38,7 @@ describe("committed migrations", () => {
       "20261004085412_phase3_qloo.sql",
       "20261004160000_phase4_compilation.sql",
       "20261004173000_phase4_validation_boolean.sql",
-      "20261004190000_phase5_revision_share.sql",
+      "20261004200000_phase5_revision_share.sql",
     ]);
   });
 
@@ -405,7 +405,7 @@ describe("committed migrations", () => {
 
   it("adds phase 5 without creating a table or rewriting a column", () => {
     const phase5 = readFileSync(
-      join(migrationsDir, "20261004190000_phase5_revision_share.sql"),
+      join(migrationsDir, "20261004200000_phase5_revision_share.sql"),
       "utf8",
     );
     expect(/create\s+table/i.test(phase5)).toBe(false);
@@ -440,7 +440,7 @@ describe("committed migrations", () => {
    */
   it("keeps the previous commit signature callable as a delegation", () => {
     const phase5 = readFileSync(
-      join(migrationsDir, "20261004190000_phase5_revision_share.sql"),
+      join(migrationsDir, "20261004200000_phase5_revision_share.sql"),
       "utf8",
     );
     const compat = phase5.slice(phase5.indexOf("as $compat$"));

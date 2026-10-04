@@ -1489,7 +1489,7 @@ migration, both leave the deployment in a state nobody verified.
 | Public read-only player at `/play/:token` | `src/components/share/PublicPlayer.tsx` |
 | Trusted offline export | `src/export/`, `scripts/build-export-runtime.ts` |
 | Studio panels: revise, compare, publish, export | `src/components/studio/{RevisionPanel,VersionCompare,PublishPanel}.tsx` |
-| Migration (additive, drops nothing) | `supabase/migrations/20261004190000_phase5_revision_share.sql` |
+| Migration (additive, drops nothing) | `supabase/migrations/20261004200000_phase5_revision_share.sql` |
 
 Reused unchanged: the Phase 1 engine and validator (`fp-engine-validator-1.0`),
 the Phase 4 controller, compiler (`fp-compiler-4.2`), module reuse by input
@@ -1510,7 +1510,7 @@ structurally: no compiler is in scope on those paths. No Qloo call was added.
 
 ### What remains, in order
 
-1. Apply `20261004190000_phase5_revision_share.sql` to project
+1. Apply `20261004200000_phase5_revision_share.sql` to project
    `vggqtyxtdqvdawwpyzea` through the Supabase management path. It is additive —
    no table, no dropped function, one widened check constraint — so the Phase 4
    production build keeps working after it is applied.
