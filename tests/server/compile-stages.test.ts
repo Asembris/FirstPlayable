@@ -468,3 +468,38 @@ describe("the fixed instruction blocks state the id rules with worked examples",
   });
 
 });
+
+/**
+ * The module block has to teach the same wiring the base block does.
+ *
+ * A real live Discovery module declared a variable nothing set and nothing
+ * read, alongside the hook-port mistake. The rule was stated; the working
+ * shape was not, exactly as in the base block before it was corrected.
+ */
+describe("the module block shows how a module variable is wired", () => {
+  it("names the set-once, read-in-the-gate shape for each slot", () => {
+    for (const slot of ["discovery", "commitment"] as const) {
+      const block = moduleInstructions(slot);
+      expect(block, slot).toMatch(/only ever set, or only ever read, is\s+rejected/);
+      expect(block, slot).toContain(`${slot}.learned`);
+      expect(block, slot).toMatch(/taken once/);
+      expect(block, slot).toMatch(/gated base action opens only after/);
+    }
+  });
+
+  it("still names no other slot anywhere in a module block", () => {
+    for (const slot of ["discovery", "commitment"] as const) {
+      const other = slot === "discovery" ? "commitment" : "discovery";
+      expect(moduleInstructions(slot), `${slot} must not mention ${other}`).not.toContain(other);
+    }
+  });
+
+  it("tells each module that its hook port is not its to name", () => {
+    expect(moduleInstructions("discovery")).toMatch(
+      /a hook has no action field, and this application\s+attaches every hook you return to core\.inspect/,
+    );
+    expect(moduleInstructions("commitment")).toMatch(
+      /a hook has no action field, and this application\s+attaches every hook you return to core\.ask_context/,
+    );
+  });
+});
