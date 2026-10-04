@@ -30,12 +30,26 @@ const EXPECTED_TABLES = [
   "sessions",
 ] as const;
 
-describe("phase 2 migrations", () => {
+describe("committed migrations", () => {
   it("are committed in deterministic order", () => {
     expect(files).toEqual([
       "20261003222350_phase2_schema.sql",
       "20261003222456_phase2_atomic_functions.sql",
+      "20261004085412_phase3_qloo.sql",
     ]);
+  });
+
+  it("never rewrites an earlier migration's tables or columns", () => {
+    const phase3 = readFileSync(join(migrationsDir, "20261004085412_phase3_qloo.sql"), "utf8");
+    expect(/drop\s+(table|column|function|trigger|index)/i.test(phase3)).toBe(false);
+    expect(/alter\s+column/i.test(phase3)).toBe(false);
+    expect(/create\s+table/i.test(phase3)).toBe(false);
+    // Only additive column work, and only on the two tables phase 3 extends.
+    const added = [...phase3.matchAll(/alter table public\.([a-z_]+)/g)].map((m) => m[1]);
+    expect([...new Set(added)].sort()).toEqual(["budget_buckets", "projects"]);
+    for (const statement of phase3.matchAll(/add column([^;]*);/g)) {
+      expect(statement[0]).toContain("if not exists");
+    }
   });
 
   it("create exactly the eight intended tables", () => {
@@ -92,6 +106,53 @@ describe("phase 2 migrations", () => {
     }
   });
 
+  it("defines the phase 3 launch policy and project writes, and nothing else", () => {
+    for (const fn of [
+      "public.reserve_qloo_launch",
+      "public.release_qloo_launch",
+      "public.confirm_project_anchor",
+      "public.set_project_references",
+      "public.set_project_proposal_draft",
+    ]) {
+      expect(sql).toContain(`create or replace function ${fn}(`);
+    }
+    const defined = [...sql.matchAll(/create or replace function public\.([a-z_0-9]+)\(/g)]
+      .map((match) => match[1])
+      .sort();
+    expect(defined).toEqual([
+      "append_influence_decision",
+      "complete_operation",
+      "confirm_project_anchor",
+      "operation_summary",
+      "reconcile_model_budget",
+      "reject_content_mutation",
+      "release_qloo_launch",
+      "reserve_model_budget",
+      "reserve_operation",
+      "reserve_qloo_launch",
+      "set_project_proposal_draft",
+      "set_project_references",
+    ]);
+  });
+
+  it("keeps Qloo launch pacing in its own scope, away from model budgeting", () => {
+    const phase3 = readFileSync(join(migrationsDir, "20261004085412_phase3_qloo.sql"), "utf8");
+    // The launch policy writes last_launch_at; the model-budget functions in
+    // the phase 2 migration never mention that column, so the two share the
+    // table without sharing a row or a counter.
+    const phase2 = readFileSync(
+      join(migrationsDir, "20261003222456_phase2_atomic_functions.sql"),
+      "utf8",
+    );
+    expect(phase3).toContain("last_launch_at");
+    expect(phase2.includes("last_launch_at")).toBe(false);
+    // Releasing a launch lease is scoped, so it cannot reclaim a model lease.
+    const release = phase3.slice(
+      phase3.indexOf("create or replace function public.release_qloo_launch("),
+    );
+    expect(release.slice(0, release.indexOf("$func$;"))).toContain("where scope = p_scope");
+  });
+
   it("uses no security definer function and no mutable search path", () => {
     expect(/security\s+definer/i.test(sql)).toBe(false);
     const functions = [...sql.matchAll(/create or replace function[\s\S]*?\nas \$func\$/g)];
@@ -102,7 +163,17 @@ describe("phase 2 migrations", () => {
   });
 
   it("takes a row lock in every function that enforces a shared limit", () => {
-    for (const fn of ["reserve_operation", "reserve_model_budget", "reconcile_model_budget", "append_influence_decision"]) {
+    for (const fn of [
+      "reserve_operation",
+      "reserve_model_budget",
+      "reconcile_model_budget",
+      "append_influence_decision",
+      "reserve_qloo_launch",
+      "release_qloo_launch",
+      "confirm_project_anchor",
+      "set_project_references",
+      "set_project_proposal_draft",
+    ]) {
       const body = sql.slice(
         sql.indexOf(`create or replace function public.${fn}(`),
       );

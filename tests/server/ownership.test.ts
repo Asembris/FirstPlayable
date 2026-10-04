@@ -91,19 +91,29 @@ describe("owner-scoped project access", () => {
     const project = await createProject(gateway, session, { brief: SECOND_COPY_BRIEF }, LIMITS);
     const view = toProjectView(project);
 
+    // The whole public shape. Provider diagnostics, request fingerprints,
+    // quota counters, the owner session id, the clean base scene, and the
+    // private affinity values are all absent by construction.
     expect(Object.keys(view).sort()).toEqual([
       "active_version_id",
+      "anchor",
       "anchor_confirmed",
+      "approvals",
       "approved_slots",
       "brief",
       "created_at",
       "id",
+      "proposals",
+      "provenance",
+      "reference_capture_ids",
       "revision",
       "title",
       "updated_at",
       "workflow_state",
     ]);
     expect(JSON.stringify(view)).not.toContain(session.id);
+    expect(JSON.stringify(view)).not.toContain("affinity");
+    expect(JSON.stringify(view)).not.toContain("request_fingerprint");
   });
 
   it("enforces the per-session daily project allowance in the database", async () => {
@@ -161,32 +171,91 @@ describe("the gateway contract itself enforces owner scoping", () => {
     return body.replace(/\/\*\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
   })();
 
-  it("declares exactly the owner-scoped or scope-keyed methods phase 2 needs", () => {
+  /**
+   * Every method, and the one category that is deliberately not owner-scoped.
+   *
+   * A `qloo_captures` row is not owner data: it is a normalized excerpt of a
+   * public catalogue response, keyed by a request fingerprint, carrying no
+   * project id, session id, creator text, or decision. Sharing it between two
+   * creators who confirmed the same artist is what makes a cache hit cost zero
+   * upstream calls. Everything that touches a *project* stays owner-scoped.
+   */
+  const CAPTURE_METHODS = [
+    "findLatestQlooCapture",
+    "findQlooCaptureByFingerprint",
+    "findQlooCapturesByFingerprints",
+    "findQlooCapturesByIds",
+    "insertQlooCapture",
+  ] as const;
+
+  it("declares exactly the owner-scoped or scope-keyed methods phases 2 and 3 need", () => {
     const methods = [...interfaceBody.matchAll(/^\s{2}(\w+)\(/gm)].map((match) => match[1]).sort();
     expect(methods).toEqual([
       "appendInfluenceDecision",
       "completeOperation",
+      "confirmProjectAnchor",
       "countProjectsForOwnerSince",
       "deleteBudgetBucket",
       "deleteSession",
+      ...CAPTURE_METHODS,
       "findLiveSessionByHash",
       "findProjectForOwner",
       "insertProject",
       "insertSession",
+      "listInfluenceDecisions",
       "reconcileModelBudget",
+      "releaseQlooLaunch",
       "reserveModelBudget",
       "reserveOperation",
+      "reserveQlooLaunch",
+      "setProjectProposalDraft",
+      "setProjectReferences",
       "touchSession",
-    ]);
+    ].sort());
   });
 
-  it("offers no project read that omits an owner session id", () => {
-    const projectReads = [...interfaceBody.matchAll(/^\s{2}(\w*Project\w*)\(([^)]*)\)/gm)];
-    expect(projectReads.length).toBeGreaterThan(0);
-    for (const read of projectReads) {
-      const takesOwner =
-        (read[2] ?? "").includes("ownerSessionId") || (read[2] ?? "").includes("InsertProjectInput");
-      expect(takesOwner, `${read[1]} must be owner-scoped`).toBe(true);
+  /**
+   * Resolves a method's parameter type and requires an owner session id to be
+   * reachable from it — either named inline, or declared on the input type.
+   * This is what stops a phase 3 write from taking a bare `{ projectId }`.
+   */
+  it("offers no project read or write that omits an owner session id", () => {
+    const projectMethods = [...interfaceBody.matchAll(/^\s{2}(\w*Project\w*)\(([^)]*)\)/gm)];
+    expect(projectMethods.length).toBeGreaterThan(4);
+
+    for (const method of projectMethods) {
+      const name = method[1] ?? "";
+      const parameters = method[2] ?? "";
+      if (parameters.includes("ownerSessionId")) continue;
+
+      const typeName = /:\s*(\w+)\s*$/.exec(parameters.trim())?.[1];
+      expect(typeName, `${name} must name its input type`).toBeDefined();
+      const declaration = new RegExp(
+        `export type ${typeName} = \\{([\\s\\S]*?)\\n\\};`,
+      ).exec(gatewaySource);
+      expect(declaration, `${typeName} must be declared in the gateway`).not.toBeNull();
+      expect(
+        (declaration?.[1] ?? "").includes("ownerSessionId"),
+        `${name} must be owner-scoped through ${typeName}`,
+      ).toBe(true);
+    }
+  });
+
+  it("names the influence-decision reads owner-scoped too", () => {
+    const decisionReads = [...interfaceBody.matchAll(/^\s{2}(\w*InfluenceDecision\w*)\(([^)]*)\)/gm)];
+    expect(decisionReads.length).toBeGreaterThan(1);
+    for (const read of decisionReads) {
+      const parameters = read[2] ?? "";
+      const typeName = /:\s*(\w+)\s*$/.exec(parameters.trim())?.[1];
+      const declaration =
+        typeName === undefined
+          ? null
+          : new RegExp(`export type ${typeName} = \\{([\\s\\S]*?)\\n\\};`).exec(gatewaySource);
+      expect(
+        parameters.includes("ownerSessionId") ||
+          (declaration?.[1] ?? "").includes("ownerSessionId"),
+        `${read[1]} must be owner-scoped`,
+      ).toBe(true);
     }
   });
 

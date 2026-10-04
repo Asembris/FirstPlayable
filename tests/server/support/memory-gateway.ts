@@ -16,22 +16,34 @@
 
 import { createHash, randomUUID } from "node:crypto";
 import type {
+  AnchorConfirmation,
   AppendDecisionInput,
   BudgetReconciliation,
   BudgetReservation,
   CompleteOperationInput,
+  ConfirmAnchorInput,
   DataGateway,
   DecisionAppend,
+  InfluenceDecisionRow,
   InsertProjectInput,
+  InsertQlooCaptureInput,
   InsertSessionInput,
   OperationCompletion,
   OperationReservation,
   OperationSummary,
+  ProjectReferencesUpdate,
   ProjectRow,
+  ProposalDraftUpdate,
+  QlooCaptureRow,
+  QlooLaunchRelease,
+  QlooLaunchReservation,
   ReconcileBudgetInput,
   ReserveBudgetInput,
   ReserveOperationInput,
+  ReserveQlooLaunchInput,
   SessionRow,
+  SetProjectReferencesInput,
+  SetProposalDraftInput,
 } from "../../../src/server/db/gateway";
 import { appErrors } from "../../../src/server/security/errors";
 
@@ -66,9 +78,13 @@ type BucketRecord = {
   reserved_tokens: number;
   used_tokens: number;
   active_leases: Lease[];
+  /** Only the Qloo launch scope writes this, exactly as in the migration. */
+  last_launch_at: string | null;
 };
 
 type ProjectRecord = ProjectRow & { base_scene: unknown };
+
+type DecisionRecord = InfluenceDecisionRow;
 
 export type GatewayMethod = keyof DataGateway;
 
@@ -77,13 +93,11 @@ export class MemoryGateway implements DataGateway {
   readonly projects = new Map<string, ProjectRecord>();
   readonly operations = new Map<string, OperationRecord>();
   readonly buckets = new Map<string, BucketRecord>();
-  readonly decisions: {
-    id: string;
-    project_id: string;
-    decision_kind: string;
-    slot: string | null;
-    created_at: string;
-  }[] = [];
+  readonly decisions: DecisionRecord[] = [];
+  readonly captures = new Map<string, QlooCaptureRow>();
+
+  /** Every granted Qloo launch, in order, so a test can assert the pacing. */
+  readonly qlooLaunches: { label: string; at: string; leaseId: string }[] = [];
 
   /** Methods configured to fail, so the database-outage path can be exercised. */
   readonly failing = new Set<GatewayMethod>();
@@ -113,6 +127,17 @@ export class MemoryGateway implements DataGateway {
       "reconcileModelBudget",
       "deleteBudgetBucket",
       "appendInfluenceDecision",
+      "listInfluenceDecisions",
+      "findQlooCaptureByFingerprint",
+      "findQlooCapturesByFingerprints",
+      "findLatestQlooCapture",
+      "findQlooCapturesByIds",
+      "insertQlooCapture",
+      "reserveQlooLaunch",
+      "releaseQlooLaunch",
+      "confirmProjectAnchor",
+      "setProjectReferences",
+      "setProjectProposalDraft",
     ];
     for (const method of methods) this.failing.add(method);
   }
@@ -190,7 +215,9 @@ export class MemoryGateway implements DataGateway {
       brief: input.brief,
       anchor: null,
       revision: 1,
+      reference_capture_ids: [],
       active_approvals: {},
+      proposal_draft: null,
       base_scene: null,
       base_hash: null,
       active_version_id: null,
@@ -227,7 +254,11 @@ export class MemoryGateway implements DataGateway {
   /** The column projection the real gateway selects: never `base_scene`. */
   #projectRow(record: ProjectRecord): ProjectRow {
     const { base_scene: _omitted, ...row } = record;
-    return { ...row, active_approvals: { ...row.active_approvals } };
+    return {
+      ...row,
+      reference_capture_ids: [...row.reference_capture_ids],
+      active_approvals: { ...row.active_approvals },
+    };
   }
 
   // -------------------------------------------------------------------------
@@ -355,6 +386,7 @@ export class MemoryGateway implements DataGateway {
         reserved_tokens: 0,
         used_tokens: 0,
         active_leases: [],
+        last_launch_at: null,
       };
       this.buckets.set(key, bucket);
     }
@@ -479,6 +511,10 @@ export class MemoryGateway implements DataGateway {
       project_id: input.projectId,
       decision_kind: input.decisionKind,
       slot: input.slot,
+      proposal_snapshot: input.proposalSnapshot ?? null,
+      selected_evidence_ids: [...input.selectedEvidenceIds],
+      creator_text: input.creatorText,
+      predecessor_id: input.predecessorId,
       created_at: nowIso,
     });
 
@@ -502,6 +538,334 @@ export class MemoryGateway implements DataGateway {
       active_approvals: { ...approvals },
     };
   }
+
+  async listInfluenceDecisions(
+    projectId: string,
+    ownerSessionId: string,
+  ): Promise<InfluenceDecisionRow[]> {
+    this.#guard("listInfluenceDecisions");
+    const project = this.projects.get(projectId);
+    if (project === undefined || project.owner_session_id !== ownerSessionId) return [];
+    return this.decisions
+      .filter((decision) => decision.project_id === projectId)
+      .map((decision) => ({
+        ...decision,
+        selected_evidence_ids: [...decision.selected_evidence_ids],
+      }));
+  }
+
+  // -------------------------------------------------------------------------
+  // Qloo captures
+  // -------------------------------------------------------------------------
+
+  async findQlooCaptureByFingerprint(fingerprint: string): Promise<QlooCaptureRow | null> {
+    this.#guard("findQlooCaptureByFingerprint");
+    const row = this.captures.get(fingerprint);
+    return row === undefined ? null : { ...row };
+  }
+
+  async findQlooCapturesByFingerprints(
+    fingerprints: readonly string[],
+  ): Promise<QlooCaptureRow[]> {
+    this.#guard("findQlooCapturesByFingerprints");
+    return fingerprints
+      .map((fingerprint) => this.captures.get(fingerprint))
+      .filter((row): row is QlooCaptureRow => row !== undefined)
+      .map((row) => ({ ...row }));
+  }
+
+  async findLatestQlooCapture(
+    artistEntityId: string,
+    domain: "movie" | "videogame",
+  ): Promise<QlooCaptureRow | null> {
+    this.#guard("findLatestQlooCapture");
+    const matching = [...this.captures.values()]
+      .filter((row) => row.artist_entity_id === artistEntityId && row.domain === domain)
+      .sort((a, b) => Date.parse(b.captured_at) - Date.parse(a.captured_at));
+    const first = matching[0];
+    return first === undefined ? null : { ...first };
+  }
+
+  async findQlooCapturesByIds(ids: readonly string[]): Promise<QlooCaptureRow[]> {
+    this.#guard("findQlooCapturesByIds");
+    const wanted = new Set(ids);
+    return [...this.captures.values()]
+      .filter((row) => wanted.has(row.id))
+      .map((row) => ({ ...row }));
+  }
+
+  /** Mirrors the `ignoreDuplicates` upsert: the first writer's row wins. */
+  async insertQlooCapture(input: InsertQlooCaptureInput): Promise<QlooCaptureRow> {
+    this.#guard("insertQlooCapture");
+    await Promise.resolve();
+    const existing = this.captures.get(input.requestFingerprint);
+    if (existing !== undefined) return { ...existing };
+    const capturedAt = this.now().toISOString();
+    if (Date.parse(input.cacheExpiresAt) <= Date.parse(capturedAt)) {
+      throw appErrors.persistenceUnavailable("cache_expires_at must be after captured_at");
+    }
+    const row: QlooCaptureRow = {
+      id: randomUUID(),
+      kind: input.kind,
+      request_fingerprint: input.requestFingerprint,
+      normalized_query: input.normalizedQuery,
+      artist_entity_id: input.artistEntityId,
+      domain: input.domain,
+      results: input.results,
+      quota_diagnostics: input.quotaDiagnostics ?? null,
+      normalizer_version: input.normalizerVersion,
+      captured_at: capturedAt,
+      cache_expires_at: input.cacheExpiresAt,
+    };
+    this.captures.set(row.request_fingerprint, row);
+    return { ...row };
+  }
+
+  // -------------------------------------------------------------------------
+  // Qloo launch policy
+  // -------------------------------------------------------------------------
+
+  /**
+   * Re-implements `reserve_qloo_launch`. The yield before the critical section
+   * models the row lock: two interleaved callers cannot both be granted a
+   * lease beyond the cap, which is the behaviour a test needs to observe.
+   */
+  async reserveQlooLaunch(input: ReserveQlooLaunchInput): Promise<QlooLaunchReservation> {
+    this.#guard("reserveQlooLaunch");
+    if (input.maxLeases < 1 || input.maxLeases > 8) {
+      throw appErrors.persistenceUnavailable("max leases out of range");
+    }
+    if (input.minSpacingMs < 0 || input.minSpacingMs > 60_000) {
+      throw appErrors.persistenceUnavailable("spacing out of range");
+    }
+    if (input.leaseSeconds < 1 || input.leaseSeconds > 600) {
+      throw appErrors.persistenceUnavailable("lease seconds out of range");
+    }
+    await Promise.resolve();
+
+    const key = `${input.scope}|${input.bucketKey}|${input.windowStart}`;
+    let bucket = this.buckets.get(key);
+    if (bucket === undefined) {
+      bucket = {
+        scope: input.scope,
+        bucket_key: input.bucketKey,
+        window_start: input.windowStart,
+        window_end: input.windowEnd,
+        call_limit: input.maxLeases,
+        reserved_calls: 0,
+        used_calls: 0,
+        reserved_tokens: 0,
+        used_tokens: 0,
+        active_leases: [],
+        last_launch_at: null,
+      };
+      this.buckets.set(key, bucket);
+    }
+
+    const now = this.now().getTime();
+    const kept = bucket.active_leases.filter((lease) => Date.parse(lease.expires_at) > now);
+    bucket.active_leases = kept;
+    bucket.reserved_calls = kept.length;
+    bucket.call_limit = input.maxLeases;
+
+    if (kept.length >= input.maxLeases) {
+      const nextFree = Math.min(...kept.map((lease) => Date.parse(lease.expires_at)));
+      return {
+        granted: false,
+        reason: "concurrency",
+        active_leases: kept.length,
+        max_leases: input.maxLeases,
+        retry_after_ms: Math.max(1, Math.min(5_000, Math.ceil(nextFree - now))),
+      };
+    }
+
+    if (bucket.last_launch_at !== null) {
+      const since = now - Date.parse(bucket.last_launch_at);
+      if (since < input.minSpacingMs) {
+        return {
+          granted: false,
+          reason: "spacing",
+          active_leases: kept.length,
+          max_leases: input.maxLeases,
+          retry_after_ms: Math.max(1, Math.ceil(input.minSpacingMs - since)),
+        };
+      }
+    }
+
+    const leaseId = randomUUID();
+    const expiresAt = new Date(now + input.leaseSeconds * 1000).toISOString();
+    bucket.active_leases.push({ id: leaseId, calls: 1, tokens: 0, expires_at: expiresAt });
+    bucket.reserved_calls = bucket.active_leases.length;
+    bucket.last_launch_at = new Date(now).toISOString();
+    this.qlooLaunches.push({
+      label: input.bucketKey,
+      at: bucket.last_launch_at,
+      leaseId,
+    });
+
+    return {
+      granted: true,
+      lease_id: leaseId,
+      active_leases: bucket.active_leases.length,
+      max_leases: input.maxLeases,
+      lease_expires_at: expiresAt,
+      launched_at: bucket.last_launch_at,
+    };
+  }
+
+  async releaseQlooLaunch(scope: string, leaseId: string): Promise<QlooLaunchRelease> {
+    this.#guard("releaseQlooLaunch");
+    await Promise.resolve();
+    for (const bucket of this.buckets.values()) {
+      if (bucket.scope !== scope) continue;
+      const index = bucket.active_leases.findIndex((lease) => lease.id === leaseId);
+      if (index === -1) continue;
+      bucket.active_leases.splice(index, 1);
+      bucket.reserved_calls = bucket.active_leases.length;
+      return { released: true, active_leases: bucket.active_leases.length };
+    }
+    return { released: false, reason: "lease_not_found" };
+  }
+
+  // -------------------------------------------------------------------------
+  // Project state writes
+  // -------------------------------------------------------------------------
+
+  async confirmProjectAnchor(input: ConfirmAnchorInput): Promise<AnchorConfirmation> {
+    this.#guard("confirmProjectAnchor");
+    await Promise.resolve();
+
+    const anchor = input.anchor;
+    if (typeof anchor !== "object" || anchor === null) {
+      throw appErrors.persistenceUnavailable("an anchor object is required");
+    }
+    const nextEntity = (anchor as { entity_id?: unknown }).entity_id;
+    if (typeof nextEntity !== "string" || nextEntity.length === 0) {
+      throw appErrors.persistenceUnavailable("the anchor must name a confirmed entity id");
+    }
+
+    const project = this.projects.get(input.projectId);
+    if (project === undefined || project.owner_session_id !== input.ownerSessionId) {
+      return { outcome: "not_found" };
+    }
+    if (project.revision !== input.expectedRevision) {
+      return { outcome: "revision_conflict", current_revision: project.revision };
+    }
+
+    const previousEntity =
+      typeof project.anchor === "object" && project.anchor !== null
+        ? ((project.anchor as { entity_id?: unknown }).entity_id ?? null)
+        : null;
+    const occupiedSlots = Object.keys(project.active_approvals);
+    const hasCulturalWork =
+      project.reference_capture_ids.length > 0 ||
+      occupiedSlots.length > 0 ||
+      project.proposal_draft !== null;
+
+    const changing = typeof previousEntity === "string" && previousEntity !== nextEntity;
+
+    if (changing && hasCulturalWork && !input.rebranch) {
+      return {
+        outcome: "rebranch_required",
+        current_revision: project.revision,
+        previous_entity_id: previousEntity,
+        occupied_slots: occupiedSlots,
+      };
+    }
+
+    const cleared: string[] = [];
+    if (changing && hasCulturalWork) {
+      const nowIso = this.now().toISOString();
+      for (const slot of occupiedSlots) {
+        this.decisions.push({
+          id: randomUUID(),
+          project_id: input.projectId,
+          decision_kind: "remove",
+          slot: slot as "discovery" | "commitment",
+          proposal_snapshot: {
+            kind: "remove",
+            reason: "anchor_rebranch",
+            previous_entity_id: previousEntity,
+            next_entity_id: nextEntity,
+            decided_at: nowIso,
+            project_revision: project.revision,
+          },
+          selected_evidence_ids: [],
+          creator_text: null,
+          predecessor_id: String(project.active_approvals[slot]),
+          created_at: nowIso,
+        });
+        cleared.push(slot);
+      }
+      project.active_approvals = {};
+      project.reference_capture_ids = [];
+      project.proposal_draft = null;
+    }
+
+    project.anchor = anchor;
+    project.workflow_state = "ANCHOR_CONFIRMED";
+    project.revision += 1;
+    project.updated_at = this.now().toISOString();
+
+    return {
+      outcome: "confirmed",
+      revision: project.revision,
+      anchor_entity_id: nextEntity,
+      invalidated: cleared.length > 0,
+      cleared_slots: cleared,
+    };
+  }
+
+  async setProjectReferences(
+    input: SetProjectReferencesInput,
+  ): Promise<ProjectReferencesUpdate> {
+    this.#guard("setProjectReferences");
+    await Promise.resolve();
+    const project = this.projects.get(input.projectId);
+    if (project === undefined || project.owner_session_id !== input.ownerSessionId) {
+      return { outcome: "not_found" };
+    }
+    if (project.revision !== input.expectedRevision) {
+      return { outcome: "revision_conflict", current_revision: project.revision };
+    }
+    if (anchorEntityOf(project) !== input.anchorEntityId) {
+      return { outcome: "anchor_mismatch" };
+    }
+    project.reference_capture_ids = [...input.captureIds];
+    project.proposal_draft = null;
+    project.workflow_state = "REFERENCES_READY";
+    project.updated_at = this.now().toISOString();
+    return {
+      outcome: "updated",
+      revision: project.revision,
+      capture_ids: [...project.reference_capture_ids],
+    };
+  }
+
+  async setProjectProposalDraft(input: SetProposalDraftInput): Promise<ProposalDraftUpdate> {
+    this.#guard("setProjectProposalDraft");
+    await Promise.resolve();
+    const project = this.projects.get(input.projectId);
+    if (project === undefined || project.owner_session_id !== input.ownerSessionId) {
+      return { outcome: "not_found" };
+    }
+    if (project.revision !== input.expectedRevision) {
+      return { outcome: "revision_conflict", current_revision: project.revision };
+    }
+    if (anchorEntityOf(project) !== input.anchorEntityId) {
+      return { outcome: "anchor_mismatch" };
+    }
+    project.proposal_draft = input.draft ?? null;
+    project.workflow_state = "PROPOSALS_READY";
+    project.updated_at = this.now().toISOString();
+    return { outcome: "updated", revision: project.revision };
+  }
+}
+
+function anchorEntityOf(project: ProjectRecord): string {
+  if (typeof project.anchor !== "object" || project.anchor === null) return "";
+  const value = (project.anchor as { entity_id?: unknown }).entity_id;
+  return typeof value === "string" ? value : "";
 }
 
 function summarize(record: OperationRecord): OperationSummary {
