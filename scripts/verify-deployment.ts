@@ -2226,7 +2226,14 @@ async function phase5Flow(base: string): Promise<void> {
     record(
       "the deployed phase 5 workflow completed",
       false,
-      error instanceof Error ? `${error.name}: ${error.message.slice(0, 300)}` : "unknown",
+      error instanceof Error
+        ? // A bare "fetch failed" hides the transport reason, which is in `cause`.
+          `${error.name}: ${error.message.slice(0, 300)}${
+            error.cause instanceof Error
+              ? ` (cause: ${(error.cause as { code?: string }).code ?? error.cause.name}: ${error.cause.message.slice(0, 160)})`
+              : ""
+          }`
+        : "unknown",
     );
   }
 }
