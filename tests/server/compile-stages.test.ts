@@ -363,32 +363,99 @@ describe("the fixed instruction blocks state the id rules with worked examples",
   });
 
   /**
-   * The worked example in the block has to be the design the hand-authored
-   * fixture actually uses, or it teaches the model the wrong shape. This reads
-   * the fixture and checks the three claims the example makes about it.
+   * The prescribed skeleton has to be the one the hand-authored fixture really
+   * uses, or the block teaches the model a shape the validator will reject.
+   *
+   * Three live base compilations failed in a row before the skeleton was
+   * prescribed: the block fixed the six action ids and verbs but left their
+   * availability conditions to the model, which declared variables nothing
+   * read. Because a layer A finding skips graph analysis entirely, the one
+   * permitted repair never saw the downstream consequences of its own fix, and
+   * on one attempt it "fixed" an unread variable by setting that action's
+   * condition to {kind: never} — disabling a required action. The ceiling and
+   * the validator were both right; the instruction was underspecified.
+   *
+   * This reads the fixture and asserts the block and the fixture agree, so the
+   * two cannot drift apart.
    */
-  it("gives a variable-reading example that the valid fixture really follows", () => {
-    expect(BASE_INSTRUCTIONS).toMatch(/core\.ask_terms sets core\.promised/);
-
+  it("prescribes the availability skeleton the valid fixture really uses", () => {
+    const reads = (when: unknown, varId: string, equals: boolean): boolean =>
+      JSON.stringify(when).includes(
+        JSON.stringify({ var_id: varId, equals }).replace(/[{}]/gu, ""),
+      ) ||
+      JSON.stringify(when).includes(
+        JSON.stringify({ equals, var_id: varId }).replace(/[{}]/gu, ""),
+      );
     const named = (id: string) =>
       SECOND_COPY_BASE.core.actions.find((action) => action.id === id);
-    const reads = (when: unknown, varId: string): boolean =>
-      JSON.stringify(when).includes(`"${varId}"`);
 
-    const askTerms = named("core.ask_terms");
-    const withhold = named("core.withhold");
-    expect(askTerms, "the fixture must declare core.ask_terms").toBeDefined();
-    expect(withhold, "the fixture must declare core.withhold").toBeDefined();
+    // The three variables the block names are exactly the fixture's.
+    expect(SECOND_COPY_BASE.core.variables.map((variable) => variable.id)).toEqual([
+      "core.inspected",
+      "core.context",
+      "core.promised",
+    ]);
+    for (const id of ["core.inspected", "core.context", "core.promised"]) {
+      expect(BASE_INSTRUCTIONS, id).toContain(id);
+    }
 
-    // 1. core.ask_terms sets core.promised.
-    expect(
-      JSON.stringify(askTerms?.branches).includes('"core.promised"'),
-      "core.ask_terms must set core.promised",
-    ).toBe(true);
-    // 2. Its own condition reads it, so it can be taken once.
-    expect(reads(askTerms?.when, "core.promised")).toBe(true);
-    // 3. core.withhold's condition reads it, so the commitment closes keeping.
-    expect(reads(withhold?.when, "core.promised")).toBe(true);
+    // Each prescribed availability condition, checked against the fixture.
+    const expected: readonly [string, readonly [string, boolean][]][] = [
+      ["core.inspect", [["core.inspected", false]]],
+      ["core.ask_context", [["core.context", false]]],
+      [
+        "core.ask_terms",
+        [
+          ["core.inspected", true],
+          ["core.context", true],
+          ["core.promised", false],
+        ],
+      ],
+      [
+        "core.give",
+        [
+          ["core.inspected", true],
+          ["core.context", true],
+        ],
+      ],
+      [
+        "core.withhold",
+        [
+          ["core.inspected", true],
+          ["core.context", true],
+          ["core.promised", false],
+        ],
+      ],
+      [
+        "core.leave",
+        [
+          ["core.inspected", true],
+          ["core.context", true],
+        ],
+      ],
+    ];
+    for (const [actionId, atoms] of expected) {
+      const action = named(actionId);
+      expect(action, `the fixture must declare ${actionId}`).toBeDefined();
+      for (const [varId, equals] of atoms) {
+        expect(
+          reads(action?.when, varId, equals),
+          `${actionId} must require ${varId} to be ${String(equals)}`,
+        ).toBe(true);
+      }
+    }
+
+    // And the block forbids the degenerate repair a live attempt reached for.
+    expect(BASE_INSTRUCTIONS).toMatch(/may not be\s+\{kind: never\}/);
+    expect(BASE_INSTRUCTIONS).toMatch(/Never make a required action unavailable/);
+  });
+
+  it("leaves the writing to the model even though the skeleton is fixed", () => {
+    expect(BASE_INSTRUCTIONS).toMatch(/Write the title, the dialogue, and the three endings/);
+    // No action in the fixture has a never-available condition.
+    for (const action of SECOND_COPY_BASE.core.actions) {
+      expect(JSON.stringify(action.when), action.id).not.toContain('"never"');
+    }
   });
 
   it("still asks each module for its own slot namespace, with no example from another", () => {
