@@ -174,6 +174,135 @@ describe("the immutable scene version", () => {
     );
   });
 
+  /**
+   * The validated-version guard, one shape at a time.
+   *
+   * The live `scene_versions_validation_passed` constraint was written
+   * `(validation_summary ->> 'ok')::boolean is true`, and `->>` projects to
+   * text, so `text::boolean` accepted the JSON *string* `"true"` and every
+   * other spelling PostgreSQL's boolean parser takes. A live probe found it
+   * (`docs/PHASE4_EVIDENCE.md` §12.9) and `20261004173000` replaced it with a
+   * jsonb value comparison.
+   *
+   * The offline suite never caught it because this in-memory gateway — the
+   * stand-in for the committed SQL — used `summary.ok !== true`, a strict
+   * identity check, and was therefore *stricter* than the database it
+   * re-implements. The divergence, not the strictness, was the problem. These
+   * cases pin both sides to the same matrix so they cannot drift apart again,
+   * and `migrations.test.ts` pins the SQL text that the live database now has.
+   */
+  describe("the validated-version guard admits only the JSON boolean true", () => {
+    async function commit(
+      summary: unknown,
+      inputHash = "a".repeat(48),
+    ): Promise<"accepted" | "refused"> {
+      const { state } = await buildOne(["discovery"]);
+      const project = [...state.h.gateway.projects.values()][0]!;
+      try {
+        await state.h.gateway.commitSceneVersion({
+          projectId: project.id,
+          ownerSessionId: project.owner_session_id,
+          expectedRevision: project.revision,
+          expectedBaseHash: project.base_hash,
+          expectedApprovals: project.active_approvals as Record<string, unknown>,
+          operationId: "11111111-1111-4111-8111-111111111111",
+          parentVersionId: null,
+          inputHash,
+          baseHash: "b".repeat(64),
+          moduleHashes: {},
+          scene: { not: "a scene" },
+          validationSummary: summary,
+          inputSnapshot: {},
+          approvalSnapshot: [],
+          modelIdentifier: "gpt-4o-mini-2024-07-18",
+          promptIdentifier: "fp-prompts-4.1",
+          schemaIdentifier: "fp-model-schema-4.1",
+          compilerIdentifier: "fp-compiler-4.1",
+          validatorIdentifier: "fp-engine-validator-1.0",
+        });
+        return "accepted";
+      } catch (error) {
+        expect(error).toBeInstanceOf(AppError);
+        expect((error as AppError).code).toBe(ERROR_CODES.PERSISTENCE_UNAVAILABLE);
+        return "refused";
+      }
+    }
+
+    const withReports = (ok: unknown) => ({ ok, subsets: [], witnesses: [] });
+
+    it("accepts a real boolean true carrying both reports", async () => {
+      expect(await commit(withReports(true))).toBe("accepted");
+    });
+
+    /**
+     * The exact value the live database accepted before `20261004173000`.
+     *
+     * `'"true"'::jsonb` is a JSON string, not a JSON boolean, so the hardened
+     * constraint's `(validation_summary -> 'ok') = 'true'::jsonb` is false for
+     * it and `jsonb_typeof(...)` reports `string`.
+     */
+    it("refuses the JSON string \"true\", which text coercion used to admit", async () => {
+      expect(await commit(withReports("true"))).toBe("refused");
+    });
+
+    it("refuses every other spelling a boolean parser would have taken", async () => {
+      for (const truthy of ["t", "T", "yes", "y", "on", "1", "TRUE", "True"]) {
+        expect(await commit(withReports(truthy)), truthy).toBe("refused");
+      }
+      // And the numeric forms, which are not booleans either.
+      for (const numeric of [1, 1.0]) {
+        expect(await commit(withReports(numeric)), String(numeric)).toBe("refused");
+      }
+    });
+
+    it("refuses boolean false, and every other falsy spelling", async () => {
+      expect(await commit(withReports(false))).toBe("refused");
+      for (const falsy of ["false", "f", "no", "off", "0", 0, null]) {
+        expect(await commit(withReports(falsy)), JSON.stringify(falsy)).toBe("refused");
+      }
+    });
+
+    it("refuses a summary with no ok key at all", async () => {
+      expect(await commit({ subsets: [], witnesses: [] })).toBe("refused");
+      // A check constraint accepts a NULL expression, so the hardened SQL
+      // asserts the key's presence before its type. This is that case.
+      expect(await commit({ ok: undefined, subsets: [], witnesses: [] })).toBe("refused");
+    });
+
+    it("still refuses a validated summary that drops either report", async () => {
+      expect(await commit({ ok: true, witnesses: [] })).toBe("refused");
+      expect(await commit({ ok: true, subsets: [] })).toBe("refused");
+      expect(await commit({ ok: true })).toBe("refused");
+    });
+
+    it("refuses a non-object summary", async () => {
+      for (const summary of [null, "ok", true, 1, []]) {
+        expect(await commit(summary), JSON.stringify(summary)).toBe("refused");
+      }
+    });
+
+    /**
+     * The hardening must not reject anything this application really produces.
+     *
+     * This takes the summary off a version a real compilation committed — the
+     * genuine `ValidationSummaryView`, with its subset reports and its
+     * mechanical witness — and commits it again under a different input hash.
+     */
+    it("keeps accepting a validation summary a real compilation produced", async () => {
+      const { state } = await buildOne(["discovery", "commitment"]);
+      const existing = state.h.gateway.versions[0]!.validation_summary as {
+        ok: unknown;
+        subsets: unknown;
+        witnesses: unknown;
+      };
+      expect(existing.ok).toBe(true);
+      expect(typeof existing.ok).toBe("boolean");
+      expect(Array.isArray(existing.subsets)).toBe(true);
+      expect(Array.isArray(existing.witnesses)).toBe(true);
+      expect(await commit(existing, "c".repeat(48))).toBe("accepted");
+    });
+  });
+
   it("reads back a scene the real engine still validates", async () => {
     const { state } = await buildOne(["discovery", "commitment"]);
     const row = state.h.gateway.versions[0]!;
