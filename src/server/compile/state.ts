@@ -15,7 +15,7 @@
  *     `CoreScene`, with the canonical hash it was committed under. It is keyed
  *     by the brief-only base input hash, so a base compiled for one brief can
  *     never be reused for another.
- *   * `projects.pending_modules` holds one entry per slot, each with the
+ *   * `projects.compiled_modules` holds one entry per slot, each with the
  *     module and the stage input hash that authorised it. A module whose
  *     stored input hash no longer matches the frozen snapshot is stale and is
  *     not reused.

@@ -65,19 +65,19 @@ export const PROJECT_COLUMNS =
 /**
  * The two large compilation columns, read only by the compilation controller.
  *
- * `base_scene` and `pending_modules` are deliberately absent from
+ * `base_scene` and `compiled_modules` are deliberately absent from
  * {@link PROJECT_COLUMNS}: no route returns them, and a project read that does
  * not need them should not carry them.
  */
 export const CompilationStateRowSchema = z.object({
   base_scene: z.unknown(),
   base_hash: z.string().nullable(),
-  pending_modules: z.record(z.string(), z.unknown()),
+  compiled_modules: z.record(z.string(), z.unknown()),
 });
 
 export type CompilationStateRow = z.infer<typeof CompilationStateRowSchema>;
 
-export const COMPILATION_STATE_COLUMNS = "base_scene,base_hash,pending_modules";
+export const COMPILATION_STATE_COLUMNS = "base_scene,base_hash,compiled_modules";
 
 export const SESSION_COLUMNS = "id,owner_secret_hash,created_at,last_seen_at,expires_at";
 
@@ -554,7 +554,7 @@ export type SetCompilationStateInput = {
   /** Null leaves the stored value as it is. */
   baseScene: unknown;
   baseHash: string | null;
-  pendingModules: unknown;
+  compiledModules: unknown;
   workflowState: string | null;
 };
 

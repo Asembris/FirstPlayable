@@ -95,7 +95,7 @@ type BucketRecord = {
 
 type ProjectRecord = ProjectRow & {
   base_scene: unknown;
-  pending_modules: Record<string, unknown>;
+  compiled_modules: Record<string, unknown>;
 };
 
 /** One immutable version row. Contents never change after insert. */
@@ -247,7 +247,7 @@ export class MemoryGateway implements DataGateway {
       active_approvals: {},
       proposal_draft: null,
       base_scene: null,
-      pending_modules: {},
+      compiled_modules: {},
       base_hash: null,
       active_version_id: null,
       pending_version_id: null,
@@ -283,10 +283,10 @@ export class MemoryGateway implements DataGateway {
 
   /**
    * The column projection the real gateway selects: never `base_scene` and
-   * never `pending_modules`.
+   * never `compiled_modules`.
    */
   #projectRow(record: ProjectRecord): ProjectRow {
-    const { base_scene: _base, pending_modules: _modules, ...row } = record;
+    const { base_scene: _base, compiled_modules: _modules, ...row } = record;
     return {
       ...row,
       reference_capture_ids: [...row.reference_capture_ids],
@@ -779,7 +779,7 @@ export class MemoryGateway implements DataGateway {
     return {
       base_scene: project.base_scene,
       base_hash: project.base_hash,
-      pending_modules: { ...project.pending_modules },
+      compiled_modules: { ...project.compiled_modules },
     };
   }
 
@@ -882,8 +882,8 @@ export class MemoryGateway implements DataGateway {
       project.base_scene = input.baseScene;
     }
     if (input.baseHash !== null) project.base_hash = input.baseHash;
-    if (input.pendingModules !== null && input.pendingModules !== undefined) {
-      project.pending_modules = input.pendingModules as Record<string, unknown>;
+    if (input.compiledModules !== null && input.compiledModules !== undefined) {
+      project.compiled_modules = input.compiledModules as Record<string, unknown>;
     }
     if (input.workflowState !== null) project.workflow_state = input.workflowState;
     project.updated_at = this.now().toISOString();
@@ -949,9 +949,10 @@ export class MemoryGateway implements DataGateway {
       scene: input.scene,
     };
     this.versions.push(record);
-    // Reviewable, not current: `active_version_id` is untouched.
+    // Reviewable, not current: `active_version_id` is untouched. The compiled
+    // module artifacts stay, so a slot whose approval did not move keeps its
+    // module and a later compilation recompiles only the slot that changed.
     project.pending_version_id = record.id;
-    project.pending_modules = {};
     project.workflow_state = "REVIEW_PLAYABLE";
     project.updated_at = createdAt;
     return {

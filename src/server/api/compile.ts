@@ -41,9 +41,11 @@ import {
   advanceCompilation,
   freezeCompilation,
   initialCheckpoint,
+  approvalsMoved,
   nextStage,
   ORDERED_STAGES,
   readCheckpoint,
+  settleStaleCompilation,
   stateOf,
 } from "../compile/controller";
 import { openAiCompiler, type SceneCompiler } from "../compile/compiler";
@@ -285,7 +287,7 @@ export async function handleCompile(
       expectedRevision: row.revision,
       baseScene: null,
       baseHash: null,
-      pendingModules: null,
+      compiledModules: null,
       workflowState: "AWAITING_APPROVAL",
     });
 
@@ -333,6 +335,19 @@ export async function handleAdvance(
 
     const row = await readProjectForOwner(gateway, session, operation.project_id);
     if (row === null) throw appErrors.notFound();
+
+    // A compilation whose approvals have moved is stale, and saying so is more
+    // honest than failing input resolution with "nothing to compile".
+    if (approvalsMoved(checkpoint.snapshot, row)) {
+      const stale = await settleStaleCompilation(gateway, session, id, checkpoint);
+      const staleOperation = (await gateway.findOperationForOwner(id, session.id)) ?? operation;
+      const staleResponse: AdvanceResponse = {
+        status: toCompilationStatus(staleOperation, stale, row),
+        model_calls: 0,
+        replayed: false,
+      };
+      return json(staleResponse, requestId);
+    }
 
     const inputs = await resolveCompilationInputs(gateway, session, row);
     const result = await advanceCompilation(

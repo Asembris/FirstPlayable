@@ -20,20 +20,34 @@
  *   * this component creates no session, so opening somebody else's link does
  *     not quietly acquire one.
  *
- * What it deliberately does not render: a playable scene. Phase 3 freezes
- * approvals; it compiles nothing, and the panel below says so rather than
- * showing an empty stage that looks broken.
+ * Phase 4 adds the compilation panel at the bottom: build the playable scene
+ * from the frozen approvals, watch the stages truthfully, play the pending
+ * result locally through the Phase 1 engine, and confirm or decline it. A
+ * compiled scene never becomes the active version by itself.
+ *
+ * What it deliberately does not render: a revision control, an ending-copy
+ * editor, a version comparison, or a share or export action. Those are phases
+ * 5 and 6.
  */
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import type { PlayableView, SceneVersionSummary } from "@/domain/compile";
 import type { ProjectView, ReferencesView } from "@/domain/project";
 import { AnchorPanel } from "./AnchorPanel";
+import { CompilePanel } from "./CompilePanel";
 import { ApprovedInfluences } from "./ApprovedInfluences";
 import { ReferenceRows } from "./ReferenceRows";
 import { ErrorPanel, getJson, type RequestFailure } from "./shared";
 
-type Loaded = { project: ProjectView; references: ReferencesView | null };
+type Loaded = {
+  project: ProjectView;
+  references: ReferencesView | null;
+  /** The version awaiting review, else the active one, else null. */
+  /** Absent before phase 4 compiled anything; null when nothing is readable. */
+  playable?: PlayableView | null;
+  versions?: SceneVersionSummary[];
+};
 
 type State =
   | { status: "loading" }
@@ -106,11 +120,11 @@ export function ProjectClient({ projectId }: { projectId: string }): React.JSX.E
     );
   }
 
-  const { project, references } = state.data;
+  const { project, references, playable, versions } = state.data;
   return (
     <main className="studio">
       <header className="studio__header">
-        <p className="cover__eyebrow">Persisted project · phase 3 influence approval</p>
+        <p className="cover__eyebrow">Persisted project · phase 4 compilation</p>
         <h1 className="cover__title" data-testid="project-title">
           {project.title}
         </h1>
@@ -176,19 +190,13 @@ export function ProjectClient({ projectId }: { projectId: string }): React.JSX.E
         onChanged={() => void load()}
       />
 
-      <section className="panel">
-        <h2 className="panel__heading">Not generated yet</h2>
-        <ul className="panel__list">
-          <li data-testid="not-generated-scene">
-            Playable scene:{" "}
-            {project.active_version_id ?? "none — compilation arrives in phase 4"}
-          </li>
-          <li>
-            Provenance shows retrieval, interpretation and your decision. It does
-            not yet show a scene change, because no scene has been compiled.
-          </li>
-        </ul>
-      </section>
+      <CompilePanel
+        projectId={project.id}
+        project={project}
+        playable={playable ?? null}
+        versions={versions ?? []}
+        onChanged={() => void load()}
+      />
 
       <div className="studio__actions">
         <Link className="button" href="/studio">

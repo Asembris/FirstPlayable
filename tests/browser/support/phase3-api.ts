@@ -410,6 +410,7 @@ export async function installPhase3Api(page: Page, options: ApiOptions = {}): Pr
       anchor_confirmed: anchor !== null,
       anchor,
       active_version_id: null,
+      pending_version_id: null,
       approved_slots: present,
       approvals: present.map((slot) => {
         const approval = approvals.get(slot)!;
@@ -627,7 +628,14 @@ export async function installPhase3Api(page: Page, options: ApiOptions = {}): Pr
     }
 
     if (path.startsWith("/api/projects/")) {
-      await json(route, { project: projectView(), references: referencesView() });
+      // Phase 4 adds `playable` and `versions`; this phase 3 mock compiles
+      // nothing, so both stay empty.
+      await json(route, {
+        project: projectView(),
+        references: referencesView(),
+        playable: null,
+        versions: [],
+      });
       return;
     }
 

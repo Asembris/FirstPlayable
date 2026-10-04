@@ -340,6 +340,48 @@ export function snapshotMatches(
   return true;
 }
 
+/**
+ * Whether the creator's approvals have moved since the compilation froze them.
+ *
+ * Checked before the stage inputs are even resolved, because a removed
+ * approval would otherwise fail input resolution with "nothing to compile"
+ * instead of the truthful "your choices changed, so this older result was not
+ * applied" — and would leave the operation un-settled.
+ */
+export function approvalsMoved(
+  snapshot: CompilationSnapshot,
+  project: ProjectRow,
+): boolean {
+  if (project.revision !== snapshot.project_revision) return true;
+  const live = approvalPointers(project);
+  const frozen = snapshot.approvals;
+  if (Object.keys(live).length !== frozen.length) return true;
+  return frozen.some((entry) => live[entry.slot] !== entry.approval_id);
+}
+
+/**
+ * Settles a compilation whose frozen inputs no longer apply.
+ *
+ * The checkpoint is retained as bounded operation evidence; it simply can
+ * never become current (specification section 7).
+ */
+export async function settleStaleCompilation(
+  gateway: DataGateway,
+  session: SessionRow,
+  operationId: string,
+  checkpoint: CompilationCheckpoint,
+): Promise<CompilationCheckpoint> {
+  const stale = failed(checkpoint, "STALE_INPUT", nextStage(checkpoint));
+  await gateway.completeOperation({
+    operationId,
+    ownerSessionId: session.id,
+    status: "failed",
+    result: stale,
+    error: { code: "STALE_INPUT" },
+  });
+  return stale;
+}
+
 /** The project's current approval pointers, for the SQL compare-and-swap. */
 export function approvalPointers(project: ProjectRow): Record<string, string> {
   const pointers: Record<string, string> = {};
@@ -449,7 +491,7 @@ async function runModelStage(
   const stored = await gateway.findProjectCompilationState(project.id, session.id);
   if (stored === null) throw appErrors.notFound();
   const storedBase = readStoredBase(stored.base_scene);
-  const storedModules = readStoredModules(stored.pending_modules);
+  const storedModules = readStoredModules(stored.compiled_modules);
 
   const frozen = freezeCompilation({
     project,
@@ -608,7 +650,7 @@ async function runModelStage(
             compiledAt: context.now.toISOString(),
           }),
           baseHash: hash,
-          pendingModules: null,
+          compiledModules: null,
           workflowState: "BASE_READY",
         });
         if (update.outcome !== "updated") {
@@ -708,7 +750,7 @@ async function runModelStage(
           expectedRevision: project.revision,
           baseScene: null,
           baseHash: null,
-          pendingModules: nextModules,
+          compiledModules: nextModules,
           workflowState: "MODULES_READY",
         });
         if (update.outcome !== "updated") {
@@ -819,7 +861,7 @@ async function runValidateStage(
   if (stored === null) throw appErrors.notFound();
 
   const base = readStoredBase(stored.base_scene);
-  const modules = readStoredModules(stored.pending_modules);
+  const modules = readStoredModules(stored.compiled_modules);
   if (base === null) {
     return {
       checkpoint: failed(checkpoint, "VALIDATION_FAILED", "validate"),

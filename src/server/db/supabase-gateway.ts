@@ -511,7 +511,7 @@ class SupabaseGateway implements DataGateway {
       p_expected_revision: input.expectedRevision,
       p_base_scene: input.baseScene ?? null,
       p_base_hash: input.baseHash,
-      p_pending_modules: input.pendingModules ?? null,
+      p_compiled_modules: input.compiledModules ?? null,
       p_workflow_state: input.workflowState,
     });
     if (error !== null) persistenceFailure("setProjectCompilationState", error.message);

@@ -56,15 +56,15 @@ alter table public.projects
   -- {"discovery": {"input_hash": "...", "module": { ... }}}.
   -- Small by construction: a module is at most 3 flags, 4 actions, 6 dialogue
   -- nodes, 3 gates, and 2 hooks (specification section 4).
-  add column if not exists pending_modules jsonb not null default '{}'::jsonb;
+  add column if not exists compiled_modules jsonb not null default '{}'::jsonb;
 
 alter table public.projects
-  add constraint projects_pending_modules_is_object
-  check (jsonb_typeof(pending_modules) = 'object');
+  add constraint projects_compiled_modules_is_object
+  check (jsonb_typeof(compiled_modules) = 'object');
 
 alter table public.projects
-  add constraint projects_pending_modules_bounded
-  check (length(pending_modules::text) <= 65536);
+  add constraint projects_compiled_modules_bounded
+  check (length(compiled_modules::text) <= 65536);
 
 alter table public.projects
   add constraint projects_pending_version_fk
@@ -74,8 +74,8 @@ create index projects_pending_version_idx on public.projects (pending_version_id
 
 comment on column public.projects.pending_version_id is
   'A validated version awaiting the creator''s explicit review confirmation. Deliberately separate from active_version_id: a compilation never becomes current by itself (specification section 7).';
-comment on column public.projects.pending_modules is
-  'Committed module artifacts of the current compilation, keyed by slot. Cleared when a compilation commits a version or when the approvals move.';
+comment on column public.projects.compiled_modules is
+  'Committed module artifacts keyed by slot, each carrying the stage input hash that authorised it. An entry is reused only when that hash still matches the frozen compilation snapshot, so a changed approval recompiles its own slot and leaves the other one alone (specification section 9).';
 
 -- ---------------------------------------------------------------------------
 -- 3. Immutable scene versions: the frozen snapshots and what produced them.
@@ -271,7 +271,7 @@ create or replace function public.set_project_compilation_state(
   p_expected_revision integer,
   p_base_scene jsonb,
   p_base_hash text,
-  p_pending_modules jsonb,
+  p_compiled_modules jsonb,
   p_workflow_state text
 )
 returns jsonb
@@ -302,7 +302,7 @@ begin
   update public.projects
   set base_scene = coalesce(p_base_scene, v_project.base_scene),
       base_hash = coalesce(p_base_hash, v_project.base_hash),
-      pending_modules = coalesce(p_pending_modules, v_project.pending_modules),
+      compiled_modules = coalesce(p_compiled_modules, v_project.compiled_modules),
       workflow_state = coalesce(p_workflow_state, v_project.workflow_state),
       updated_at = v_now
   where id = v_project.id
@@ -408,9 +408,10 @@ begin
 
   -- Reviewable, not current. `active_version_id` is untouched, which is what
   -- keeps the last good version playable while a new one awaits review.
+  -- The compiled module artifacts stay: an approval that did not change keeps
+  -- its module, so a later compilation recompiles only the slot that moved.
   update public.projects
   set pending_version_id = v_version.id,
-      pending_modules = '{}'::jsonb,
       workflow_state = 'REVIEW_PLAYABLE',
       updated_at = v_now
   where id = v_project.id;
