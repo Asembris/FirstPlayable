@@ -1,0 +1,1045 @@
+{
+  "success": true,
+  "results": {
+    "entities": [
+      {
+        "name": "Children of Men",
+        "entity_id": "BB9AA6CE-8012-44B8-B554-54BE8A374A5E",
+        "type": "urn:entity",
+        "subtype": "urn:entity:movie",
+        "disambiguation": "2006, Alfonso Cuarón",
+        "popularity": 0.994967,
+        "properties": {
+          "description": "Children of Men (2006), directed by Alfonso Cuarón and starring Clive Owen, Julianne Moore, and Chiwetel Ejiofor, is a near-future dystopian drama that mixes speculative science fiction with tense thriller elements. Set against global infertility and social collapse, the film follows a disillusioned former activist who must escort a miraculously pregnant refugee to a rumored offshore sanctuary. The story foregrounds themes of immigration, authoritarianism, sacrifice, and the fragile persistence of hope, rendered through stark, realistic visuals and extended single-take sequences. Its emotional tone is urgent, bleak, and quietly hopeful, inviting moral reflection rather than straightforward answers.",
+          "plot_summary": "In a near-future world where human infertility has plunged society into disarray, a disillusioned former activist is drawn into protecting a young, miraculously pregnant refugee. He and a small, precarious group race through collapsing cities, militarized checkpoints, and refugee encampments to deliver her to a rumored offshore sanctuary. The journey forces brutal moral choices, sacrifice, and a fragile sense of hope amid pervasive violence and social decay.",
+          "plot_themes_description": "Examines state power, displacement, and the moral costs of protecting new life amid social collapse, using a miraculous pregnancy to probe questions of hope, responsibility, and human dignity.",
+          "emotional_tone_description": "Bleak and urgent, the film balances despair and small, stubborn hope while delivering tense, immersive sequences that leave viewers unsettled and moved.",
+          "style_description": "The director employs long, immersive single-take sequences and a gritty, documentary-like visual approach that emphasizes handheld intimacy, muted colors, and layered urban decay.",
+          "genre_description": "A near-future dystopian drama that blends speculative science fiction worldbuilding with thriller pacing and politically charged, character-focused storytelling.",
+          "short_descriptions": [
+            {
+              "value": "In a near-future infertile world, a former activist must escort a miraculously pregnant refugee through violent, collapsing society to a rumored sanctuary at sea.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "keywords": [
+            "fertility",
+            "long take",
+            "dystopian sci fi",
+            "england",
+            "british government",
+            "infertility",
+            "refugee camp",
+            "neo noir",
+            "allegory",
+            "blood on camera lens"
+          ],
+          "genres": [
+            "Drama",
+            "Sci-Fi",
+            "Thriller"
+          ],
+          "release_year": 2006,
+          "release_date": "2007-01-05"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:theme:qloo:parenthood",
+            "name": "Parenthood",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:science_fiction",
+            "name": "Science fiction",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:sanctuary",
+            "name": "Sanctuary",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:hope",
+            "name": "Hope",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:immigration",
+            "name": "Immigration",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:survival",
+            "name": "Survival",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:infertility",
+            "name": "Infertility",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:authoritarianism",
+            "name": "Authoritarianism",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:social_collapse",
+            "name": "Social collapse",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:human_rights",
+            "name": "Human rights",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:drama",
+            "name": "Drama",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:sacrifice",
+            "name": "Sacrifice",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:thriller",
+            "name": "Thriller",
+            "type": "urn:tag:genre:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.941137
+        }
+      },
+      {
+        "name": "Being John Malkovich",
+        "entity_id": "42AFD1E0-D42C-42C8-9272-945248E87BB6",
+        "type": "urn:entity",
+        "subtype": "urn:entity:movie",
+        "disambiguation": "1999, Spike Jonze",
+        "popularity": 0.992332,
+        "properties": {
+          "description": "Being John Malkovich (1999), directed by Spike Jonze and written by Charlie Kaufman, is a darkly comic fantasy-drama starring John Cusack, Cameron Diaz and Catherine Keener alongside John Malkovich. The story follows a struggling puppeteer who discovers a hidden portal into the actor John Malkovich’s mind and, with accomplices, monetizes the experience, unleashing obsession, jealousy and identity crises. The film blends surreal visual invention and black humor with philosophical concerns about consciousness, control and celebrity. Its tone is at once whimsical and deeply unsettling, inviting reflection on the self and desire.",
+          "plot_summary": "A struggling puppeteer, Craig Schwartz, takes a job on the bizarre 7½ floor and discovers a hidden doorway that leads directly into the mind of actor John Malkovich. He, a co-worker and his wife exploit the portal by charging people fifteen-minute sessions inside Malkovich’s consciousness. The scheme amplifies jealousies, sexual longings and identity confusion as possession of another’s perspective reshapes desire and power. The story mixes dark humor and surreal imagination to probe consciousness, fame and control.",
+          "plot_themes_description": "Through a literal portal into another person’s mind the film examines how identity, desire and power dynamics are shaped, commodified and contested.",
+          "emotional_tone_description": "Playful and darkly comic yet unsettling, the film blends whimsy with existential unease to provoke curiosity and discomfort about identity and desire.",
+          "style_description": "Inventive and surreal, the film employs stylized, theatrical sets and playful camera work to create claustrophobic, dollhouse-like perspectives that heighten its absurdist tone.",
+          "genre_description": "A darkly comic, surreal drama that mixes fantastical premises with character-focused psychological satire and offbeat, satirical humor.",
+          "short_descriptions": [
+            {
+              "value": "A puppeteer finds a hidden portal into actor John Malkovich’s mind and turns it into a surreal, commodified experience that sparks obsession and identity crises.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "keywords": [
+            "puppeteer",
+            "portal",
+            "lesbianism",
+            "body swap",
+            "actor name in title",
+            "high concept comedy",
+            "character's point of view camera shot",
+            "trapped in a human body",
+            "surrealism",
+            "inside the mind"
+          ],
+          "genres": [
+            "Comedy",
+            "Drama",
+            "Fantasy"
+          ],
+          "release_year": 1999,
+          "release_date": "1999-12-03"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:theme:qloo:identity",
+            "name": "Identity",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:control",
+            "name": "Control",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:drama",
+            "name": "Drama",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:fantasy",
+            "name": "Fantasy",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:infidelity",
+            "name": "Infidelity",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:exploitation",
+            "name": "Exploitation",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:comedy",
+            "name": "Comedy",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:desire",
+            "name": "Desire",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:fame",
+            "name": "Fame",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:consciousness",
+            "name": "Consciousness",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:voyeurism",
+            "name": "Voyeurism",
+            "type": "urn:tag:theme:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.938628
+        }
+      },
+      {
+        "name": "Moon",
+        "entity_id": "6BBB34F4-9345-4459-82AE-10991FA35CD2",
+        "type": "urn:entity",
+        "subtype": "urn:entity:movie",
+        "disambiguation": "2009, Duncan Jones",
+        "popularity": 0.990021,
+        "properties": {
+          "description": "Moon (2009), directed by Duncan Jones and starring Sam Rockwell, Kevin Spacey and Dominique McElligott, is a low-budget, near-future science fiction drama that blends psychological mystery with emotional character work. The story follows an astronaut on a three-year solo stint at a lunar mining base who begins to experience hallucinations and ultimately discovers a duplicate of himself, provoking an investigation into memory, identity and corporate practices. The film emphasizes intimate performances, practical production design, and a meditative tone to explore loneliness, family longing and ethical questions about cloning and exploitation.",
+          "plot_summary": "An astronaut nearing the end of a three-year solo contract on a lunar mining base begins experiencing hallucinations and memory disorientation while working with the station's robotic assistant. After a rover accident he wakes to find evidence that his situation is not what it seems, and an identical man at an exterior harvester forces him to confront the truth about his identity and the company he serves. The discovery triggers a tense, intimate struggle to piece together stolen memories, confront corporate exploitation, and find a way home.",
+          "plot_themes_description": "The film probes what makes someone human by exploring identity and memory under extreme isolation, while criticizing corporate practices that commodify lives and labor.",
+          "emotional_tone_description": "A quietly wrenching and suspenseful meditation on loneliness, identity, and corporate betrayal that balances melancholy with moments of human tenderness.",
+          "style_description": "A restrained, retro-futuristic visual approach that blends practical, analog production design with moody, intimate cinematography to emphasize isolation and human scale.",
+          "genre_description": "A character-focused, near-future science fiction drama that uses restrained, independent production values and psychological suspense to investigate existential questions.",
+          "short_descriptions": [
+            {
+              "value": "An astronaut at the end of a solitary three-year lunar stint uncovers unsettling secrets about his identity and the corporation that employs him.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "keywords": [
+            "moon",
+            "solitude",
+            "memory",
+            "cult film",
+            "human clone",
+            "minimal cast",
+            "isolation",
+            "die hard scenario",
+            "hitchcockian",
+            "short term memory"
+          ],
+          "genres": [
+            "Drama",
+            "Mystery",
+            "Sci-Fi"
+          ],
+          "release_year": 2009,
+          "release_date": "2009-07-10"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:genre:qloo:science_fiction",
+            "name": "Science fiction",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:cloning",
+            "name": "Cloning",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:identity",
+            "name": "Identity",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:memory",
+            "name": "Memory",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:isolation",
+            "name": "Isolation",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:drama",
+            "name": "Drama",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:family",
+            "name": "Family",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:mystery",
+            "name": "Mystery",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:corporate_exploitation",
+            "name": "Corporate exploitation",
+            "type": "urn:tag:theme:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.92771
+        }
+      },
+      {
+        "name": "Adaptation.",
+        "entity_id": "58892AD7-059C-4BF3-AFC3-A674BD784E9A",
+        "type": "urn:entity",
+        "subtype": "urn:entity:movie",
+        "disambiguation": "2002, Spike Jonze",
+        "popularity": 0.987905,
+        "properties": {
+          "description": "Adaptation (2002), directed by Spike Jonze and written by Charlie Kaufman (credited also to the fictional Donald Kaufman), is a darkly comic drama starring Nicolas Cage, Meryl Streep, and Chris Cooper. The film follows a struggling screenwriter hired to adapt a nonfiction article about orchid poaching, whose battle with writer's block devolves into obsession, ethical entanglement, and metafictional invention. Combining satire of Hollywood storytelling with an intimate study of creative insecurity, the film interrogates authenticity, identity, and the compromises artists make.",
+          "plot_summary": "A neurotic screenwriter is hired to adapt a nonfiction piece about orchid poaching but finds the source material stubbornly resistant to conventional storytelling. As his writer's block deepens he becomes consumed by self-doubt, envy, and creative paralysis, leading him to fold his own life — and an invented twin brother — into the screenplay. The assignment spirals into obsession and moral complication when the people connected to the book pull him into real-world danger, forcing him to confront what he will sacrifice for a story.",
+          "plot_themes_description": "The story examines the tension between artistic authenticity and commercial pressures, the corrosive effects of self-doubt and obsession, and the search for identity through creation.",
+          "emotional_tone_description": "Anxious, darkly comic, and oddly tender, the film oscillates between melancholic self-doubt and absurd, manic energy.",
+          "style_description": "Polished, intimate filmmaking that alternates between observational realism and stylized, self-reflexive surrealism, using controlled compositions and offbeat tonal shifts to mirror creative anxiety.",
+          "genre_description": "A darkly comedic drama that satirizes Hollywood and the creative process, blending introspective, character-driven storytelling with metafictional and surreal flourishes.",
+          "short_descriptions": [
+            {
+              "value": "A tormented screenwriter struggles to adapt a nonfiction book, spiraling into obsession, self-doubt, and an increasingly surreal, self-referential screenplay.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "keywords": [
+            "loneliness",
+            "loner",
+            "self hate",
+            "female full frontal nudity",
+            "female frontal nudity",
+            "open vagina",
+            "vagina",
+            "writing",
+            "ass",
+            "magical realism"
+          ],
+          "genres": [
+            "Comedy",
+            "Drama"
+          ],
+          "release_year": 2002,
+          "release_date": "2003-02-14"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:genre:qloo:comedy",
+            "name": "Comedy",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:artistic_integrity",
+            "name": "Artistic integrity",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:authenticity",
+            "name": "Authenticity",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:obsession",
+            "name": "Obsession",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:isolation",
+            "name": "Isolation",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:drama",
+            "name": "Drama",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:identity",
+            "name": "Identity",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:creativity",
+            "name": "Creativity",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:commercialism",
+            "name": "Commercialism",
+            "type": "urn:tag:theme:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.926438
+        }
+      },
+      {
+        "name": "Synecdoche, New York",
+        "entity_id": "5FBAD562-A8AF-4643-A212-936B17AE97E0",
+        "type": "urn:entity",
+        "subtype": "urn:entity:movie",
+        "disambiguation": "2008, Charlie Kaufman",
+        "popularity": 0.988088,
+        "properties": {
+          "description": "Synecdoche, New York (2008/2009) is Charlie Kaufman's directorial debut, a drama starring Philip Seymour Hoffman, Samantha Morton and Michelle Williams. The story follows a struggling theater director who, after receiving a grant, attempts to create a life-size replica of the city inside a warehouse as the centerpiece for an all-encompassing play. As the theatrical project expands, it collapses distinctions between performance and reality and becomes a sprawling meditation on art, identity, mortality and failed relationships. The film is formally daring, bleakly introspective, and positioned as an ambitious art-house work that challenges viewers with its surreal, recursive structure.",
+          "plot_summary": "A besieged theater director obsessively stages ever-more ambitious work while his personal life unravels, blurring the boundaries between art and reality. After receiving a grant, he constructs a vast, life-size replica of the city inside a warehouse as the centerpiece of a new play. As the production grows, it becomes a recursive, surreal theater of memory, disease, relationships and death, forcing him to confront aging, solitude, and the impossibility of representing a whole life. The play’s escalating scale collapses intimate moments into epic tableaux, creating a disorienting meditation on creativity and mortality.",
+          "plot_themes_description": "The film examines the struggle to make meaningful art while confronting mortality, fractured relationships, the instability of self, and the tension between lived experience and its representations.",
+          "emotional_tone_description": "Bleakly introspective and melancholic, the film is relentlessly probing and occasionally darkly humorous, leaving viewers unsettled and contemplative.",
+          "style_description": "A dense, theatrical and hyperreal visual approach stages life as an immense, recursive set—alternately intimate and claustrophobic—mixing surreal tableaux with granular character detail.",
+          "genre_description": "A contemplative, art-house drama that blends surreal and darkly comic elements to interrogate existential questions about art, identity, and death.",
+          "short_descriptions": [
+            {
+              "value": "A theater director builds a life‑size replica of the city for an all-encompassing play as his life and sense of self disintegrate.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "keywords": [
+            "play within a play",
+            "death",
+            "allegory",
+            "depression",
+            "loneliness",
+            "meta film",
+            "scantily clad female",
+            "female nudity",
+            "independent film",
+            "anxiety"
+          ],
+          "genres": [
+            "Drama"
+          ],
+          "release_year": 2008,
+          "release_date": "2009-02-05"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:theme:qloo:art_and_creativity",
+            "name": "Art and creativity",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:marriage_and_loss",
+            "name": "Marriage and loss",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:obsession",
+            "name": "Obsession",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:aging",
+            "name": "Aging",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:drama",
+            "name": "Drama",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:reality_versus_representation",
+            "name": "Reality versus representation",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:mortality",
+            "name": "Mortality",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:loneliness",
+            "name": "Loneliness",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:identity",
+            "name": "Identity",
+            "type": "urn:tag:theme:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.925784
+        }
+      },
+      {
+        "name": "A Scanner Darkly",
+        "entity_id": "0CAC5821-6465-46C6-951C-E6307176D529",
+        "type": "urn:entity",
+        "subtype": "urn:entity:movie",
+        "disambiguation": "2006, Richard Linklater",
+        "popularity": 0.971058,
+        "properties": {
+          "description": "A Scanner Darkly (2006), directed by Richard Linklater and starring Keanu Reeves, Winona Ryder, and Robert Downey Jr., is a rotoscoped animated science‑fiction drama-thriller adapted from Philip K. Dick’s novel. Set in a near-future Los Angeles, it follows an undercover cop who infiltrates drug users to investigate a potent hallucinogen called Substance D and slowly loses his identity as he becomes addicted. The film blends dark comedy and political satire with psychological and philosophical inquiry, examining surveillance, addiction, and the instability of self. Its disorienting visual approach and melancholic tone foreground questions about reality and state power.",
+          "plot_summary": "An undercover police officer in a near-future Los Angeles infiltrates a circle of drug users to investigate a mysterious new narcotic called Substance D. As he becomes increasingly dependent on the drug he is meant to be policing, his memories and sense of self begin to fracture. The investigation, which uses intrusive surveillance tactics and a surreal ‘scramble suit’ for anonymity, blurs the line between observer and participant and forces questions about identity, reality, and state power.",
+          "plot_themes_description": "Through a near-future drug epidemic and state surveillance, the story interrogates fractured identity, the effects of addiction, and the erosion of personal privacy and reality.",
+          "emotional_tone_description": "Bleak, disorienting, and quietly unsettling, the film produces a slow-burning sense of loss and paranoia while prompting reflective unease about personal and societal boundaries.",
+          "style_description": "The film uses rotoscoped animation and textured, hallucinatory visuals to collapse live-action realism into shifting, comic‑book-like imagery that mirrors drug‑induced perception and surveillance aesthetics.",
+          "genre_description": "A rotoscoped animated science-fiction drama that blends psychological thriller and darkly satirical crime elements to explore social and philosophical questions in a near-future setting.",
+          "short_descriptions": [
+            {
+              "value": "An undercover cop in a near-future Los Angeles grows addicted to a powerful hallucinogen and gradually loses his identity while spying on his friends.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "keywords": [
+            "drugs",
+            "rotoscoping",
+            "covered in bugs",
+            "undercover agent",
+            "fictional drug",
+            "lodge meeting",
+            "washing a dog",
+            "collie dog",
+            "introduction",
+            "man in a shower"
+          ],
+          "genres": [
+            "Animation",
+            "Comedy",
+            "Crime",
+            "Drama",
+            "Mystery",
+            "Sci-Fi",
+            "Thriller"
+          ],
+          "release_year": 2006,
+          "release_date": "2006-07-28"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:theme:qloo:surveillance",
+            "name": "Surveillance",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:addiction",
+            "name": "Addiction",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:reality_vs_perception",
+            "name": "Reality vs perception",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:crime",
+            "name": "Crime",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:paranoia",
+            "name": "Paranoia",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:comedy",
+            "name": "Comedy",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:thriller",
+            "name": "Thriller",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:mystery",
+            "name": "Mystery",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:friendship",
+            "name": "Friendship",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:consequences_of_drug_use",
+            "name": "Consequences of drug use",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:animation",
+            "name": "Animation",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:government_overreach",
+            "name": "Government overreach",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:science_fiction",
+            "name": "Science fiction",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:identity",
+            "name": "Identity",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:drama",
+            "name": "Drama",
+            "type": "urn:tag:genre:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.925703
+        }
+      },
+      {
+        "name": "Donnie Darko",
+        "entity_id": "43A03C5A-3692-43FF-9164-3378ED14FDA2",
+        "type": "urn:entity",
+        "subtype": "urn:entity:movie",
+        "disambiguation": "2001, Richard Kelly",
+        "popularity": 0.998866,
+        "properties": {
+          "description": "Donnie Darko (2001), written and directed by Richard Kelly and starring Jake Gyllenhaal, Jena Malone and Mary McDonnell, is a moody, genre-blending drama/psychological sci‑fi thriller. The film follows a troubled teenager who, after narrowly avoiding a bizarre accident, is visited by visions of a man in a rabbit suit that set him on a path of strange, morally fraught actions. Mixing adolescent coming-of-age elements with time-travel paradoxes, the story examines mental illness, fate, and the porous line between reality and delusion. Its tone is haunting, melancholic, and provocatively ambiguous, which has cemented the film's cult status.",
+          "plot_summary": "After narrowly escaping a bizarre accident, a troubled teenager begins experiencing vivid, often terrifying visions of a man in a large rabbit suit who instructs and manipulates him. As the visions intensify he skips medication, clashes with authority figures, and becomes obsessed with understanding the nature of his reality. Strange events and hints of time manipulation draw him toward a series of morally fraught actions that force him to confront fate, mortality, and his own mental state.",
+          "plot_themes_description": "Uses time-travel mechanics and surreal visions to explore adolescent alienation, mental illness, destiny versus choice, and the unstable boundary between reality and delusion.",
+          "emotional_tone_description": "Haunting, melancholic, and unsettling, combining adolescent confusion and cosmic dread with moments of dark humor and poignant introspection.",
+          "style_description": "Combines moody, period-accurate 1980s visuals with surreal, dreamlike imagery to create an uncanny suburban atmosphere that shifts between intimate realism and unsettling fantasy.",
+          "genre_description": "A psychologically driven, genre-blending film that mixes moody, mysterious science-fiction elements with intimate teen drama and suspenseful thriller pacing.",
+          "short_descriptions": [
+            {
+              "value": "After narrowly escaping a strange accident, a troubled teen is haunted by a man in a rabbit suit who manipulates him as reality and time begin to unravel.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "keywords": [
+            "mental illness",
+            "surrealism",
+            "imaginary friend",
+            "cult film",
+            "parallel universe",
+            "schizophrenic",
+            "teenage boy",
+            "schizophrenia",
+            "rabbit suit",
+            "cult classic"
+          ],
+          "genres": [
+            "Drama",
+            "Mystery",
+            "Sci-Fi",
+            "Thriller"
+          ],
+          "release_year": 2001,
+          "release_date": "2001-01-19"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:genre:qloo:drama",
+            "name": "Drama",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:fate_vs_free_will",
+            "name": "Fate vs free will",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:isolation",
+            "name": "Isolation",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:thriller",
+            "name": "Thriller",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:time_travel",
+            "name": "Time travel",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:mental_illness",
+            "name": "Mental illness",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:death",
+            "name": "Death",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:reality_vs_illusion",
+            "name": "Reality vs illusion",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:science_fiction",
+            "name": "Science fiction",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:adolescence",
+            "name": "Adolescence",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:mystery",
+            "name": "Mystery",
+            "type": "urn:tag:genre:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.924665
+        }
+      },
+      {
+        "name": "Pi",
+        "entity_id": "91F1EB9D-3F68-4134-AF04-E45696D56D54",
+        "type": "urn:entity",
+        "subtype": "urn:entity:movie",
+        "disambiguation": "1998, Darren Aronofsky",
+        "popularity": 0.981987,
+        "properties": {
+          "description": "Pi (1998), directed by Darren Aronofsky and starring Sean Gullette, Mark Margolis, and Ben Shenkman, is a black-and-white indie psychological thriller that mixes science-fiction and horror elements. It follows a brilliant but paranoid mathematician who becomes obsessed with finding a single number he believes underlies patterns in nature, a search that intensifies migraines, paranoia, and isolation. The film is a tense character study about obsession, the blurred line between genius and madness, and the human craving for order. Its high-contrast monochrome visuals and abrasive sound design produce a claustrophobic, feverish viewing experience.",
+          "plot_summary": "A brilliant but increasingly paranoid mathematician obsessively searches for a single number he believes will reveal universal patterns in nature. His fixation deepens migraines, isolation, and disturbing sensory experiences while outside pressures and his own doubts close in. The story traces his descent from analytic curiosity into feverish obsession, leaving the line between discovery and madness ambiguous.",
+          "plot_themes_description": "The film explores obsession and isolation as a pursuit of truth blurs into madness, probing our compulsion to find order and meaning in chaotic systems.",
+          "emotional_tone_description": "Claustrophobic and unsettling, the film evokes a feverish anxiety that alternates between intellectual wonder and creeping dread.",
+          "style_description": "High-contrast black-and-white cinematography, jittery handheld camerawork, and an abrasive, pulsating soundscape create a claustrophobic, feverish atmosphere.",
+          "genre_description": "A stark, low-budget psychological thriller that fuses speculative science-fiction and horror elements with an intimate dramatic character study and a central mysterious premise.",
+          "short_descriptions": [
+            {
+              "value": "A paranoid mathematician hunts for a number he believes unlocks universal patterns, descending into obsession and isolation.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "keywords": [
+            "mathematics",
+            "cult film",
+            "mathematician",
+            "obsession",
+            "the letter pi",
+            "tormented genius",
+            "torah",
+            "computer",
+            "conspiracy",
+            "independent film"
+          ],
+          "genres": [
+            "Drama",
+            "Horror",
+            "Mystery",
+            "Sci-Fi",
+            "Thriller"
+          ],
+          "release_year": 1998,
+          "release_date": "1998-07-10"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:genre:qloo:horror",
+            "name": "Horror",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:knowledge_and_power",
+            "name": "Knowledge and power",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:madness",
+            "name": "Madness",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:science_fiction",
+            "name": "Science fiction",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:pattern_seeking",
+            "name": "Pattern seeking",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:drama",
+            "name": "Drama",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:isolation",
+            "name": "Isolation",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:mystery",
+            "name": "Mystery",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:science_versus_belief",
+            "name": "Science versus belief",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:obsession",
+            "name": "Obsession",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:thriller",
+            "name": "Thriller",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:genius_versus_insanity",
+            "name": "Genius versus insanity",
+            "type": "urn:tag:theme:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.923496
+        }
+      },
+      {
+        "name": "Lost in Translation",
+        "entity_id": "603C7E42-C952-45CB-8B6F-3B803FEFB2F7",
+        "type": "urn:entity",
+        "subtype": "urn:entity:movie",
+        "disambiguation": "2003, Sofia Coppola",
+        "popularity": 0.997084,
+        "properties": {
+          "description": "Lost in Translation (2003), directed by Sofia Coppola and starring Bill Murray, Scarlett Johansson and Giovanni Ribisi, is an indie-leaning comedy-drama that follows the fragile, quietly charged relationship between a fading movie star and a young woman in Tokyo. The film blends atmospheric cinematography and spare dialogue to emphasize themes of loneliness, cultural dislocation, and the search for connection. Its tone is wistful and melancholic, with restrained humor and an emphasis on small, intimate moments that reveal the characters' interior lives.",
+          "plot_summary": "A fading movie star on a promotional trip and a young, newly married woman form an unexpected, intimate bond while adrift in Tokyo. Both feel isolated and dislocated amid the city's neon bustle and foreign customs, and their interactions become a quiet refuge from loneliness. Their relationship is defined less by overt romance than by shared vulnerability, small gestures, and moments of tenderness that illuminate their uncertainty about identity and purpose.",
+          "plot_themes_description": "The film explores loneliness and cross-cultural alienation while tracing two isolated people searching for human connection and meaning during transitional moments in their lives.",
+          "emotional_tone_description": "Quietly melancholic and wistful, the film evokes loneliness, tenderness, and a bittersweet longing for connection.",
+          "style_description": "The film employs intimate, observational camerawork, soft-focused lighting and restrained pacing to create a moody, neon-lit portrait of isolation and quiet longing.",
+          "genre_description": "A contemplative indie blend of drama and restrained comedy that emphasizes intimate, character-driven storytelling and understated romantic themes within an art-house aesthetic.",
+          "short_descriptions": [
+            {
+              "value": "A fading movie star and a young woman form an intimate, melancholic bond while feeling lost and isolated in Tokyo.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "keywords": [
+            "loneliness",
+            "older man younger woman relationship",
+            "american in tokyo",
+            "hotel room",
+            "unlikely friendship",
+            "insomnia",
+            "language barrier",
+            "tokyo japan",
+            "hotel bar",
+            "unhappiness"
+          ],
+          "genres": [
+            "Comedy",
+            "Drama"
+          ],
+          "release_year": 2003,
+          "release_date": "2003-10-03"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:theme:qloo:self_discovery",
+            "name": "Self discovery",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:communication",
+            "name": "Communication",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:drama",
+            "name": "Drama",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:midlife_crisis",
+            "name": "Midlife crisis",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:loneliness",
+            "name": "Loneliness",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:connection",
+            "name": "Connection",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:transience",
+            "name": "Transience",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:cross_cultural_dislocation",
+            "name": "Cross cultural dislocation",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:romance",
+            "name": "Romance",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:intimacy",
+            "name": "Intimacy",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:alienation",
+            "name": "Alienation",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:comedy",
+            "name": "Comedy",
+            "type": "urn:tag:genre:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.923049
+        }
+      },
+      {
+        "name": "Primer",
+        "entity_id": "F2D38796-6AEC-489E-A13D-DFEBB8527CB9",
+        "type": "urn:entity",
+        "subtype": "urn:entity:movie",
+        "disambiguation": "2004, Shane Carruth",
+        "popularity": 0.980788,
+        "properties": {
+          "description": "Primer (2004) is a low-budget independent science-fiction drama-thriller written and directed by Shane Carruth and starring Shane Carruth, David Sullivan, and Casey Gooden. The film follows a small group of entrepreneurial engineers who accidentally invent a crude time-travel device and gradually descend into secrecy, duplications, and escalating paranoia as they exploit and fight over its use. The narrative emphasizes ethical dilemmas, trust breakdowns, and the unforeseen consequences of iterative experimentation, delivered in a terse, clinical visual style that rewards attentive, repeat viewing. Emotionally, the movie is intellectually unsettling and claustrophobic, prioritizing moral ambiguity and procedural realism over conventional exposition.",
+          "plot_summary": "A group of entrepreneurial engineers working out of a garage accidentally build a small, crude time machine capable of sending users back short intervals. At first they run controlled experiments and exploit the device for minor gains, but iterative use creates overlapping timelines and competing agendas. Secrecy, duplications, and escalating paranoia strain friendships as the characters face ethical dilemmas and attempt to control the unpredictable consequences of manipulating causality.",
+          "plot_themes_description": "Through a small-scale time-travel experiment, the story probes the ethical and interpersonal fallout of technological discovery, focusing on trust, ambition, and the destabilizing effects of iterative manipulation of events.",
+          "emotional_tone_description": "The film creates a steadily mounting sense of intellectual disorientation and claustrophobic anxiety as it forces viewers to reckon with ethical ambiguity and escalating mistrust.",
+          "style_description": "Unadorned, low‑budget cinematography and a matter‑of‑fact visual approach emphasize technical detail and claustrophobic intimacy, creating a documentary-like, austere realism that foregrounds procedural mechanics over spectacle.",
+          "genre_description": "A low-budget, intellectually driven science-fiction thriller that blends character-focused drama with tightly wound, concept-heavy speculative mechanics and suspenseful moral conflict.",
+          "short_descriptions": [
+            {
+              "value": "A group of engineers invent a crude time machine and spiral into secrecy, competing iterations, and paranoia as they exploit and fight over its consequences.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "keywords": [
+            "time travel",
+            "changing the future",
+            "nonlinear timeline",
+            "unintended consequences",
+            "everything is not what it seems",
+            "time loop",
+            "independent film",
+            "directorial debut",
+            "time travel sci fi",
+            "cult film"
+          ],
+          "genres": [
+            "Drama",
+            "Sci-Fi",
+            "Thriller"
+          ],
+          "release_year": 2004,
+          "release_date": "2005-05-25"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:genre:qloo:science_fiction",
+            "name": "Science fiction",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:thriller",
+            "name": "Thriller",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:paranoia",
+            "name": "Paranoia",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:entrepreneurship",
+            "name": "Entrepreneurship",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:obsession",
+            "name": "Obsession",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:drama",
+            "name": "Drama",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:ethics_of_science",
+            "name": "Ethics of science",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:time_travel",
+            "name": "Time travel",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:consequences_of_technology",
+            "name": "Consequences of technology",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:trust",
+            "name": "Trust",
+            "type": "urn:tag:theme:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.921886
+        }
+      }
+    ]
+  }
+}

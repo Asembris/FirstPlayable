@@ -110,6 +110,112 @@ export function openAiEnv(): OpenAiEnv {
   return { apiKey, model };
 }
 
+export type QlooEnv = { apiKey: string; baseUrl: string; host: string };
+
+const QlooEnvSchema = z.strictObject({
+  apiKey: z.string().min(8),
+  baseUrl: z.url().refine((value) => value.startsWith("https://"), {
+    message: "must be an https URL",
+  }),
+});
+
+/**
+ * Qloo credentials and base URL. Server only.
+ *
+ * `QLOO_API_KEY` travels in the `X-Api-Key` header of exactly three frozen
+ * request shapes and nowhere else. No browser-exposed variant of it exists —
+ * the publicly prefixed form is forbidden and asserted against by
+ * `tests/server/secrets.test.ts` — and the browser reaches Qloo only through
+ * this application's own owner-scoped routes (specification sections 6 and 12).
+ *
+ * `host` is derived here rather than at each call site, because it is part of
+ * every capture's cache key: a configured base-URL change must not serve a
+ * capture taken from another host.
+ */
+export function qlooEnv(): QlooEnv {
+  const baseUrl = required("QLOO_API_BASE_URL").replace(/\/+$/u, "");
+  const parsed = QlooEnvSchema.safeParse({ apiKey: required("QLOO_API_KEY"), baseUrl });
+  if (!parsed.success) {
+    throw new ConfigError("Qloo configuration is invalid", [
+      "QLOO_API_KEY",
+      "QLOO_API_BASE_URL",
+    ]);
+  }
+  let host: string;
+  try {
+    host = new URL(parsed.data.baseUrl).host.toLowerCase();
+  } catch {
+    throw new ConfigError("QLOO_API_BASE_URL is not a parseable URL", ["QLOO_API_BASE_URL"]);
+  }
+  return { apiKey: parsed.data.apiKey, baseUrl: parsed.data.baseUrl, host };
+}
+
+/**
+ * The application's own Qloo safety policy.
+ *
+ * Every number here is a conservative local decision, not a figure read out of
+ * the API's documentation. The live recon on 4 October 2026 observed
+ * `x-month-ratelimit-limit: 10000` and `x-second-ratelimit-limit: 5`; this
+ * application paces itself well inside both and keeps a reserve for judging
+ * (specification section 12).
+ */
+export type QlooConfig = {
+  /** Local conservative allowance for one rolling window. Lowerable only. */
+  readonly monthlyCallAllowance: number;
+  /** Calls held back for judging once that many remain. */
+  readonly judgingReserveCalls: number;
+  /** Minimum milliseconds between two launches, globally. */
+  readonly launchSpacingMs: number;
+  /** Maximum simultaneously active request leases, globally. */
+  readonly maxActiveLeases: number;
+  /** How long a launch lease survives an abandoned request, in seconds. */
+  readonly launchLeaseSeconds: number;
+};
+
+export const QLOO_DEFAULTS = {
+  monthlyCallAllowance: 10_000,
+  judgingReserveCalls: 500,
+  launchSpacingMs: 250,
+  maxActiveLeases: 2,
+  launchLeaseSeconds: 40,
+} as const satisfies QlooConfig;
+
+export function qlooConfig(): QlooConfig {
+  return {
+    monthlyCallAllowance: integer(
+      "QLOO_MONTHLY_CALL_ALLOWANCE",
+      QLOO_DEFAULTS.monthlyCallAllowance,
+      0,
+      QLOO_DEFAULTS.monthlyCallAllowance,
+    ),
+    judgingReserveCalls: integer(
+      "QLOO_JUDGING_RESERVE_CALLS",
+      QLOO_DEFAULTS.judgingReserveCalls,
+      0,
+      5_000,
+    ),
+    // Only ever slower than the default, never faster.
+    launchSpacingMs: integer(
+      "QLOO_LAUNCH_SPACING_MS",
+      QLOO_DEFAULTS.launchSpacingMs,
+      QLOO_DEFAULTS.launchSpacingMs,
+      5_000,
+    ),
+    maxActiveLeases: integer(
+      "QLOO_MAX_ACTIVE_LEASES",
+      QLOO_DEFAULTS.maxActiveLeases,
+      1,
+      QLOO_DEFAULTS.maxActiveLeases,
+    ),
+    launchLeaseSeconds: integer(
+      "QLOO_LAUNCH_LEASE_SECONDS",
+      QLOO_DEFAULTS.launchLeaseSeconds,
+      5,
+      300,
+    ),
+  };
+}
+
 /**
  * Application-level budget settings. These are application caps chosen by this
  * deployment; they are not a claim about the OpenAI account's own rate limits.

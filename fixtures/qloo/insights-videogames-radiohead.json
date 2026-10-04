@@ -1,0 +1,1031 @@
+{
+  "success": true,
+  "results": {
+    "entities": [
+      {
+        "name": "Mass Effect 2",
+        "entity_id": "5B3C9A59-72CF-4EC1-924A-3CC7AA87647D",
+        "type": "urn:entity",
+        "subtype": "urn:entity:videogame",
+        "disambiguation": "2010-01-26, BioWare",
+        "popularity": 0.999308,
+        "properties": {
+          "description": "Mass Effect 2 is the dark second chapter of a sci‑fi trilogy in which Commander Shepard must recruit a diverse squad to confront a galaxy‑threatening force; the game blends narrative choice, squad-based third‑person combat, and RPG progression across a richly detailed interstellar setting.",
+          "short_descriptions": [
+            {
+              "value": "A veteran commander assembles a diverse squad to stop a galaxy-spanning threat, making life-or-death choices that shape the fate of allies and civilizations.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "emotional_tone": [
+            "dramatic",
+            "tense",
+            "melancholic",
+            "hopeful",
+            "heroic"
+          ],
+          "audience_tags": [
+            "rich characters",
+            "immersive worldbuilding",
+            "branching narrative",
+            "replayable",
+            "moral choices"
+          ],
+          "steam_tags": [
+            "Story Rich",
+            "Choices Matter",
+            "Singleplayer",
+            "RPG",
+            "Science Fiction",
+            "Third-Person Shooter",
+            "Squad-Based"
+          ],
+          "gameplay_type": [
+            "Single-Player",
+            "Squad-Based",
+            "Role-Playing",
+            "Third-Person Shooter"
+          ],
+          "genre": [
+            "Western RPG",
+            "Action RPG",
+            "Third-Person Shooter",
+            "Science Fiction"
+          ],
+          "art_style": [
+            "3D",
+            "Realistic",
+            "Cinematic"
+          ],
+          "release_date": "2010-01-26",
+          "universe": "Mass Effect"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:emotional_tone:qloo:dramatic",
+            "name": "dramatic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:tense",
+            "name": "tense",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:melancholic",
+            "name": "melancholic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:hopeful",
+            "name": "hopeful",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:heroic",
+            "name": "heroic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:western_rpg",
+            "name": "Western RPG",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:action_rpg",
+            "name": "Action RPG",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:third_person_shooter",
+            "name": "Third-Person Shooter",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:science_fiction",
+            "name": "Science Fiction",
+            "type": "urn:tag:genre:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.895563
+        }
+      },
+      {
+        "name": "Dragon Age: Origins",
+        "entity_id": "2EFBE2D7-A977-4824-8304-6389BF377127",
+        "type": "urn:entity",
+        "subtype": "urn:entity:videogame",
+        "disambiguation": "2009-11-03, BioWare",
+        "popularity": 0.998789,
+        "properties": {
+          "description": "Dragon Age: Origins is a dark, mature party-based Western role-playing game in which a player-created protagonist, chosen from several unique \"origins,\" must recruit companions and lead them against a continent-spanning demonic Blight. The game mixes tactical, pausable real-time combat with deep character progression, powerful magic and branching narrative choices that reshape alliances, rivalries and the political landscape of the world of Thedas.",
+          "short_descriptions": [
+            {
+              "value": "A customizable hero from one of several origins unites companions to stop a demonic Blight threatening the kingdom, with choices shaping alliances and outcomes.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "emotional_tone": [
+            "dark",
+            "epic",
+            "melancholic",
+            "intense",
+            "dramatic"
+          ],
+          "audience_tags": [
+            "story-rich",
+            "choice-driven",
+            "deep lore",
+            "replayable",
+            "character-driven",
+            "tactical gameplay"
+          ],
+          "steam_tags": [
+            "RPG",
+            "Fantasy",
+            "Party-Based",
+            "Choices Matter",
+            "Tactical",
+            "Story Rich",
+            "Singleplayer",
+            "Third Person"
+          ],
+          "gameplay_type": [
+            "Single-Player",
+            "Party-Based RPG",
+            "Tactical Combat",
+            "Real-Time With Pause"
+          ],
+          "genre": [
+            "Role-Playing",
+            "Western RPG",
+            "Tactical"
+          ],
+          "art_style": [
+            "3D",
+            "Realistic",
+            "High Fantasy"
+          ],
+          "release_date": "2009-11-03",
+          "universe": "Thedas"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:emotional_tone:qloo:dark",
+            "name": "dark",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:epic",
+            "name": "epic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:melancholic",
+            "name": "melancholic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:intense",
+            "name": "intense",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:dramatic",
+            "name": "dramatic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:role_playing",
+            "name": "Role-Playing",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:western_rpg",
+            "name": "Western RPG",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:tactical",
+            "name": "Tactical",
+            "type": "urn:tag:genre:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.891507
+        }
+      },
+      {
+        "name": "Mass Effect",
+        "entity_id": "DB003E13-0C9F-4011-B928-43ADC2A59F26",
+        "type": "urn:entity",
+        "subtype": "urn:entity:videogame",
+        "disambiguation": "2007-11-20, BioWare",
+        "popularity": 0.999446,
+        "properties": {
+          "description": "Mass Effect is a science-fiction action role-playing game in which the player, as humanity's first major representative on the galactic stage, must investigate and thwart an ancient, galaxy-spanning threat while recruiting allies, making consequential moral choices, upgrading talents, customizing weapons and vehicles, and exploring numerous uncharted planets with side quests and discoveries.",
+          "short_descriptions": [
+            {
+              "value": "As humanity's first galactic envoy, you uncover a looming existential threat and must persuade others and gather allies to prevent the extinction of civilization.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "emotional_tone": [
+            "Epic",
+            "Suspenseful",
+            "Melancholic",
+            "Tense"
+          ],
+          "audience_tags": [
+            "story-rich",
+            "choice-driven",
+            "character-driven",
+            "moral choices",
+            "memorable cast"
+          ],
+          "steam_tags": [
+            "Singleplayer",
+            "Story Rich",
+            "Choices Matter",
+            "RPG",
+            "Sci-fi",
+            "Third Person"
+          ],
+          "gameplay_type": [
+            "Single-player",
+            "Action RPG",
+            "Squad-based",
+            "Exploration"
+          ],
+          "genre": [
+            "Role-Playing",
+            "Action",
+            "Science Fiction"
+          ],
+          "art_style": [
+            "3D",
+            "Realistic",
+            "Cinematic",
+            "Science-fiction aesthetic"
+          ],
+          "release_date": "2007-11-20",
+          "universe": "Mass Effect Universe"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:emotional_tone:qloo:epic",
+            "name": "Epic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:suspenseful",
+            "name": "Suspenseful",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:melancholic",
+            "name": "Melancholic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:tense",
+            "name": "Tense",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:role_playing",
+            "name": "Role-Playing",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:action",
+            "name": "Action",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:science_fiction",
+            "name": "Science Fiction",
+            "type": "urn:tag:genre:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.880901
+        }
+      },
+      {
+        "name": "The Elder Scrolls IV: Oblivion",
+        "entity_id": "41376753-6D7F-41A0-AC01-7C2B61870A21",
+        "type": "urn:entity",
+        "subtype": "urn:entity:videogame",
+        "disambiguation": "2006-03-20, Bethesda Game Studios",
+        "popularity": 0.99917,
+        "properties": {
+          "description": "Oblivion is a single-player open-world Western RPG set in Cyrodiil, the imperial province of Tamriel. After the emperor is assassinated, the player must find the emperor's lost heir and stop gates to Oblivion from inundating the world with demonic forces. The game emphasizes player freedom, exploration, faction-based side quests (mages guild, thieves guild, etc.), deep lore, character customization, and features Radiant AI-driven NPC schedules, fully voiced dialogue and facial animation.",
+          "short_descriptions": [
+            {
+              "value": "A lone hero must find the emperor's lost heir and close the gates of Oblivion as demonic invaders pour into the open-world province of Cyrodiil.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "emotional_tone": [
+            "epic",
+            "adventurous",
+            "immersive",
+            "mysterious"
+          ],
+          "audience_tags": [
+            "deep lore",
+            "sandbox freedom",
+            "high replayability",
+            "modding community"
+          ],
+          "steam_tags": [
+            "Open World",
+            "RPG",
+            "Singleplayer",
+            "Fantasy",
+            "Exploration",
+            "Story Rich"
+          ],
+          "gameplay_type": [
+            "Single-player",
+            "Open World",
+            "Role-Playing",
+            "Sandbox"
+          ],
+          "genre": [
+            "Role-Playing",
+            "Western RPG",
+            "Action"
+          ],
+          "art_style": [
+            "3D",
+            "Realistic",
+            "High Fantasy"
+          ],
+          "release_date": "2006-03-20",
+          "universe": "Tamriel"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:emotional_tone:qloo:epic",
+            "name": "epic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:adventurous",
+            "name": "adventurous",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:immersive",
+            "name": "immersive",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:mysterious",
+            "name": "mysterious",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:role_playing",
+            "name": "Role-Playing",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:western_rpg",
+            "name": "Western RPG",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:action",
+            "name": "Action",
+            "type": "urn:tag:genre:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.879688
+        }
+      },
+      {
+        "name": "Mass Effect 3",
+        "entity_id": "8B63E812-B486-4070-BCF8-AC978AE51A1E",
+        "type": "urn:entity",
+        "subtype": "urn:entity:videogame",
+        "disambiguation": "2012-03-06, BioWare",
+        "popularity": 0.999273,
+        "properties": {
+          "description": "BioWare completes the Mass Effect trilogy: Earth is under assault by a race of sentient machines known as the Reapers. As Commander Shepard, an Alliance Marine, you must unite disparate galactic civilizations, make alliance- and morality-defining choices, manage squad and resources, and lead a final mission to retake Earth and stop the invasion.",
+          "short_descriptions": [
+            {
+              "value": "Commander Shepard must unite galactic civilizations to repel a machine invasion and lead a final assault to save Earth.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "emotional_tone": [
+            "epic",
+            "urgent",
+            "melancholic",
+            "heroic"
+          ],
+          "audience_tags": [
+            "memorable characters",
+            "impactful choices",
+            "immersive worldbuilding",
+            "cinematic presentation",
+            "controversial ending"
+          ],
+          "steam_tags": [
+            "Story Rich",
+            "RPG",
+            "Sci-fi",
+            "Third Person",
+            "Shooter",
+            "Choices Matter",
+            "Singleplayer",
+            "Multiplayer",
+            "Co-op"
+          ],
+          "gameplay_type": [
+            "Single-player",
+            "Multiplayer",
+            "Co-op"
+          ],
+          "genre": [
+            "Action",
+            "Role-Playing"
+          ],
+          "art_style": [
+            "3D",
+            "Realistic",
+            "Cinematic"
+          ],
+          "release_date": "2012-03-06",
+          "universe": "Mass Effect"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:emotional_tone:qloo:epic",
+            "name": "epic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:urgent",
+            "name": "urgent",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:melancholic",
+            "name": "melancholic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:heroic",
+            "name": "heroic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:action",
+            "name": "Action",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:role_playing",
+            "name": "Role-Playing",
+            "type": "urn:tag:genre:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.873953
+        }
+      },
+      {
+        "name": "The Elder Scrolls IV: Shivering Isles",
+        "entity_id": "D82A53CE-D6B8-4958-953D-51D4F0F249FD",
+        "type": "urn:entity",
+        "subtype": "urn:entity:videogame",
+        "disambiguation": "2007-03-26, Bethesda Softworks",
+        "popularity": 0.993461,
+        "properties": {
+          "description": "Shivering Isles is an expansion for The Elder Scrolls IV: Oblivion that adds over 30 hours of content set in the realm of Sheogorath, the Daedric Prince of Madness. Players enter a surreal plane split between Mania and Dementia, explore bizarre landscapes and dungeons, face new creatures, collect new items, spells and gear, and ultimately undertake trials to become the champion (and possibly the new god) of the Isles. The expansion integrates with existing Oblivion characters/save files or can be explored with new characters.",
+          "short_descriptions": [
+            {
+              "value": "Enter the realm of Sheogorath, navigate the twin realms of Mania and Dementia, and become the Prince of Madness's champion to save the Shivering Isles from destruction.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "emotional_tone": [
+            "Surreal",
+            "Darkly Humorous",
+            "Eerie",
+            "Whimsical",
+            "Melancholic"
+          ],
+          "audience_tags": [
+            "Expansion",
+            "Story-Rich",
+            "Exploration",
+            "Bizarre World",
+            "High Replayability",
+            "Weird Fantasy"
+          ],
+          "steam_tags": [
+            "Open World",
+            "Singleplayer",
+            "RPG",
+            "Story Rich",
+            "Fantasy",
+            "Exploration",
+            "Atmospheric",
+            "Moddable"
+          ],
+          "gameplay_type": [
+            "Single-player",
+            "Expansion DLC",
+            "Open World",
+            "Action RPG"
+          ],
+          "genre": [
+            "Role-Playing",
+            "Action",
+            "Open World",
+            "Expansion"
+          ],
+          "art_style": [
+            "3D",
+            "Realistic",
+            "High Fantasy",
+            "Surreal"
+          ],
+          "release_date": "2007-03-26",
+          "universe": "Tamriel / The Elder Scrolls universe"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:emotional_tone:qloo:surreal",
+            "name": "Surreal",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:darkly_humorous",
+            "name": "Darkly Humorous",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:eerie",
+            "name": "Eerie",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:whimsical",
+            "name": "Whimsical",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:melancholic",
+            "name": "Melancholic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:role_playing",
+            "name": "Role-Playing",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:action",
+            "name": "Action",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:open_world",
+            "name": "Open World",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:expansion",
+            "name": "Expansion",
+            "type": "urn:tag:genre:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.865133
+        }
+      },
+      {
+        "name": "The Elder Scrolls III: Morrowind",
+        "entity_id": "D1210BAE-5A11-4759-BED4-E19666C46B24",
+        "type": "urn:entity",
+        "subtype": "urn:entity:videogame",
+        "disambiguation": "2002-06-06, Bethesda Softworks",
+        "popularity": 0.997336,
+        "properties": {
+          "description": "An epic, open-ended single-player game where you create and play any kind of character you can imagine. Be the noble hero embarking on an epic quest, or an insidious thief rising to leadership of his guild. Be a malevolent sorcerer developing the ultimate spell of destruction, or a reverent healer searching for the cure to a plague. Your actions define your character, and your gameplay changes and evolves in response to your actions. Confront the assassins' guild, and they take out a contract on you. Impress them, and they try to recruit you instead. No two sagas are the same in the world of Morrowind.",
+          "short_descriptions": [
+            {
+              "value": "Explore the island province of Vvardenfell, shape your character through choices and skills, and unravel a prophecy that threatens the land.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "emotional_tone": [
+            "Epic",
+            "Adventurous",
+            "Isolated",
+            "Mysterious",
+            "Immersive"
+          ],
+          "audience_tags": [
+            "modding community",
+            "deep lore",
+            "non-linear quests",
+            "high player freedom",
+            "open-ended character building"
+          ],
+          "steam_tags": [
+            "Open World",
+            "RPG",
+            "Singleplayer",
+            "Exploration",
+            "Moddable",
+            "Fantasy"
+          ],
+          "gameplay_type": [
+            "Single-player",
+            "Open World",
+            "Role-Playing",
+            "Sandbox",
+            "Quest-driven"
+          ],
+          "genre": [
+            "Role-Playing",
+            "Open World",
+            "Adventure"
+          ],
+          "art_style": [
+            "3D",
+            "Realistic",
+            "High Fantasy"
+          ],
+          "release_date": "2002-06-06",
+          "universe": "Tamriel"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:emotional_tone:qloo:epic",
+            "name": "Epic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:adventurous",
+            "name": "Adventurous",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:isolated",
+            "name": "Isolated",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:mysterious",
+            "name": "Mysterious",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:immersive",
+            "name": "Immersive",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:role_playing",
+            "name": "Role-Playing",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:open_world",
+            "name": "Open World",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:adventure",
+            "name": "Adventure",
+            "type": "urn:tag:genre:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.858975
+        }
+      },
+      {
+        "name": "Neverwinter Nights 2",
+        "entity_id": "350A86D0-7DB8-4AE9-8757-1383959A9A4B",
+        "type": "urn:entity",
+        "subtype": "urn:entity:videogame",
+        "disambiguation": "2006-10-31, Obsidian Entertainment",
+        "popularity": 0.978931,
+        "properties": {
+          "description": "Neverwinter Nights 2 is the sequel to BioWare's genre-defining role-playing game, set in the Dungeons & Dragons Forgotten Realms. Developed by Obsidian Entertainment with tools and assets from BioWare, it offers a party-based, D&D rules-driven RPG campaign with branching storylines, extensive character customization, and multiplayer support.",
+          "short_descriptions": [
+            {
+              "value": "A customizable hero and their party uncover conspiracies and ancient powers in the Forgotten Realms while pursuing a branching, D&D-driven campaign.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "emotional_tone": [
+            "Epic",
+            "Adventurous",
+            "Dark",
+            "Tactical",
+            "Nostalgic"
+          ],
+          "audience_tags": [
+            "Dungeons & Dragons Fans",
+            "Tabletop RPG Players",
+            "Modding Community",
+            "Classic RPG Fans",
+            "Story-Driven Players"
+          ],
+          "steam_tags": [
+            "RPG",
+            "Party-Based RPG",
+            "Story Rich",
+            "Fantasy",
+            "Singleplayer",
+            "Multiplayer",
+            "Moddable"
+          ],
+          "gameplay_type": [
+            "Single-player",
+            "Multiplayer",
+            "Co-operative",
+            "Party-based",
+            "Story-driven"
+          ],
+          "genre": [
+            "Role-Playing"
+          ],
+          "art_style": [
+            "3D",
+            "Realistic",
+            "High Fantasy"
+          ],
+          "release_date": "2006-10-31",
+          "universe": "Forgotten Realms"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:emotional_tone:qloo:epic",
+            "name": "Epic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:adventurous",
+            "name": "Adventurous",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:dark",
+            "name": "Dark",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:tactical",
+            "name": "Tactical",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:nostalgic",
+            "name": "Nostalgic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:role_playing",
+            "name": "Role-Playing",
+            "type": "urn:tag:genre:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.856879
+        }
+      },
+      {
+        "name": "Star Wars: Knights of the Old Republic",
+        "entity_id": "A35266F4-0AA5-4DDA-8B48-15B260D0CB91",
+        "type": "urn:entity",
+        "subtype": "urn:entity:videogame",
+        "disambiguation": "2003-07-17, BioWare",
+        "popularity": 0.997059,
+        "properties": {
+          "description": "Set over 4,000 years before the films, Knights of the Old Republic is a party-based, choice-driven Western-style role-playing game in the Star Wars universe where your moral choices and actions determine whether you follow the light or dark side and shape the fate of the galaxy.",
+          "short_descriptions": [
+            {
+              "value": "Play a customizable hero in the ancient Star Wars era, choosing light or dark as you lead companions and decide the galaxy's fate.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "emotional_tone": [
+            "epic",
+            "melancholic",
+            "heroic",
+            "moral ambiguity",
+            "suspenseful"
+          ],
+          "audience_tags": [
+            "classic RPG",
+            "deep story",
+            "memorable twist",
+            "high replayability",
+            "strong writing"
+          ],
+          "steam_tags": [
+            "Story Rich",
+            "RPG",
+            "Singleplayer",
+            "Choice",
+            "Party-Based",
+            "Sci-fi",
+            "Classic"
+          ],
+          "gameplay_type": [
+            "Single-player",
+            "Party-based RPG",
+            "Choice-driven narrative"
+          ],
+          "genre": [
+            "Role-Playing",
+            "Adventure"
+          ],
+          "art_style": [
+            "3D",
+            "Realistic",
+            "Sci-fi"
+          ],
+          "release_date": "2003-07-17",
+          "universe": "Star Wars: Old Republic era"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:emotional_tone:qloo:epic",
+            "name": "epic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:melancholic",
+            "name": "melancholic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:heroic",
+            "name": "heroic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:moral_ambiguity",
+            "name": "moral ambiguity",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:suspenseful",
+            "name": "suspenseful",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:role_playing",
+            "name": "Role-Playing",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:adventure",
+            "name": "Adventure",
+            "type": "urn:tag:genre:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.856219
+        }
+      },
+      {
+        "name": "The Elder Scrolls V: Skyrim",
+        "entity_id": "B8518AFD-A777-4545-B606-9A768FD27E04",
+        "type": "urn:entity",
+        "subtype": "urn:entity:videogame",
+        "disambiguation": "2011-11-11, Bethesda Game Studios",
+        "popularity": 0.999931,
+        "properties": {
+          "description": "The Elder Scrolls V: Skyrim is a sprawling open-world action role-playing game set in the frozen, war-torn province of Skyrim. Players create any character build, explore a vast, emergent world of cities, dungeons and wilderness, develop skills and abilities, craft and customize gear, join factions, and confront an ancient dragon threat as the prophesied Dragonborn who can absorb and use dragon shouts.",
+          "short_descriptions": [
+            {
+              "value": "As the prophesied Dragonborn, you explore the province of Skyrim, battle ancient dragons, and shape Tamriel's fate through your choices, combat and character progression.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "emotional_tone": [
+            "epic",
+            "adventurous",
+            "immersive",
+            "atmospheric"
+          ],
+          "audience_tags": [
+            "high replayability",
+            "mod-friendly",
+            "player freedom",
+            "deep worldbuilding"
+          ],
+          "steam_tags": [
+            "RPG",
+            "Open World",
+            "Singleplayer",
+            "Fantasy",
+            "Exploration",
+            "Moddable",
+            "Adventure",
+            "Atmospheric"
+          ],
+          "gameplay_type": [
+            "Single-player",
+            "Open World",
+            "Action Role-Playing",
+            "Sandbox"
+          ],
+          "genre": [
+            "Role-Playing",
+            "Action",
+            "Adventure",
+            "Open World"
+          ],
+          "art_style": [
+            "3D",
+            "Realistic",
+            "High-fidelity fantasy"
+          ],
+          "release_date": "2011-11-11",
+          "universe": "Tamriel"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:emotional_tone:qloo:epic",
+            "name": "epic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:adventurous",
+            "name": "adventurous",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:immersive",
+            "name": "immersive",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:atmospheric",
+            "name": "atmospheric",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:role_playing",
+            "name": "Role-Playing",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:action",
+            "name": "Action",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:adventure",
+            "name": "Adventure",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:open_world",
+            "name": "Open World",
+            "type": "urn:tag:genre:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.853558
+        }
+      }
+    ]
+  }
+}

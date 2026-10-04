@@ -27,17 +27,59 @@ describe("fixture honesty", () => {
     }
   });
 
-  it("contains no Qloo identifier, timestamp, or API metadata", () => {
+  /**
+   * The design fixtures must stay design fixtures. Phase 3 adds real redacted
+   * Qloo captures under `fixtures/qloo/`, which do legitimately carry real
+   * entity UUIDs — that is checked separately below. The hand-authored scene
+   * fixtures still may not, because a fixture cannot mint a production Qloo
+   * badge (specification section 5, "Layer A").
+   */
+  it("keeps the hand-authored scene fixtures free of Qloo identity", () => {
     const uuid = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
     const iso = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
-    for (const file of walk(join(repoRoot, "fixtures"))) {
-      if (!file.endsWith(".json")) continue;
+    const designFixtures = walk(join(repoRoot, "fixtures")).filter(
+      (file) => file.endsWith(".json") && !file.split("\\").join("/").includes("/fixtures/qloo/"),
+    );
+    expect(designFixtures.length).toBeGreaterThan(3);
+    for (const file of designFixtures) {
       const text = readFileSync(file, "utf8");
       expect(uuid.test(text), `${file} contains a UUID`).toBe(false);
       expect(iso.test(text), `${file} contains a timestamp`).toBe(false);
       expect(/qloo/i.test(text), `${file} mentions Qloo`).toBe(false);
       expect(/affinity|retrieved_at|x-api-key/i.test(text)).toBe(false);
     }
+  });
+
+  /**
+   * The opposite claim, for the phase 3 captures: they are real responses, so
+   * they must carry real identity, and they must carry no credential, header,
+   * or request diagnostic.
+   */
+  it("keeps the real Qloo captures real, and free of any credential", () => {
+    const uuid = /[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}/;
+    const captures = walk(join(repoRoot, "fixtures", "qloo")).filter((file) =>
+      file.endsWith(".json"),
+    );
+    expect(captures.length).toBeGreaterThan(2);
+    let withIdentity = 0;
+    for (const file of captures) {
+      const text = readFileSync(file, "utf8");
+      if (uuid.test(text)) withIdentity += 1;
+      expect(/x-api-key/i.test(text), `${file} carries a key header`).toBe(false);
+      expect(/authorization/i.test(text), `${file} carries an auth header`).toBe(false);
+      // Removed during redaction: images, marketing links, audience and
+      // demographic claims. None of these may be stored or sent onward.
+      for (const forbidden of [
+        "images.qloo.com",
+        "audience_identity",
+        "situational_contexts",
+        "player_demographics",
+        "websites",
+      ]) {
+        expect(text.includes(forbidden), `${file} retains ${forbidden}`).toBe(false);
+      }
+    }
+    expect(withIdentity).toBeGreaterThan(0);
   });
 
   it("makes no retrieval claim in the brief", () => {
