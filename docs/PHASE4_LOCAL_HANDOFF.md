@@ -60,10 +60,14 @@ In chronological order, oldest first:
 | `7be4700` | `feat: add the resumable persisted compilation controller` |
 | `e4be799` | `feat: add the compile advance status and activation routes` |
 | `c2ade89` | `feat: add the phase 4 review panel and local playable` |
-| *(see `git log`)* | the browser gate and this documentation |
+| `bf42c3b` | `test: cover the phase 4 build review and activation flow in the browser gate` |
+| `e7c3841` | `docs: add the phase 4 local acceptance handoff and cloud evidence` |
+| *(see `git log`)* | this table's own correction, if one follows |
 
-`git log --oneline main..HEAD` on the branch is authoritative; the table above
-is a convenience.
+`git log --oneline origin/main..HEAD` on the branch is authoritative; the table
+above is a convenience. Note that `c2ade89` groups the review panel with the
+offline route, version, and failure test files, because the phase 3 browser
+mock had to change in the same commit for the gate to stay green.
 
 ---
 
