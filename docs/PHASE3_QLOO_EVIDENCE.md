@@ -57,9 +57,14 @@ substituted and the key header never printed:
 {base}/v2/insights?filter.type=urn%3Aentity%3Avideogame&signal.interests.entities=70CAE5BF-2F4C-445C-A3E5-4EDACFC3591C&take=10
 ```
 
-`urn:entity:videogame` is the type that works. The string `video_game` does not
-appear anywhere in the repository, and a test asserts its absence from the
-documented shapes.
+`urn:entity:videogame` is the type that works. `urn:entity:video_game` is never
+sent: it appears in this repository only inside comments stating that it is not
+the working value, and inside two assertions in
+`tests/server/qloo-client.test.ts` that it is absent from the outgoing
+`filter.type` and from the documented request shapes. The specification records
+the conflict between the published guide and the live recon (§ "Conflict
+handling"); this phase smoke-tested the observed working GET form and it
+succeeded.
 
 A creator-supplied query cannot become a parameter: a search for
 `a&filter.type=urn:entity:movie&x= #` produces a URL whose only keys are

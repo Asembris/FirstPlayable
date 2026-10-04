@@ -576,8 +576,9 @@ GET {base}/v2/insights?filter.type=urn:entity:videogame&signal.interests.entitie
 ```
 
 Host: `hackathon.api.qloo.com`. Key in `X-Api-Key`, server only.
-`urn:entity:videogame` is the working type; the string `video_game` appears
-nowhere in the repository.
+`urn:entity:videogame` is the working type. `urn:entity:video_game` is never
+sent; it appears only in comments saying so and in two assertions that it is
+absent from the outgoing request.
 
 **There is no parameter echo** in either observed envelope. The application
 records that absence and preserves the outbound request fingerprint; it does not
