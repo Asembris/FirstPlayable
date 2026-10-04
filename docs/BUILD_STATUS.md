@@ -1537,3 +1537,175 @@ structurally: no compiler is in scope on those paths. No Qloo call was added.
   delegation for one deployment window. A later phase should drop it.
 * Every count above is an offline measurement. Nothing here is evidence that the
   live path works.
+
+## Phase 5 — live acceptance against a preview — 4 October 2026, later session
+
+**Branch:** `feat/phase-5-revision-share` · **Nothing was pushed. Production was
+not deployed.** `https://firstplayable.vercel.app` is still deployment
+`dpl_8QyLzVhHf9pyxbgdAPbxrv1Kxbsj`, the Phase 4 build.
+
+**Phase 5 does NOT pass yet, on one item.** Every functional live gate passes
+against a preview of this branch, and the deployed verifier passes **118 of
+118**. The open item is bookkeeping, and it is listed first because the gate
+names it: the remote migration history records the Phase 5 migration as
+`20261004200000`, not the committed `20261004190000`, and no official
+Management API endpoint can change a recorded version (below).
+
+### Migration — applied through the Management API, verified live
+
+Applied with `POST /v1/projects/{ref}/database/migrations` using a new scoped
+`SUPABASE_ACCESS_TOKEN` (Migrations read-write, Database read). No raw ad-hoc
+DDL was run, `supabase db push` was not attempted (the IPv6 blocker stands), and
+no permission was broadened.
+
+| Check | Observed |
+|---|---|
+| History before | 5 rows, matching the 5 committed Phase 2–4 files |
+| Applied statement | byte-identical to the committed file (24,901 characters, same SHA-256) |
+| History after | 6 rows; the new one is `20261004200000` / `phase5_revision_share` |
+| Name matches the filename | **yes** |
+| Version matches the filename | **no** — the API stamps its own version |
+| Replay order | unaffected: `20261004200000` sorts after every earlier migration |
+| Reconcilable through the API | **no** — `PATCH .../migrations/{version}` accepts only `name` and `rollback`; `DELETE ?gte=` is documented as rolling migrations back as well as removing them from history, and was not used on production for bookkeeping |
+| Tables / RLS / policies | 8 / 8 / 0, unchanged |
+| Functions | 20 → 26: six added, `read_scene_versions` replaced, the 19-argument `commit_scene_version` now a delegation |
+| New functions | `SECURITY INVOKER`, `search_path=""`, execute granted to `service_role` (and `postgres`) only |
+| Browser-role grants | 0 table grants; the one routine grant is Supabase's own `rls_auto_enable`, present before this migration |
+| Phase 4 data | 44 projects, 7 versions, 68 operations: identical digests before and after |
+| Backwards compatibility | the 19- and 20-argument `commit_scene_version` both resolve and refuse a foreign owner; `read_scene_versions` reads a real Phase 4 version for its owner and refuses a foreign one |
+| Production after the migration | 7 of 7 zero-model-call health checks, before and after |
+
+To close the item: correct the history row's version to `20261004190000`
+outside the Management API (as Phase 4's own history row was corrected), or
+decide explicitly to keep the API's stamp. The committed file was not renamed.
+
+### A secret-handling defect found and fixed before deploying
+
+The Vercel CLI does not read `.gitignore`, and its built-in ignore list excludes
+`.env.local` but not `.env`. The **current production deployment's uploaded
+source contains `.env`** (listed by name through the Vercel API; contents not
+read). That deployment was made by an earlier session. The file is not served:
+`/.env` returns 404 and `/_src` redirects to the Vercel dashboard, which requires
+a signed-in team member. The keys it held at the time are nonetheless stored in
+Vercel's copy of that deployment's source; **rotating them is the owner's
+decision** and was not done here.
+
+Fixed by a `.vercelignore` that repeats every `.gitignore` rule, including the
+nested `supabase/.gitignore`, with a regression test. Both previews made in this
+session uploaded exactly the 202 tracked files plus two empty directory entries:
+no `.env`, no `.env.local`, no `supabase/.temp`.
+
+### Two live defects found, regression-tested, and fixed
+
+| Defect, as observed live | Root cause | Fix |
+|---|---|---|
+| A refused ending-copy apply (wording other than the preview, same preview hash) made the genuine apply of the previewed wording fail with `429 "This change is already being applied"` | the apply's idempotency key omitted the text, so the refused command settled the key the genuine one needed | the applied text is part of the key; double-submitting one apply still deduplicates |
+| After revocation the very next public read, from a fresh client, still returned **200** | `public, max-age=300` is cached by Vercel's CDN when it is the only cache header | the public read sends `no-store`, as its unavailable answer already did; revocation takes effect on the next read |
+
+Section 12 allows a five-minute revocation window; the second fix only narrows
+it. The share warning's wording ("within five minutes") is still true and was
+not changed.
+
+### Preview deployments
+
+| Preview | Deployment | Built from | Used for |
+|---|---|---|---|
+| `firstplayable-9t0i43jve-…vercel.app` | `dpl_6FPzNoxjjXF4DhJKAxB7ZjoH7JWj` | `e63569f` | run 1, which found both defects |
+| **`firstplayable-7j3nsodad-…vercel.app`** | `dpl_DHXPSw3aEujWdykxopsUEtYE8XYL` | `acea1c0` | runs 2–4; application code identical to the final HEAD |
+
+Both are behind Vercel Authentication. The verifier used the project's existing
+automation bypass secret, created before this session, passed through the
+environment and never printed. No project setting was changed.
+
+### Live Phase 5 results (verifier run 4, against the final preview)
+
+| Gate | Result |
+|---|---|
+| Fresh two-influence scene, real Qloo context and real model | **PASS** — 3 provider calls |
+| Arbitrary interpretation edit | **PASS** — 0 calls to record it; recompile **1** call; base and commitment hashes identical, discovery hash changed |
+| Replace one influence | **PASS** — 0 calls to record it; recompile **1** call; base and discovery hashes identical |
+| Ending wording preview | **PASS** — exactly 1 text-only call; nothing applied, no pending version |
+| Forged apply (other wording) | **PASS** — refused, `422 PREVIEW_MISMATCH` |
+| Explicit apply | **PASS** — 0 calls; labelled `wording`, `mechanical_change` false, one override, base endings and mechanical signature identical |
+| Remove an influence | **PASS** — **0** provider calls; base and commitment hashes identical; the applied wording carried through; labelled `mechanical` |
+| Deterministic diff | **PASS** — all four stored diffs equal the engine's recomputation from the two stored scenes |
+| Immutable history | **PASS** — 5 versions, each linked to its parent, identical on re-read; earlier versions still listed and playable |
+| Publish | **PASS** — preview publishes nothing; a different document is refused (422); a stranger is refused (404); the link names one version |
+| Version pinning | **PASS** — after four further revisions the link still serves the version it was published from |
+| Public payload | **PASS** — exactly the nine whitelisted snapshot keys; none of 20 private markers (project id, premise, artist, owner cookie, capture and entity ids, 4 unapproved ideas) present |
+| Public play from a fresh browser | **PASS** — read-only, played to an ending with 0 requests, `noindex`, no owner control |
+| Revoke | **PASS** — a stranger is refused (404); the next read is 404, byte-identical to an unknown token; revoking twice is idempotent; a fresh browser sees the unavailable screen |
+| Export | **PASS** — owner 200 attachment, stranger 404, anonymous 401; 27,504 bytes with no private marker, credential, provider host, or external reference |
+| Export offline | **PASS** — played from `file://` to an ending and reset, with the context offline and every http(s)/ws request aborted: **0 requests, 0 CSP violations** |
+| Owner studio | **PASS** — revision, comparison, publication list (link shown withdrawn), and export all present |
+| Phases 1–4 on the same preview | **PASS** — the Phase 2–4 HTTP matrix, Phase 3 HTTP and browser flows, Phase 4 compilation, and fresh-server persistence |
+
+### Deployed verifier runs, every one
+
+| Run | Target | Result | What it showed |
+|---|---|---|---|
+| 1 | `9t0i43jve` | 101 / 113 | both defects above; verifier errors (diff comparison sensitive to `jsonb` key order and to the stored null `after_version_id`; ending wording read from the base text instead of the override); the preview toolbar |
+| 2 | `7j3nsodad` | 111 / 116 | both fixes hold live; the offline reset clicked "Start over" at an ending, where the player says "Play it again"; the preview toolbar |
+| 3 | `7j3nsodad` | aborted, 99 / 100 | `TypeError: fetch failed` after the server had committed the removal (Vercel logs: 200, version committed); a client-side transport failure, not retried by the verifier |
+| **4** | **`7j3nsodad`** | **118 / 118** | **all pass** |
+
+The preview toolbar: Vercel's build adds a `vercel.live` loader to a client
+chunk in both production and preview builds (not in a local build), and only a
+preview activates it. The documented `x-vercel-skip-toolbar` header did not stop
+it, because the loader runs in the browser. On a protected preview only, the
+verifier exempts exactly `https://vercel.live/_next-live/feedback/` from its
+same-origin checks and prints the count (7 in run 4). A production run has no
+exemption.
+
+### Tracked OpenAI spend
+
+Read live from `public.budget_buckets`, scope `model_cost_micros`: cumulative
+list-price estimates from provider-reported usage.
+
+| Point | Spent |
+|---|---|
+| Start of this session | $0.020985 |
+| After runs 1 / 2 / 3 / 4 | $0.028516 / $0.035951 / $0.043595 / **$0.051355** |
+| **This session** | **$0.030370** (about $0.0075 per full verifier run) |
+| Remaining under the $0.60 cap | $0.548645 |
+
+**Qloo calls: 5 before, 5 after.** Every artist search and first hop came from
+stored captures. No operation exceeded `attempts = 2`.
+
+### The offline gate at the final HEAD
+
+`typecheck`, `test` (**711 tests in 34 files**, was 709), `test:e2e` (**64**),
+`check:fixtures`, `build` (with `.next` deleted first), and `check:secrets`
+(**422** built assets) all pass.
+
+### Live data left behind
+
+Verifier runs write real rows, as earlier phases' did. After this session there
+are 30 versions and 4 publications in total. **One publication is still live**:
+run 3 aborted after publishing and before revoking. Its token was never printed
+or stored and its owner cookie was not kept, so it cannot be opened, and it
+cannot be revoked through the API; revoking it needs a direct `revoked_at`
+update.
+
+### Known limitations
+
+* The migration-history version mismatch above.
+* A recompiled module may keep the same mechanics: the live interpretation edit
+  was correctly labelled `wording`, not `mechanical`. The labels are the
+  engine's own, so this is honest, but demonstrating a gate change needs a
+  revision that actually changes one.
+* A compilation stores `changed_by: "edit"` for both edit and replace, as the
+  controller's comment says; the stored diff cannot tell them apart.
+* A stored diff's `after_version_id` is `null`, because it is written by the
+  insert that creates its own row; the row id is the "after" version.
+* Run 3's transport failure was not reproduced and has no recorded cause; the
+  verifier now prints the transport cause.
+* The production deployment's source still contains `.env` until production is
+  redeployed; the credentials it held were not rotated.
+
+### Next step
+
+Phase 5 is **not** marked PASS until the migration-history item is resolved.
+After that it is ready to push and open a PR, which needs explicit
+authorization. Production is redeployed only after the merge. Phase 6 is not
+started.
