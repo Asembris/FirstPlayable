@@ -2,7 +2,7 @@
   "name": "firstplayable",
   "version": "0.1.0",
   "private": true,
-  "description": "FirstPlayable \u2014 playable-pitch studio. Phase 3: real Qloo references, bounded proposals, explicit influence approval.",
+  "description": "FirstPlayable \u2014 playable-pitch studio. It compiles approved cultural influences into a validated, playable one-room scene the creator activates.",
   "license": "MIT",
   "engines": {
     "node": ">=22.12.0"
@@ -21,6 +21,7 @@
     "smoke:openai": "tsx scripts/smoke-openai.ts",
     "smoke:qloo": "tsx scripts/smoke-qloo.ts",
     "smoke:proposal": "tsx scripts/smoke-proposal.ts",
+    "smoke:compile": "tsx scripts/smoke-compile.ts",
     "verify:deployment": "tsx scripts/verify-deployment.ts"
   },
   "dependencies": {

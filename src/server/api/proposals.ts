@@ -26,7 +26,14 @@
  */
 
 import { ProposalsRequestSchema, type ProposalsResponse } from "@/domain/project";
-import { reconcileModelCall, releaseModelCall, reserveModelCall } from "../db/budgets";
+import {
+  budgetExhaustedMessage,
+  modelCallRecord,
+  recordModelCall,
+  reconcileModelCall,
+  releaseModelCall,
+  reserveModelCall,
+} from "../db/budgets";
 import { readProjectViewForOwner } from "../db/projects";
 import { refreshOwnerActivity, requireOwnerSession } from "../db/sessions";
 import { reserveStage, settleStage } from "../db/operations";
@@ -35,7 +42,7 @@ import {
   prepareProposalStage,
   runProposalStage,
 } from "../influence/proposals";
-import { ModelError } from "../model/openai";
+import { estimateUsdCostMicros, ModelError } from "../model/openai";
 import { readCapturesByIds } from "../qloo/cache";
 import { appErrors, errorResponse, newRequestId } from "../security/errors";
 import {
@@ -154,19 +161,29 @@ export async function handleProposals(
             // Reserve conservatively before each attempt, including the repair.
             const budget = await reserveModelCall(gateway, config, { now });
             if (!budget.granted) {
-              throw appErrors.budgetExhausted(
-                `This application's configured cap of ${budget.call_limit} model calls for the current window is used up. It resets at ${budget.window_end}. The saved example still plays.`,
-              );
+              throw appErrors.budgetExhausted(budgetExhaustedMessage(budget.call_limit));
             }
             pendingLease = budget.lease_id;
           },
-          afterCall: async (usage) => {
+          afterCall: async (outcome) => {
             modelCalls += 1;
             const lease = pendingLease;
             pendingLease = null;
             if (lease === null) return;
+            const costMicros = estimateUsdCostMicros(outcome.usage);
+            recordModelCall(
+              modelCallRecord({
+                stage: "proposals",
+                attempt: outcome.attempt,
+                model: outcome.model,
+                usage: outcome.usage,
+                costMicros,
+                latencyMs: outcome.latencyMs,
+              }),
+            );
             await reconcileModelCall(gateway, lease, {
-              tokens: usage?.total_tokens ?? 0,
+              costMicros,
+              tokens: outcome.usage?.total_tokens ?? 0,
             });
           },
         },

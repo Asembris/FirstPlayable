@@ -121,6 +121,12 @@ export const ProposalDraftSchema = z.strictObject({
   usage: z
     .strictObject({
       input_tokens: z.number().int().nonnegative(),
+      /**
+       * The cached portion of `input_tokens`, which the provider bills at a
+       * discount. Defaulted so a draft stored before the field existed still
+       * parses; it is never inferred from the other counts.
+       */
+      cached_input_tokens: z.number().int().nonnegative().default(0),
       output_tokens: z.number().int().nonnegative(),
       total_tokens: z.number().int().nonnegative(),
     })

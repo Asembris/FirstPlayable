@@ -19,6 +19,8 @@
 
 import { chromium, type Browser, type BrowserContext } from "@playwright/test";
 
+import { sha256Hex } from "../src/engine/hash";
+
 const GUARD = "RUN_DEPLOY_VERIFY";
 
 type Check = { label: string; ok: boolean; detail: string };
@@ -881,6 +883,390 @@ async function phase3BrowserFlow(base: string): Promise<void> {
   }
 }
 
+/**
+ * What the phase 4 browser flow created, so a later run against a freshly
+ * deployed server can prove the same owner still gets the same version.
+ */
+type DeployedVersion = {
+  projectId: string;
+  versionId: string;
+  createdAt: string;
+  sceneHash: string;
+  cookie: string;
+};
+
+let deployedPhase4: DeployedVersion | null = null;
+
+/**
+ * The deployed phase 4 compilation, driven through the real browser UI against
+ * the real services.
+ *
+ * This is the phase 4 exit criterion in its strongest form, and the only place
+ * the whole chain runs end to end on the deployed instance: one fresh brief, a
+ * real artist search, an explicit confirmation, real first-hop references, one
+ * real bounded proposal call, one Approve click, one **Build the playable
+ * scene** click, the stage list advancing truthfully, the pending validated
+ * scene played locally to an ending and reset, the fourth provenance layer read
+ * off the stored witness, and one explicit activation that survives a reload.
+ * A second browser with its own empty cookie jar is then refused.
+ *
+ * Every request the browser makes is recorded, and the recording is restarted
+ * once the scene is on screen, so "a complete playthrough and a reset make zero
+ * requests" is measured rather than asserted.
+ *
+ * It spends three real model calls on the deployed instance: one proposal, one
+ * base, one module. Validation, review, and activation spend none.
+ */
+async function phase4BrowserFlow(base: string): Promise<void> {
+  console.log("");
+  console.log("  Deployed phase 4 compilation in a real browser");
+
+  let browser: Browser | null = null;
+  try {
+    browser = await chromium.launch();
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    let requests: string[] = [];
+    page.on("request", (request) => requests.push(request.url()));
+
+    // ------------------------------------------------- the phase 3 prerequisite
+    await page.goto(`${base}/studio`, { waitUntil: "load" });
+    await page.getByTestId("session-ready").waitFor({ timeout: 30_000 });
+    await page.getByRole("button", { name: "Save this brief" }).click();
+    await page.getByTestId("project-premise").waitFor({ timeout: 30_000 });
+    const projectId = (await page.getByTestId("project-id").innerText()).trim();
+
+    record(
+      "the deployed build is refused until an interaction is approved",
+      (await page.getByTestId("compile-needs-approval").count()) === 1 &&
+        (await page.getByTestId("compile-start").count()) === 0,
+      "the panel asks for an approval before offering a build",
+    );
+
+    await page.getByTestId("artist-query").fill("Radiohead");
+    await page.getByTestId("artist-search-submit").click();
+    await page.getByTestId("artist-results").waitFor({ timeout: 30_000 });
+    await page.getByTestId("artist-option-1").check();
+    await page.getByTestId("anchor-confirm").click();
+    await page.getByTestId("anchor-confirmed").waitFor({ timeout: 30_000 });
+    await page.getByTestId("retrieve-references").click();
+    await page.getByTestId("domain-row-movie").waitFor({ timeout: 60_000 });
+    await page.getByTestId("run-proposals").click();
+    await page.locator('[data-testid^="approve-ref."]').first().waitFor({ timeout: 120_000 });
+    await page.locator('[data-testid^="approve-ref."]').first().click();
+    await page.getByTestId("approved-chips").waitFor({ timeout: 30_000 });
+    record(
+      "the deployed phase 3 prerequisite is one real stored approval",
+      (await page.getByTestId("approved-chips").locator("li").count()) === 1,
+      `project ${projectId.slice(0, 8)}…`,
+    );
+
+    // ------------------------------------------------------------- the build
+    await page.getByTestId("compile-start").click();
+    await page.getByTestId("compile-stages").waitFor({ timeout: 30_000 });
+    await page.getByTestId("pending-review").waitFor({ timeout: 300_000 });
+
+    const stageText = await page.getByTestId("compile-stages").innerText();
+    record(
+      "every deployed stage reached committed, in the locked wording",
+      /Writing encounter/.test(stageText) &&
+        /Building (Discovery|Commitment)/.test(stageText) &&
+        /Checking choices/.test(stageText) &&
+        (stageText.match(/committed/g) ?? []).length >= 3,
+      stageText.replace(/\s+/g, " ").trim().slice(0, 220),
+    );
+    record(
+      "no deployed stage exceeded its declared attempt ceiling",
+      !/attempts?:? 3/.test(stageText),
+      "no stage shows a third attempt",
+    );
+
+    const modelCallText = await page.getByTestId("compile-model-calls").innerText();
+    const reportedCalls = Number(/(\d+)/.exec(modelCallText)?.[1] ?? "-1");
+    const stateText = (await page.getByTestId("compile-state").innerText())
+      .replace(/\s+/g, " ")
+      .trim();
+    record(
+      "the deployed compilation reports a real, bounded provider-call count",
+      reportedCalls >= 2 && reportedCalls <= 4,
+      `${modelCallText.replace(/\s+/g, " ").trim()} · ${stateText}`,
+    );
+
+    const pendingVersionId = (await page.getByTestId("pending-version-id").innerText()).trim();
+    record(
+      "a deployed pending validated scene appears, and nothing is active yet",
+      pendingVersionId.length > 0 && (await page.getByTestId("active-playable").count()) === 0,
+      `pending ${pendingVersionId.slice(0, 8)}…`,
+    );
+
+    // ------------------------------------------- the fourth provenance layer
+    const sceneChanged = page.locator('[data-testid^="scene-changed-"]');
+    const witness = page.locator('[data-testid^="witness-"]');
+    const changedCount = await sceneChanged.count();
+    const witnessText = (await witness.allInnerTexts()).join(" ");
+    record(
+      "the fourth provenance layer appears, once per validated module",
+      (await page.getByTestId("where-this-appears").count()) === 1 &&
+        changedCount >= 1 &&
+        (await witness.count()) === changedCount,
+      `${changedCount} "Scene changed" line(s)`,
+    );
+    record(
+      "and reads as a deterministic engine observation, claiming nothing more",
+      witnessText.length > 20 &&
+        !/qloo|better|original|creative|\bllm\b|proves|unique|superior/i.test(witnessText),
+      witnessText.replace(/\s+/g, " ").trim().slice(0, 200),
+    );
+
+    // --------------------------------------- the pending scene plays, locally
+    await page.getByTestId("pending-choices").waitFor({ timeout: 30_000 });
+    // Everything recorded from here is attributable to gameplay alone.
+    requests = [];
+
+    let ended = false;
+    for (let step = 0; step < 14 && !ended; step += 1) {
+      const enabled = page.locator('[data-testid^="pending-choice-"]:not([disabled])');
+      if ((await enabled.count()) === 0) break;
+      await enabled.first().click();
+      ended = (await page.getByTestId("pending-ending").count()) === 1;
+    }
+    record(
+      "the deployed pending scene plays through the real browser engine to an ending",
+      ended,
+      ended ? "an ending was reached by clicking choices" : "no ending reached",
+    );
+
+    await page.getByTestId("pending-reset").first().click();
+    await page.getByTestId("pending-choices").waitFor({ timeout: 10_000 });
+    record(
+      "a complete deployed playthrough and a reset make zero requests of any kind",
+      requests.length === 0,
+      requests.length === 0
+        ? "0 requests caused by choices, the ending, or the reset"
+        : requests.join(", "),
+    );
+
+    // ------------------------------------------------------ explicit activation
+    record(
+      "nothing becomes current until the creator confirms",
+      (await page.getByTestId("activate-version").count()) === 1 &&
+        (await page.getByTestId("decline-version").count()) === 1 &&
+        (await page.getByTestId("active-playable").count()) === 0,
+      "both review decisions offered, nothing current",
+    );
+
+    await page.getByTestId("activate-version").click();
+    await page.getByTestId("active-playable").waitFor({ timeout: 60_000 });
+    const activeId = (await page.getByTestId("active-version-id").innerText()).trim();
+    record(
+      "clicking confirm makes exactly the reviewed version current",
+      activeId === pendingVersionId && (await page.getByTestId("pending-review").count()) === 0,
+      `${activeId.slice(0, 8)}… is active`,
+    );
+
+    await page.reload({ waitUntil: "load" });
+    await page.getByTestId("active-playable").waitFor({ timeout: 60_000 });
+    record(
+      "the deployed active version survives a full page reload and still plays",
+      (await page.getByTestId("active-version-id").innerText()).trim() === pendingVersionId &&
+        (await page.getByTestId("active-choices").count()) === 1,
+      (await page.getByTestId("version-list").innerText()).replace(/\s+/g, " ").trim().slice(0, 140),
+    );
+
+    // ------------------------------------------------- no phase 5 capability
+    const actionable = await page
+      .locator("button, a, [role=button], input, select, textarea")
+      .allInnerTexts();
+    const offending = actionable
+      .map((label) => label.trim().toLowerCase())
+      .filter((label) =>
+        ["revise", "publish", "share", "export", "revoke", "public link", "compare"].some(
+          (banned) => label.includes(banned),
+        ),
+      );
+    record(
+      "no deployed revision, share, publish, export, or compare control exists",
+      offending.length === 0,
+      offending.join(", ") || `${actionable.length} actionable elements checked`,
+    );
+
+    // ------------------------------------------------------------ isolation
+    const foreign = foreignRequests(requests, base);
+    record(
+      "the deployed phase 4 workflow made only same-origin requests",
+      foreign.length === 0,
+      foreign.join(", ") || "all same-origin",
+    );
+    const upstream = requests.filter((url) =>
+      /qloo\.com|api\.openai\.com|supabase\.(co|in)/i.test(url),
+    );
+    record(
+      "the browser never reached Qloo, OpenAI, or Supabase directly during a build",
+      upstream.length === 0,
+      upstream.join(", ") || "none",
+    );
+    const html = await page.content();
+    const leaked = CREDENTIAL_SHAPES.filter((shape) => shape.pattern.test(html));
+    record(
+      "the rendered compiled scene carries no credential and no provider host",
+      leaked.length === 0,
+      leaked.map((shape) => shape.name).join(", ") || "clean",
+    );
+
+    // The owner cookie, kept as a header value only so a later run can prove
+    // the same owner still reaches the same version from a fresh server.
+    const cookies = await context.cookies();
+    const owner = cookies.find((entry) => entry.name === "fp_owner");
+
+    // The version's own identity, read through the application's API with the
+    // browser's cookie rather than out of the page.
+    const state = await fetch(`${base}/api/projects/${projectId}`, {
+      headers: owner === undefined ? {} : { cookie: `fp_owner=${owner.value}` },
+    });
+    const stateBody = (await state.json()) as {
+      playable?: { version_id: string; created_at: string; scene: unknown };
+      project?: { active_version_id: string | null };
+    };
+    deployedPhase4 =
+      owner === undefined || stateBody.playable === undefined
+        ? null
+        : {
+            projectId,
+            versionId: stateBody.playable.version_id,
+            createdAt: stateBody.playable.created_at,
+            sceneHash: sha256Hex(JSON.stringify(stateBody.playable.scene)),
+            cookie: `fp_owner=${owner.value}`,
+          };
+    record(
+      "the activated version is readable through the API by its owner",
+      stateBody.project?.active_version_id === pendingVersionId,
+      `active_version_id matches the confirmed version`,
+    );
+
+    await page.close();
+    await context.close();
+
+    // A genuinely separate browser, with its own empty cookie jar.
+    const stranger = await browser.newContext();
+    const strangerPage = await stranger.newPage();
+    await strangerPage.goto(`${base}/studio/${projectId}`, { waitUntil: "load" });
+    await strangerPage.getByTestId("project-unavailable").waitFor({ timeout: 30_000 });
+    const strangerHtml = await strangerPage.content();
+    record(
+      "a second deployed browser is refused and cannot build, advance, or activate",
+      (await strangerPage.getByTestId("compile-start").count()) === 0 &&
+        (await strangerPage.getByTestId("activate-version").count()) === 0 &&
+        !strangerHtml.includes(pendingVersionId),
+      "the project is not available in a browser that does not own it",
+    );
+    await stranger.close();
+  } catch (error) {
+    record(
+      "the deployed phase 4 browser workflow completed",
+      false,
+      error instanceof Error ? `${error.name}: ${error.message.slice(0, 300)}` : "unknown",
+    );
+  } finally {
+    await browser?.close();
+  }
+}
+
+/**
+ * The same owner, the same version, a genuinely fresh server.
+ *
+ * Phase 4 is the first phase with immutable version rows, so "the scene is
+ * persisted" has to mean more than "it is still in this process". Run with
+ * `DEPLOY_VERIFY_VERSION` naming a version created by an earlier run against a
+ * previous deployment, this re-reads it through the new one and compares the
+ * version id, its creation time, and a hash of the scene itself.
+ */
+async function freshServerPersistence(base: string): Promise<void> {
+  const carried = process.env["DEPLOY_VERIFY_VERSION"];
+  const target =
+    carried === undefined || carried.trim().length === 0
+      ? deployedPhase4
+      : (JSON.parse(carried) as DeployedVersion);
+  if (target === null || target === undefined) {
+    record(
+      "a compiled version was available to re-read from this server",
+      false,
+      "no version was created in this run and none was carried in",
+    );
+    return;
+  }
+
+  console.log("");
+  console.log("  Fresh-server persistence");
+
+  const response = await fetch(`${base}/api/projects/${target.projectId}`, {
+    headers: { cookie: target.cookie },
+  });
+  const body = (await response.json()) as {
+    playable?: { version_id: string; created_at: string; scene: unknown; state: string };
+    project?: { active_version_id: string | null };
+  };
+  record(
+    "the same owner cookie retrieves the same active version from this server",
+    response.status === 200 &&
+      body.project?.active_version_id === target.versionId &&
+      body.playable?.version_id === target.versionId,
+    `status ${response.status}, version ${body.playable?.version_id?.slice(0, 8) ?? "none"}…`,
+  );
+  record(
+    "with the same creation time and the same scene, byte for byte",
+    body.playable?.created_at === target.createdAt &&
+      sha256Hex(JSON.stringify(body.playable?.scene)) === target.sceneHash,
+    `created_at ${body.playable?.created_at ?? "none"}`,
+  );
+  record(
+    "and it is still the active version rather than a pending review",
+    body.playable?.state === "active",
+    body.playable?.state ?? "none",
+  );
+
+  /*
+   * A fresh anonymous session must still be refused, and the two refusals are
+   * different on purpose.
+   *
+   * No cookie at all is `401`: the caller has no owner session, so there is
+   * nothing to check ownership against. An *established* session that does not
+   * own the project is `404`, the same answer a project that does not exist
+   * gets, so a stranger learns nothing about whether it is there. This check
+   * used to send no cookie while asserting `404`, which asserted the wrong one
+   * of the two; the HTTP matrix above covers the cookie-less case.
+   */
+  const noSession = await fetch(`${base}/api/projects/${target.projectId}`);
+  const noSessionText = await noSession.text();
+  record(
+    "no owner session is still refused, and learns nothing",
+    noSession.status === 401 && !noSessionText.includes(target.versionId),
+    `status ${noSession.status}`,
+  );
+
+  const strangerSession = await fetch(`${base}/api/session`, {
+    method: "POST",
+    headers: { origin: base, "content-type": "application/json" },
+    body: "{}",
+  });
+  const strangerCookie = cookieValue(strangerSession);
+  const stranger = await fetch(`${base}/api/projects/${target.projectId}`, {
+    headers: { cookie: strangerCookie ?? "" },
+  });
+  const strangerText = await stranger.text();
+  record(
+    "a fresh anonymous session is still denied the same project",
+    strangerSession.status === 200 &&
+      stranger.status === 404 &&
+      !strangerText.includes(target.versionId),
+    `session ${strangerSession.status}, read ${stranger.status}`,
+  );
+
+  console.log("");
+  console.log("  To re-verify this exact version against a later deployment, set");
+  console.log("  DEPLOY_VERIFY_VERSION to the object this run recorded. It carries an");
+  console.log("  owner cookie, so keep it out of any file that git tracks.");
+}
+
 async function main(): Promise<void> {
   if (process.env[GUARD] !== "1") {
     console.log(
@@ -920,6 +1306,8 @@ async function main(): Promise<void> {
   await phase3Flow(base);
   await browserChecks(base);
   await phase3BrowserFlow(base);
+  await phase4BrowserFlow(base);
+  await freshServerPersistence(base);
   await clientBundleScan(base);
 
   const failed = checks.filter((check) => !check.ok).length;

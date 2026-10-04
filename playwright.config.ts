@@ -16,10 +16,21 @@ export default defineConfig({
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: `npm run start -- --port ${PORT}`,
+    /**
+     * The gate builds the assets it then tests.
+     *
+     * `next start` serves whatever `.next` happens to hold, so running this
+     * command on its own silently tests the last build on the machine. That is
+     * not a theoretical risk: a stale pre-feature `.next` makes the gate report
+     * failures for a feature that is present in the source and absent only from
+     * the build, and an equally stale one could report a pass. Building here
+     * makes `npm run test:e2e` self-contained and independent of the order the
+     * surrounding gate happens to run its steps in.
+     */
+    command: `npm run build && npm run start -- --port ${PORT}`,
     url: BASE_URL,
     reuseExistingServer: false,
-    timeout: 120_000,
+    timeout: 300_000,
     /**
      * The browser gate runs with persistence deliberately unconfigured.
      *

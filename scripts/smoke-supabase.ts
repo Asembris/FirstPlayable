@@ -18,6 +18,7 @@
 
 import { budgetConfig, ConfigError, supabaseEnv } from "../src/server/config";
 import {
+  formatMicrosUsd,
   assertGranted,
   MODEL_BUDGET_SCOPE,
   reconcileModelCall,
@@ -76,7 +77,9 @@ async function run(): Promise<number> {
   }
 
   const limits = budgetConfig();
-  console.log(`  configured cap    ${limits.modelDailyCallCap} model calls per UTC day`);
+  console.log(
+    `  configured cap    ${formatMicrosUsd(limits.modelCostCapMicros)} of cumulative OpenAI spend`,
+  );
   console.log("");
 
   const gateway = supabaseGateway();
@@ -216,12 +219,13 @@ async function run(): Promise<number> {
     // ---------------------------------------------------------------------
     // Atomic budget reservation, including genuine concurrency.
     // ---------------------------------------------------------------------
-    const smokeCap = { ...limits, modelDailyCallCap: 3, modelLeaseSeconds: 30 };
+    // Three micro-dollars of headroom and a one-micro-dollar reservation, so
+    // the concurrency assertions below stay readable as plain arithmetic.
+    const smokeCap = { ...limits, modelCostCapMicros: 3, modelLeaseSeconds: 30 };
+    const reserveOne = { bucketKey: SMOKE_BUDGET_KEY, costMicros: 1 };
 
     const burst = await Promise.all(
-      Array.from({ length: 12 }, () =>
-        reserveModelCall(gateway, smokeCap, { bucketKey: SMOKE_BUDGET_KEY }),
-      ),
+      Array.from({ length: 12 }, () => reserveModelCall(gateway, smokeCap, reserveOne)),
     );
     const granted = burst.filter((outcome) => outcome.granted);
     for (const outcome of granted) {
@@ -243,7 +247,7 @@ async function run(): Promise<number> {
     const reconciled =
       leases[0] === undefined
         ? null
-        : await reconcileModelCall(gateway, leases[0], { tokens: 52 });
+        : await reconcileModelCall(gateway, leases[0], { costMicros: 1, tokens: 52 });
     record(
       "reconciliation records the reported usage",
       reconciled !== null && reconciled.applied && reconciled.used_calls === 1,
@@ -255,7 +259,7 @@ async function run(): Promise<number> {
     const doubleReconcile =
       leases[0] === undefined
         ? null
-        : await reconcileModelCall(gateway, leases[0], { tokens: 52 });
+        : await reconcileModelCall(gateway, leases[0], { costMicros: 1, tokens: 52 });
     record(
       "reconciling the same lease twice is a no-op",
       doubleReconcile !== null && !doubleReconcile.applied,
@@ -271,9 +275,7 @@ async function run(): Promise<number> {
         : `used stays ${released.used_calls}, reserved ${released.reserved_calls}`,
     );
 
-    const afterRelease = await reserveModelCall(gateway, smokeCap, {
-      bucketKey: SMOKE_BUDGET_KEY,
-    });
+    const afterRelease = await reserveModelCall(gateway, smokeCap, reserveOne);
     if (afterRelease.granted) leases.push(afterRelease.lease_id);
     record(
       "the released capacity is genuinely reusable",
@@ -286,9 +288,7 @@ async function run(): Promise<number> {
     let assertGrantedThrew = false;
     try {
       assertGranted(
-        await reserveModelCall(gateway, { ...smokeCap, modelDailyCallCap: 0 }, {
-          bucketKey: SMOKE_BUDGET_KEY,
-        }),
+        await reserveModelCall(gateway, { ...smokeCap, modelCostCapMicros: 0 }, reserveOne),
       );
     } catch {
       assertGrantedThrew = true;

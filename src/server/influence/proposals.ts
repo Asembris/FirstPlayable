@@ -449,11 +449,24 @@ export type ProposalStageResult = {
   repaired: boolean;
 };
 
+/**
+ * What one finished provider attempt reported. `model` is null and `usage` is
+ * null when the attempt failed before a response was read; the latency is
+ * measured either way, because a failed attempt still took time and still
+ * spent the attempt.
+ */
+export type ProposalCallOutcome = {
+  readonly attempt: number;
+  readonly usage: ModelUsage | null;
+  readonly model: string | null;
+  readonly latencyMs: number;
+};
+
 export type RunProposalStageDeps = GenerateStructuredDeps & {
   /** Called before each model call, so the caller owns the budget reservation. */
   beforeCall?: (attempt: number) => Promise<void>;
   /** Called after each model call with what the provider actually reported. */
-  afterCall?: (usage: ModelUsage | null) => Promise<void>;
+  afterCall?: (outcome: ProposalCallOutcome) => Promise<void>;
   now?: () => Date;
 };
 
@@ -487,6 +500,7 @@ export async function runProposalStage(
         : `${PROPOSAL_INSTRUCTIONS}\n\n${repairNote(lastRejections)}`;
 
     let result;
+    const startedAt = Date.now();
     try {
       result = await generateStructured(
         {
@@ -499,11 +513,21 @@ export async function runProposalStage(
         deps,
       );
     } catch (cause) {
-      await deps.afterCall?.(null);
+      await deps.afterCall?.({
+        attempt,
+        usage: null,
+        model: null,
+        latencyMs: Date.now() - startedAt,
+      });
       throw cause;
     }
 
-    await deps.afterCall?.(result.usage);
+    await deps.afterCall?.({
+      attempt,
+      usage: result.usage,
+      model: result.model,
+      latencyMs: Date.now() - startedAt,
+    });
     usage = result.usage;
     model = result.model;
 

@@ -31,7 +31,10 @@ function request(
   };
 }
 
-const USAGE = { input_tokens: 40, output_tokens: 12, total_tokens: 52 };
+const USAGE = { input_tokens: 40, cached_input_tokens: 0, output_tokens: 12, total_tokens: 52 };
+
+/** The provider's wire shape, which reports the cached share in a sub-object. */
+const WIRE_USAGE = { input_tokens: 40, output_tokens: 12, total_tokens: 52 };
 
 function clientReturning(response: unknown): ResponsesClient & { calls: number } {
   const stub = {
@@ -53,7 +56,7 @@ function completed(overrides: Record<string, unknown> = {}): Record<string, unkn
     status: "completed",
     output_parsed: { colour: "blue", letters: 4 },
     output_text: JSON.stringify({ colour: "blue", letters: 4 }),
-    usage: USAGE,
+    usage: WIRE_USAGE,
     output: [{ type: "message", content: [{ type: "output_text", text: "{}" }] }],
     ...overrides,
   };
@@ -266,13 +269,58 @@ describe("the pinned model and the cost estimate", () => {
     expect(PINNED_CHAT_MODEL).toBe("gpt-4o-mini-2024-07-18");
   });
 
+  it("reads the cached input share the provider reported, and never invents one", async () => {
+    const cached = await generateStructured(request(), {
+      client: clientReturning(
+        completed({
+          usage: { ...WIRE_USAGE, input_tokens_details: { cached_tokens: 32 } },
+        }),
+      ),
+    });
+    expect(cached.usage).toEqual({ ...USAGE, cached_input_tokens: 32 });
+    // Cheaper than the same call with nothing cached, and by the published
+    // half-price difference on exactly those 32 tokens.
+    expect(estimateUsdCost(USAGE) - estimateUsdCost(cached.usage!)).toBeCloseTo(
+      32e-6 * (0.15 - 0.075),
+      12,
+    );
+
+    // No detail block, a null one, and a null count all mean zero, not a guess.
+    for (const details of [undefined, null, { cached_tokens: null }]) {
+      const result = await generateStructured(request(), {
+        client: clientReturning(
+          completed({ usage: { ...WIRE_USAGE, input_tokens_details: details } }),
+        ),
+      });
+      expect(result.usage?.cached_input_tokens).toBe(0);
+    }
+
+    // A cached count above the reported input is clamped to it.
+    const absurd = await generateStructured(request(), {
+      client: clientReturning(
+        completed({ usage: { ...WIRE_USAGE, input_tokens_details: { cached_tokens: 9_999 } } }),
+      ),
+    });
+    expect(absurd.usage?.cached_input_tokens).toBe(40);
+  });
+
   it("estimates cost from the published list price, labelled as arithmetic", () => {
     // 1M input tokens at $0.15 and 1M output tokens at $0.60.
     expect(
-      estimateUsdCost({ input_tokens: 1_000_000, output_tokens: 0, total_tokens: 1_000_000 }),
+      estimateUsdCost({
+        input_tokens: 1_000_000,
+        cached_input_tokens: 0,
+        output_tokens: 0,
+        total_tokens: 1_000_000,
+      }),
     ).toBeCloseTo(0.15, 10);
     expect(
-      estimateUsdCost({ input_tokens: 0, output_tokens: 1_000_000, total_tokens: 1_000_000 }),
+      estimateUsdCost({
+        input_tokens: 0,
+        cached_input_tokens: 0,
+        output_tokens: 1_000_000,
+        total_tokens: 1_000_000,
+      }),
     ).toBeCloseTo(0.6, 10);
     expect(estimateUsdCost(USAGE)).toBeCloseTo(40e-6 * 0.15 + 12e-6 * 0.6, 12);
   });

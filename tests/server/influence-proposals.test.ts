@@ -503,8 +503,8 @@ describe("running the proposal stage", () => {
         beforeCall: async (attempt) => {
           events.push(`before:${attempt}`);
         },
-        afterCall: async (usage) => {
-          events.push(`after:${usage?.total_tokens ?? "none"}`);
+        afterCall: async (outcome) => {
+          events.push(`after:${outcome.usage?.total_tokens ?? "none"}`);
         },
       },
     );

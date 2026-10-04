@@ -50,6 +50,8 @@ export const ProjectRowSchema = z.object({
   proposal_draft: z.unknown(),
   base_hash: z.string().nullable(),
   active_version_id: z.uuid().nullable(),
+  /** Phase 4: a validated version awaiting the creator's explicit review. */
+  pending_version_id: z.uuid().nullable(),
   workflow_state: z.string(),
   created_at: z.string(),
   updated_at: z.string(),
@@ -58,7 +60,24 @@ export const ProjectRowSchema = z.object({
 export type ProjectRow = z.infer<typeof ProjectRowSchema>;
 
 export const PROJECT_COLUMNS =
-  "id,owner_session_id,title,brief,anchor,revision,reference_capture_ids,active_approvals,proposal_draft,base_hash,active_version_id,workflow_state,created_at,updated_at";
+  "id,owner_session_id,title,brief,anchor,revision,reference_capture_ids,active_approvals,proposal_draft,base_hash,active_version_id,pending_version_id,workflow_state,created_at,updated_at";
+
+/**
+ * The two large compilation columns, read only by the compilation controller.
+ *
+ * `base_scene` and `compiled_modules` are deliberately absent from
+ * {@link PROJECT_COLUMNS}: no route returns them, and a project read that does
+ * not need them should not carry them.
+ */
+export const CompilationStateRowSchema = z.object({
+  base_scene: z.unknown(),
+  base_hash: z.string().nullable(),
+  compiled_modules: z.record(z.string(), z.unknown()),
+});
+
+export type CompilationStateRow = z.infer<typeof CompilationStateRowSchema>;
+
+export const COMPILATION_STATE_COLUMNS = "base_scene,base_hash,compiled_modules";
 
 export const SESSION_COLUMNS = "id,owner_secret_hash,created_at,last_seen_at,expires_at";
 
@@ -91,6 +110,15 @@ export const OperationSummarySchema = z.object({
 });
 
 export type OperationSummary = z.infer<typeof OperationSummarySchema>;
+
+/**
+ * The owner-safe operation projection, matching `public.operation_summary`.
+ *
+ * `error` is deliberately absent: the browser receives this application's own
+ * failure code inside the bounded result, never a provider diagnostic.
+ */
+export const OPERATION_SUMMARY_COLUMNS =
+  "id,project_id,stage,status,input_revision,input_hash,attempts,max_attempts,idempotency_key,lease_expires_at,result,created_at,updated_at";
 
 /**
  * `reserved` is the only outcome that authorises an upstream attempt. Every
@@ -306,6 +334,113 @@ export const ProposalDraftUpdateSchema = z.union([
 export type ProposalDraftUpdate = z.infer<typeof ProposalDraftUpdateSchema>;
 
 // ---------------------------------------------------------------------------
+// Phase 4: compilation leases, version commits, and activation.
+// ---------------------------------------------------------------------------
+
+/**
+ * Leasing the persisted compilation controller row.
+ *
+ * `leased` is the only outcome that lets an advance request proceed. It spends
+ * no attempt and authorises no provider call on its own: a model stage still
+ * goes through {@link DataGateway.reserveOperation} and still gets two
+ * attempts and no more.
+ */
+export const CompileLeaseSchema = z.union([
+  z.object({ outcome: z.literal("not_found") }),
+  z.object({ outcome: z.literal("leased"), operation: OperationSummarySchema }),
+  z.object({ outcome: z.literal("lease_held"), operation: OperationSummarySchema }),
+  z.object({ outcome: z.literal("settled"), operation: OperationSummarySchema }),
+]);
+
+export type CompileLease = z.infer<typeof CompileLeaseSchema>;
+
+export const OperationParkSchema = z.union([
+  z.object({ outcome: z.literal("not_found") }),
+  z.object({ outcome: z.literal("parked"), operation: OperationSummarySchema }),
+  z.object({ outcome: z.literal("already_settled"), operation: OperationSummarySchema }),
+]);
+
+export type OperationPark = z.infer<typeof OperationParkSchema>;
+
+export const CompilationStateUpdateSchema = z.union([
+  z.object({ outcome: z.literal("not_found") }),
+  z.object({ outcome: z.literal("revision_conflict"), current_revision: z.number().int() }),
+  z.object({
+    outcome: z.literal("updated"),
+    revision: z.number().int(),
+    base_hash: z.string().nullable(),
+    workflow_state: z.string(),
+  }),
+]);
+
+export type CompilationStateUpdate = z.infer<typeof CompilationStateUpdateSchema>;
+
+/** `stale_input` is the compare-and-swap refusing to let an old result land. */
+export const SceneVersionCommitSchema = z.union([
+  z.object({ outcome: z.literal("not_found") }),
+  z.object({ outcome: z.literal("stale_input"), current_revision: z.number().int() }),
+  z.object({
+    outcome: z.literal("committed"),
+    version_id: z.uuid(),
+    created_at: z.string(),
+    revision: z.number().int(),
+  }),
+]);
+
+export type SceneVersionCommit = z.infer<typeof SceneVersionCommitSchema>;
+
+export const VersionActivationSchema = z.union([
+  z.object({ outcome: z.literal("not_found") }),
+  z.object({ outcome: z.literal("not_pending") }),
+  z.object({ outcome: z.literal("revision_conflict"), current_revision: z.number().int() }),
+  z.object({ outcome: z.literal("stale_input"), current_revision: z.number().int() }),
+  z.object({
+    outcome: z.enum(["activated", "already_active", "declined"]),
+    active_version_id: z.uuid().nullable(),
+    pending_version_id: z.uuid().nullable(),
+    workflow_state: z.string(),
+  }),
+]);
+
+export type VersionActivation = z.infer<typeof VersionActivationSchema>;
+
+/**
+ * One immutable version row.
+ *
+ * `scene` is present only when one version was named, which is why it is
+ * nullable here: a project's version list carries summaries, not four copies
+ * of a 96 KiB scene.
+ */
+export const SceneVersionRowSchema = z.object({
+  id: z.uuid(),
+  project_id: z.uuid(),
+  parent_version_id: z.uuid().nullable(),
+  input_hash: z.string(),
+  base_hash: z.string(),
+  module_hashes: z.record(z.string(), z.unknown()),
+  validation_summary: z.unknown(),
+  input_snapshot: z.unknown(),
+  approval_snapshot: z.unknown(),
+  model_identifier: z.string().nullable(),
+  prompt_identifier: z.string().nullable(),
+  schema_identifier: z.string().nullable(),
+  compiler_identifier: z.string().nullable(),
+  validator_identifier: z.string().nullable(),
+  operation_id: z.uuid().nullable(),
+  created_at: z.string(),
+  scene: z.unknown(),
+});
+
+export type SceneVersionRow = z.infer<typeof SceneVersionRowSchema>;
+
+export const SceneVersionReadSchema = z.union([
+  z.object({ outcome: z.literal("not_found") }),
+  z.object({ outcome: z.literal("read"), versions: z.array(SceneVersionRowSchema) }),
+]);
+
+export type SceneVersionRead = z.infer<typeof SceneVersionReadSchema>;
+
+// ---------------------------------------------------------------------------
 // Call shapes.
 // ---------------------------------------------------------------------------
 
@@ -412,6 +547,47 @@ export type SetProposalDraftInput = {
   draft: unknown;
 };
 
+export type SetCompilationStateInput = {
+  projectId: string;
+  ownerSessionId: string;
+  expectedRevision: number;
+  /** Null leaves the stored value as it is. */
+  baseScene: unknown;
+  baseHash: string | null;
+  compiledModules: unknown;
+  workflowState: string | null;
+};
+
+export type CommitSceneVersionInput = {
+  projectId: string;
+  ownerSessionId: string;
+  /** The compare-and-swap triple, frozen when the compilation started. */
+  expectedRevision: number;
+  expectedBaseHash: string | null;
+  expectedApprovals: Record<string, unknown>;
+  operationId: string;
+  parentVersionId: string | null;
+  inputHash: string;
+  baseHash: string;
+  moduleHashes: Record<string, string>;
+  scene: unknown;
+  validationSummary: unknown;
+  inputSnapshot: unknown;
+  approvalSnapshot: unknown;
+  modelIdentifier: string;
+  promptIdentifier: string;
+  schemaIdentifier: string;
+  compilerIdentifier: string;
+  validatorIdentifier: string;
+};
+
+export type VersionDecisionInput = {
+  projectId: string;
+  ownerSessionId: string;
+  expectedRevision: number;
+  versionId: string;
+};
+
 /**
  * Every method here is owner-scoped or scope-keyed. Adding a method that reads
  * a project, operation, or publication without an owner session id would
@@ -471,6 +647,51 @@ export interface DataGateway {
   /** The global launch policy. `granted: false` is a normal, waitable outcome. */
   reserveQlooLaunch(input: ReserveQlooLaunchInput): Promise<QlooLaunchReservation>;
   releaseQlooLaunch(scope: string, leaseId: string): Promise<QlooLaunchRelease>;
+
+  /** The large compilation columns, for the controller only. Owner-scoped. */
+  findProjectCompilationState(
+    projectId: string,
+    ownerSessionId: string,
+  ): Promise<CompilationStateRow | null>;
+
+  /** One operation row, owner-scoped. Backs `GET /api/operations/:id`. */
+  findOperationForOwner(
+    operationId: string,
+    ownerSessionId: string,
+  ): Promise<OperationSummary | null>;
+  /** The newest operation for one project and stage, for resuming after a reload. */
+  findLatestOperation(
+    projectId: string,
+    ownerSessionId: string,
+    stage: string,
+  ): Promise<OperationSummary | null>;
+  /** Leases the compilation controller row. Spends no attempt. */
+  leaseCompileOperation(
+    operationId: string,
+    ownerSessionId: string,
+    leaseSeconds: number,
+  ): Promise<CompileLease>;
+  /** Releases a stage lease without settling it, so one repair stays available. */
+  parkOperation(
+    operationId: string,
+    ownerSessionId: string,
+    result: unknown,
+  ): Promise<OperationPark>;
+
+  setProjectCompilationState(
+    input: SetCompilationStateInput,
+  ): Promise<CompilationStateUpdate>;
+  /** Inserts one validated version under the compare-and-swap. */
+  commitSceneVersion(input: CommitSceneVersionInput): Promise<SceneVersionCommit>;
+  activateSceneVersion(input: VersionDecisionInput): Promise<VersionActivation>;
+  declineSceneVersion(input: VersionDecisionInput): Promise<VersionActivation>;
+  /** Owner-checked version read. One named version carries its scene. */
+  readSceneVersions(
+    projectId: string,
+    ownerSessionId: string,
+    versionId: string | null,
+    limit: number,
+  ): Promise<SceneVersionRead>;
 
   confirmProjectAnchor(input: ConfirmAnchorInput): Promise<AnchorConfirmation>;
   setProjectReferences(input: SetProjectReferencesInput): Promise<ProjectReferencesUpdate>;

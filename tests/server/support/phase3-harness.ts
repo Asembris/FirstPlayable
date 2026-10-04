@@ -109,7 +109,13 @@ export type ModelScript = {
   model?: string;
   status?: string;
   refusal?: string;
-  usage?: { input_tokens: number; output_tokens: number; total_tokens: number } | null;
+  usage?: {
+    input_tokens: number;
+    /** The provider's own detail block, so the cached-token path is real. */
+    input_tokens_details?: { cached_tokens?: number | null } | null;
+    output_tokens: number;
+    total_tokens: number;
+  } | null;
   /** Throw instead of answering, for the transport-failure branch. */
   throws?: Error;
 };

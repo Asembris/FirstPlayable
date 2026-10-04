@@ -27,6 +27,8 @@ export const OPERATION_STAGES = [
   "artist_search",
   "references",
   "proposals",
+  /** The persisted phase 4 compilation controller row. */
+  "compile",
   "base",
   "module_discovery",
   "module_commitment",

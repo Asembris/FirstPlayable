@@ -36,6 +36,8 @@ describe("committed migrations", () => {
       "20261003222350_phase2_schema.sql",
       "20261003222456_phase2_atomic_functions.sql",
       "20261004085412_phase3_qloo.sql",
+      "20261004160000_phase4_compilation.sql",
+      "20261004173000_phase4_validation_boolean.sql",
     ]);
   });
 
@@ -50,6 +52,147 @@ describe("committed migrations", () => {
     for (const statement of phase3.matchAll(/add column([^;]*);/g)) {
       expect(statement[0]).toContain("if not exists");
     }
+  });
+
+  /**
+   * Phase 4 is additive too, with one deliberate exception: it swaps the
+   * `operations.stage` check constraint to admit the `compile` controller
+   * stage. A constraint swap adds a permitted value; it rewrites no column, no
+   * table, and no earlier function's behaviour.
+   */
+  it("adds phase 4 without rewriting an earlier migration's schema", () => {
+    const phase4 = readFileSync(
+      join(migrationsDir, "20261004160000_phase4_compilation.sql"),
+      "utf8",
+    );
+    expect(/drop\s+(table|column|function|trigger|index)/i.test(phase4)).toBe(false);
+    expect(/alter\s+column/i.test(phase4)).toBe(false);
+    expect(/create\s+table/i.test(phase4)).toBe(false);
+    // Only additive column work, and only on the two tables phase 4 extends.
+    const touched = [...phase4.matchAll(/alter table public\.([a-z_]+)/g)].map((m) => m[1]);
+    expect([...new Set(touched)].sort()).toEqual([
+      "operations",
+      "projects",
+      "scene_versions",
+    ]);
+    for (const statement of phase4.matchAll(/add column([^;]*);/g)) {
+      expect(statement[0]).toContain("if not exists");
+    }
+    // The one constraint it drops, and the value that drop exists to admit.
+    const drops = [...phase4.matchAll(/drop constraint ([a-z_]+)/g)].map((m) => m[1]);
+    expect(drops).toEqual(["operations_stage_known"]);
+    expect(phase4).toContain("'compile'");
+  });
+
+  /**
+   * The validated-version guard, in its hardened form.
+   *
+   * `20261004160000` wrote it as `(validation_summary ->> 'ok')::boolean is
+   * true`, which goes through `text::boolean` and therefore accepted the JSON
+   * *string* `"true"`. A live probe found that (`docs/PHASE4_EVIDENCE.md`
+   * §12.9) and `20261004173000` replaces it with a jsonb value comparison.
+   *
+   * This reads the **last** definition in migration order, which is the one
+   * the database ends up with, so the test cannot pass on a superseded form.
+   */
+  it("makes an unvalidated scene version unrepresentable in the schema", () => {
+    expect(sql).toContain("scene_versions_validation_passed");
+    const marker = "add constraint scene_versions_validation_passed";
+    const constraint = sql.slice(sql.lastIndexOf(marker));
+    const body = constraint.slice(0, constraint.indexOf(";"));
+
+    // The key's presence is asserted before its type, because a check
+    // constraint accepts a NULL expression: without this conjunct a summary
+    // with no `ok` key would make `jsonb_typeof` NULL and pass.
+    expect(body).toContain("validation_summary ? 'ok'");
+    expect(body).toContain("jsonb_typeof(validation_summary -> 'ok') = 'boolean'");
+    expect(body).toContain("(validation_summary -> 'ok') = 'true'::jsonb");
+    expect(body).toContain("validation_summary ? 'subsets'");
+    expect(body).toContain("validation_summary ? 'witnesses'");
+
+    // And no text projection of `ok` survives anywhere in the final form: that
+    // is the coercion path the defect came through.
+    expect(body).not.toContain("->> 'ok'");
+    expect(body).not.toContain("::boolean");
+  });
+
+  /**
+   * The hardening migration is a constraint replacement and nothing else.
+   *
+   * Replacing a check constraint needs a drop, which is why it is a separate
+   * forward migration rather than an edit to `20261004160000`. It must not
+   * take the opportunity to touch anything else.
+   */
+  it("hardens the validation guard without changing anything else", () => {
+    const hardening = readFileSync(
+      join(migrationsDir, "20261004173000_phase4_validation_boolean.sql"),
+      "utf8",
+    );
+    expect(/drop\s+(table|column|function|trigger|index|policy)/i.test(hardening)).toBe(false);
+    expect(/alter\s+column/i.test(hardening)).toBe(false);
+    expect(/create\s+table/i.test(hardening)).toBe(false);
+    expect(/create\s+or\s+replace\s+function/i.test(hardening)).toBe(false);
+    expect(/add column/i.test(hardening)).toBe(false);
+    expect(/^\s*(grant|revoke)/im.test(hardening)).toBe(false);
+
+    // Exactly one table, exactly one constraint dropped, exactly one re-added.
+    const touched = [...hardening.matchAll(/alter table public\.([a-z_]+)/g)].map((m) => m[1]);
+    expect([...new Set(touched)]).toEqual(["scene_versions"]);
+    expect(
+      [...hardening.matchAll(/drop constraint ([a-z_]+)/g)].map((m) => m[1]),
+    ).toEqual(["scene_versions_validation_passed"]);
+    expect(
+      [...hardening.matchAll(/add constraint ([a-z_]+)/g)].map((m) => m[1]),
+    ).toEqual(["scene_versions_validation_passed"]);
+
+    // The earlier migration is untouched and still carries its original form,
+    // so the history says what was applied and when it was corrected.
+    const phase4 = readFileSync(
+      join(migrationsDir, "20261004160000_phase4_compilation.sql"),
+      "utf8",
+    );
+    expect(phase4).toContain("(validation_summary ->> 'ok')::boolean is true");
+  });
+
+  it("keeps the pending review pointer separate from the active version", () => {
+    expect(sql).toContain("add column if not exists pending_version_id uuid");
+    expect(sql).toContain("projects_pending_version_fk");
+    // Committing a version sets the pending pointer and never the active one.
+    const commit = sql.slice(sql.indexOf("create or replace function public.commit_scene_version("));
+    const body = commit.slice(0, commit.indexOf("$func$;"));
+    expect(body).toContain("pending_version_id = v_version.id");
+    expect(body).toContain("'REVIEW_PLAYABLE'");
+    expect(/set[\s\S]*?active_version_id\s*=/.test(body)).toBe(false);
+  });
+
+  it("refuses to let a stale compilation result become current", () => {
+    for (const fn of ["commit_scene_version", "activate_scene_version"]) {
+      const body = sql.slice(sql.indexOf(`create or replace function public.${fn}(`));
+      const statement = body.slice(0, body.indexOf("$func$;"));
+      expect(statement).toContain("'stale_input'");
+      expect(statement).toContain("v_project.revision <> p_expected_revision");
+    }
+    // Activation reads the frozen values off the version row, never from the
+    // request body, so knowing a version id is not enough to activate it.
+    const activate = sql.slice(sql.indexOf("create or replace function public.activate_scene_version("));
+    const statement = activate.slice(0, activate.indexOf("$func$;"));
+    expect(statement).toContain("v_version.input_snapshot");
+    expect(statement).toContain("v_version.approval_snapshot");
+    expect(statement).toContain("v_project.pending_version_id is distinct from p_version_id");
+  });
+
+  it("keeps the model-stage attempt ceiling out of the controller lease", () => {
+    const lease = sql.slice(sql.indexOf("create or replace function public.lease_compile_operation("));
+    const body = lease.slice(0, lease.indexOf("$func$;"));
+    // The controller row is leased once per advance and spends no attempt.
+    expect(/attempts\s*=/.test(body)).toBe(false);
+    expect(body).toContain("v_operation.stage <> 'compile'");
+    // Parking releases a lease without settling, which is how the one
+    // permitted repair stays inside the same max_attempts ceiling.
+    const park = sql.slice(sql.indexOf("create or replace function public.park_operation("));
+    const parkBody = park.slice(0, park.indexOf("$func$;"));
+    expect(/attempts\s*=/.test(parkBody)).toBe(false);
+    expect(parkBody).toContain("status = 'reserved'");
   });
 
   it("create exactly the eight intended tables", () => {
@@ -120,16 +263,23 @@ describe("committed migrations", () => {
       .map((match) => match[1])
       .sort();
     expect(defined).toEqual([
+      "activate_scene_version",
       "append_influence_decision",
+      "commit_scene_version",
       "complete_operation",
       "confirm_project_anchor",
+      "decline_scene_version",
+      "lease_compile_operation",
       "operation_summary",
+      "park_operation",
+      "read_scene_versions",
       "reconcile_model_budget",
       "reject_content_mutation",
       "release_qloo_launch",
       "reserve_model_budget",
       "reserve_operation",
       "reserve_qloo_launch",
+      "set_project_compilation_state",
       "set_project_proposal_draft",
       "set_project_references",
     ]);
@@ -173,6 +323,12 @@ describe("committed migrations", () => {
       "confirm_project_anchor",
       "set_project_references",
       "set_project_proposal_draft",
+      "lease_compile_operation",
+      "park_operation",
+      "set_project_compilation_state",
+      "commit_scene_version",
+      "activate_scene_version",
+      "decline_scene_version",
     ]) {
       const body = sql.slice(
         sql.indexOf(`create or replace function public.${fn}(`),
@@ -195,6 +351,28 @@ describe("committed migrations", () => {
     expect(sql).toContain("read_token_hash text not null");
     expect(/owner_secret\s+text/.test(sql)).toBe(false);
     expect(/read_token\s+text/.test(sql)).toBe(false);
+  });
+
+  it("defines the phase 4 compilation primitives, and nothing else new", () => {
+    for (const fn of [
+      "public.lease_compile_operation",
+      "public.park_operation",
+      "public.set_project_compilation_state",
+      "public.commit_scene_version",
+      "public.activate_scene_version",
+      "public.decline_scene_version",
+      "public.read_scene_versions",
+    ]) {
+      expect(sql).toContain(`create or replace function ${fn}(`);
+    }
+    // No revision, publication, share, token, or export primitive: those are
+    // phase 5 and must not exist yet.
+    for (const absent of ["publication", "publish", "read_token", "revoke_share", "export_"]) {
+      expect(
+        new RegExp(`create or replace function public\\.[a-z_0-9]*${absent}`).test(sql),
+        `${absent} is not part of phase 4`,
+      ).toBe(false);
+    }
   });
 
   it("introduces no phase 3 Qloo call and no model call in SQL", () => {

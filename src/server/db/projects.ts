@@ -92,6 +92,7 @@ export function toProjectView(
     anchor_confirmed: anchor !== null,
     anchor,
     active_version_id: row.active_version_id,
+    pending_version_id: row.pending_version_id,
     approved_slots: [...approvedSlots],
     approvals: [...approvals],
     provenance: [...provenance],

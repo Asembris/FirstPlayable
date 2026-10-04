@@ -51,7 +51,9 @@ test("the persisted project opens with its brief and no cultural work yet", asyn
   await expect(page.getByTestId("project-state")).toHaveText("DRAFT");
   await expect(page.getByTestId("references-need-anchor")).toBeVisible();
   await expect(page.getByTestId("no-approvals")).toBeVisible();
-  await expect(page.getByTestId("not-generated-scene")).toContainText("phase 4");
+  // Phase 4's compilation panel is present but asks for an approval first:
+  // nothing can be built until the creator has approved an interaction.
+  await expect(page.getByTestId("compile-needs-approval")).toBeVisible();
 
   expect(foreign).toEqual([]);
 });

@@ -200,8 +200,16 @@ export const ProjectViewSchema = z.strictObject({
   anchor_confirmed: z.boolean(),
   /** The explicitly confirmed artist, or null before confirmation. */
   anchor: AnchorViewSchema.nullable(),
-  /** Phase 4 produces the first validated version. Phase 3 always reports null. */
+  /** The active validated version, preserved across every failed compilation. */
   active_version_id: z.uuid().nullable(),
+  /**
+   * A validated version awaiting the creator's explicit review confirmation.
+   *
+   * It is deliberately separate from `active_version_id`: a successful
+   * compilation becomes reviewable, never silently current
+   * (specification section 7, "Approval semantics").
+   */
+  pending_version_id: z.uuid().nullable(),
   /** Which influence slots currently hold an approval. Empty by default. */
   approved_slots: z.array(z.enum(SLOTS)),
   /**
@@ -229,12 +237,6 @@ export type ProjectView = z.infer<typeof ProjectViewSchema>;
 
 export const CreateProjectResponseSchema = z.strictObject({
   project: ProjectViewSchema,
-  references: ReferencesViewSchema.nullable(),
-});
-
-export const ReadProjectResponseSchema = z.strictObject({
-  project: ProjectViewSchema,
-  /** Null until the first hops have run. Rebuilt from immutable captures. */
   references: ReferencesViewSchema.nullable(),
 });
 

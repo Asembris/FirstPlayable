@@ -1,10 +1,16 @@
-# FirstPlayable — Phase 2 deployment preflight record
+# FirstPlayable — deployment preflight record
 
 **Date:** 3 October 2026 (UTC)
 **Branch:** `feat/phase-2-persistence`
 **Commit the deployed production build was made from:** `86aaf69`
 **Commit at which the final gate and the deployed verification were re-run:** `86aaf69`
 **Runtime used:** Node `v24.11.0`, npm `11.6.1`
+
+The header above belongs to the original Phase 2 record, which is sections 1
+to 11. This file is append-only across phases: section 12 was added by the
+Phase 4 migration and environment work, and section 13 by the Phase 4
+deployment, each dated in its own opening line. Nothing in sections 1 to 11
+has been rewritten.
 
 This file records **only what was actually executed against real accounts**.
 Nothing below is inferred from the specification, from provider documentation,
@@ -443,3 +449,193 @@ Every live command is opt-in. `npm test`, `npm run test:e2e`, and
    no Qloo host appears in any source file, and `qloo_captures` holds zero rows.
 10. **Phase 3 is not implemented.** The route list is asserted to be exactly
     `POST /api/session`, `POST /api/projects`, and `GET /api/projects/:id`.
+
+---
+
+## 12. Phase 4 additions — migration and environment
+
+Appended by the Phase 4 local live-acceptance session, 4 October 2026. The
+full record is `docs/PHASE4_EVIDENCE.md`.
+
+### Migration
+
+| Version | File | Applied live | How |
+|---|---|---|---|
+| `20261004160000` | `supabase/migrations/20261004160000_phase4_compilation.sql` | **yes** | the already-authorised Supabase management connection, as one statement |
+
+`supabase db push` was attempted first and failed with the same
+`DbConfigIpv6Error` recorded in section 2, so the blocker documented there
+persists unchanged. The migration's history row was then set to the version its
+filename declares, so `supabase migration list` and the committed files agree:
+
+```
+20261003222350  phase2_schema
+20261003222456  phase2_atomic_functions
+20261004085412  phase3_qloo
+20261004160000  phase4_compilation
+```
+
+Verified against the live catalog: seven new columns with their intended
+defaults, the `compile` stage value admitted, the
+`scene_versions_validation_passed` guard present, and seven new functions all
+`SECURITY INVOKER` with `search_path=""` and `execute` granted to
+`service_role` only. Still eight tables, RLS enabled on all eight, and **zero**
+rows in `pg_policies`. Phase 1–3 data intact.
+
+### Environment
+
+`OPENAI_API_KEY` — which section 7 recorded as deliberately withheld because
+no deployed Phase 2 route made a model call — is now present in **Production
+and Preview**, stored encrypted and shown as `Hidden`. So are
+`OPENAI_CHAT_MODEL`, `QLOO_API_KEY`, and `QLOO_API_BASE_URL`.
+
+| Variable | Production | Preview | Development |
+|---|---|---|---|
+| `SUPABASE_URL` | yes | yes | no |
+| `SUPABASE_SECRET_KEY` | yes | yes | no |
+| `QLOO_API_KEY` | yes | yes | no |
+| `QLOO_API_BASE_URL` | yes | yes | no |
+| `OPENAI_API_KEY` | yes | yes | no |
+| `OPENAI_CHAT_MODEL` | yes | yes | no |
+
+Still **deliberately not uploaded:** `SUPABASE_ACCESS_TOKEN` and the database
+password. There is still no `NEXT_PUBLIC_` variable of any kind. No value was
+read or printed while confirming this.
+
+### Deployment
+
+**No Phase 4 deployment was made.** Local live acceptance did not go green,
+and the handoff requires deploying only after it does; the production URL
+therefore still serves the verified Phase 3 build. The Phase 4 sections of
+`scripts/verify-deployment.ts` are written and committed, ready to run once a
+compilation succeeds locally.
+
+> That changed later the same day: local acceptance went green and the
+> deployment was made and verified. Section 13 records it. The paragraph above
+> is left exactly as it was written, because it was true when it was written.
+
+---
+
+## 13. Phase 4 deployment — made, and verified against the deployment
+
+Appended 4 October 2026, after the Phase 4 live acceptance passed its gate.
+The full record is `docs/PHASE4_EVIDENCE.md` §16. Every fact below was observed
+by a command run in this repository, not inferred from a build log.
+
+### Migrations applied live
+
+Both Phase 4 migrations are applied to the real Supabase project and verified
+against the live catalog. Neither was edited after application; the second is a
+forward migration that replaces one constraint the first added.
+
+| Version | File | Applied live | Verified |
+|---|---|---|---|
+| `20261004160000` | `20261004160000_phase4_compilation.sql` | **yes** | section 12, and `PHASE4_EVIDENCE.md` §4 |
+| `20261004173000` | `20261004173000_phase4_validation_boolean.sql` | **yes** | `PHASE4_EVIDENCE.md` §14.3 and §14.7 |
+
+`supabase migration list` and the committed files agree:
+
+```
+20261003222350  phase2_schema
+20261003222456  phase2_atomic_functions
+20261004085412  phase3_qloo
+20261004160000  phase4_compilation
+20261004173000  phase4_validation_boolean
+```
+
+The validated-version guard and the row-level immutability trigger were both
+probed against live Postgres with deliberately invalid writes, every one of
+which was refused — six negative insert shapes with `23514`, and an update to
+a committed version with `23001`. Those probes are `PHASE4_EVIDENCE.md` §16.8.
+
+### OpenAI runtime environment present
+
+`vercel env ls production`, read without printing any value:
+
+| Variable | Production | Type |
+|---|---|---|
+| `OPENAI_API_KEY` | yes | Secret, shown as `Hidden` |
+| `OPENAI_CHAT_MODEL` | yes | Secret, shown as `Hidden` |
+| `QLOO_API_KEY` | yes | Secret, shown as `Hidden` |
+| `QLOO_API_BASE_URL` | yes | Secret, shown as `Hidden` |
+| `SUPABASE_URL` | yes | Secret, shown as `Hidden` |
+| `SUPABASE_SECRET_KEY` | yes | Secret, shown as `Hidden` |
+
+Six variables, and only those six. Still **deliberately absent**:
+`SUPABASE_ACCESS_TOKEN`, the database password, and any `NEXT_PUBLIC_`
+variable of any kind. `MODEL_COST_CAP_MICROS` is also absent, so the
+compiled-in cumulative **$0.60** cap applies in production unmodified.
+
+### Production deployment verified
+
+```
+vercel --prod --yes
+```
+
+| Fact | Observed |
+|---|---|
+| Target | `production`, status `ok` |
+| Immutable deployment URL | `firstplayable-74c7bthei-mohamed-aziz-ayaris-projects.vercel.app` |
+| Production URL | **`https://firstplayable.vercel.app`** — unchanged from Phase 2 and Phase 3 |
+| `/` anonymously | `200` |
+| `/example` anonymously | `200` |
+
+The production URL is the same alias the Phase 2 and Phase 3 records verified.
+No new domain, project, or alias was created.
+
+### Deployed verifier — 78 of 78
+
+```
+RUN_DEPLOY_VERIFY=1 DEPLOY_URL=https://firstplayable.vercel.app npm run verify:deployment
+```
+
+**78 checks, 78 passed.** It drives the deployed application itself — an HTTP
+matrix over the real routes, then two genuinely isolated browser contexts —
+not the build log. What the Phase 4 half established on the deployment:
+
+| Deployed check | Result |
+|---|---|
+| A build is refused until an interaction is approved | PASS |
+| The stage list advances in the locked wording, every stage committed | PASS |
+| Any stage reaching a third attempt | **none** |
+| A pending validated scene appears, and nothing is active yet | PASS |
+| The fourth provenance layer, matching the stored witness verbatim | PASS |
+| The pending scene plays to an ending in the browser | PASS |
+| Requests caused by a complete playthrough, the ending, and a reset | **0** |
+| Nothing current until confirmed, then exactly the reviewed version | PASS |
+| The active version survives a full page reload and still plays | PASS |
+| Any revision, share, publish, export, or compare control | **none**, 30 actionable elements checked |
+| The browser reaching `api.openai.com`, the Qloo host, or Supabase | **never**; all requests same-origin |
+| A second browser with its own empty cookie jar | refused; cannot build, advance, or activate |
+| Fresh-deployment persistence: same version, same scene byte for byte | PASS |
+| No owner session / a fresh non-owning session | `401` / `404`, learning nothing |
+
+One earlier run of the same command reported 77 checks with one failure. The
+defect was in the verifier, not the application: a check sent no cookie while
+asserting the `404` that an *established* non-owning session gets, rather than
+the `401` that no session gets. Both behaviours were already asserted correctly
+elsewhere in the same script. It is recorded in `PHASE4_EVIDENCE.md` §16.9 and
+was fixed before the run above.
+
+### No secrets exposed
+
+| Scan | Result |
+|---|---|
+| `npm run check:secrets` — tracked files | **PASS**, 166 files, no credential shape |
+| `npm run check:secrets` — built client and server assets | **PASS**, 350 files |
+| `.vercel` tracked by git | **no**, confirmed untracked |
+| Client chunks fetched from the deployment and scanned | **clean**, 8 chunks |
+| Rendered deployed pages scanned for credential shapes and provider hosts | **clean** |
+| Credential, host, SQL, or stack trace in any refusal response | **none** |
+
+No key, token, database password, or cookie value appears in this file, and
+none was printed while confirming any of the above.
+
+### What this section does not claim
+
+It does not re-verify the Preview environment, which section 12 recorded and
+this session did not read again. It does not claim a reliability measurement:
+the deployment was verified by one full verifier run, following two local live
+compilations. And the spend figures in `PHASE4_EVIDENCE.md` §16.12 are labelled
+list-price estimates computed from provider-reported usage, not amounts read
+back from the OpenAI account.
