@@ -232,12 +232,6 @@ export const CreateProjectResponseSchema = z.strictObject({
   references: ReferencesViewSchema.nullable(),
 });
 
-export const ReadProjectResponseSchema = z.strictObject({
-  project: ProjectViewSchema,
-  /** Null until the first hops have run. Rebuilt from immutable captures. */
-  references: ReferencesViewSchema.nullable(),
-});
-
 // ---------------------------------------------------------------------------
 // Phase 3 request and response contracts
 // ---------------------------------------------------------------------------
