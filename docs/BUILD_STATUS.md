@@ -1544,12 +1544,11 @@ structurally: no compiler is in scope on those paths. No Qloo call was added.
 not deployed.** `https://firstplayable.vercel.app` is still deployment
 `dpl_8QyLzVhHf9pyxbgdAPbxrv1Kxbsj`, the Phase 4 build.
 
-**Phase 5 does NOT pass yet, on one item.** Every functional live gate passes
-against a preview of this branch, and the deployed verifier passes **118 of
-118**. The open item is bookkeeping, and it is listed first because the gate
-names it: the remote migration history records the Phase 5 migration as
-`20261004200000`, not the committed `20261004190000`, and no official
-Management API endpoint can change a recorded version (below).
+**Phase 5 PASSES.** Every functional live gate passes against a preview of this
+branch, and the deployed verifier passes **118 of 118**. The one item that held
+the gate open — the remote history recorded the migration as `20261004200000`
+while the file was named `20261004190000` — was closed by renaming the committed
+file to the recorded version, with its SQL unchanged, and verified live (below).
 
 ### Migration — applied through the Management API, verified live
 
@@ -1564,7 +1563,7 @@ no permission was broadened.
 | Applied statement | byte-identical to the committed file (24,901 characters, same SHA-256) |
 | History after | 6 rows; the new one is `20261004200000` / `phase5_revision_share` |
 | Name matches the filename | **yes** |
-| Version matches the filename | **no** — the API stamps its own version |
+| Version matches the filename | **no**, at first — the API stamps its own version; **yes** after the rename below |
 | Replay order | unaffected: `20261004200000` sorts after every earlier migration |
 | Reconcilable through the API | **no** — `PATCH .../migrations/{version}` accepts only `name` and `rollback`; `DELETE ?gte=` is documented as rolling migrations back as well as removing them from history, and was not used on production for bookkeeping |
 | Tables / RLS / policies | 8 / 8 / 0, unchanged |
@@ -1575,9 +1574,27 @@ no permission was broadened.
 | Backwards compatibility | the 19- and 20-argument `commit_scene_version` both resolve and refuse a foreign owner; `read_scene_versions` reads a real Phase 4 version for its owner and refuses a foreign one |
 | Production after the migration | 7 of 7 zero-model-call health checks, before and after |
 
-To close the item: correct the history row's version to `20261004190000`
-outside the Management API (as Phase 4's own history row was corrected), or
-decide explicitly to keep the API's stamp. The committed file was not renamed.
+### Migration history reconciled — by renaming the committed file
+
+The file was renamed with `git mv` to
+`supabase/migrations/20261004200000_phase5_revision_share.sql`. Git records a
+100% rename and the blob hash is unchanged (`67f1c7ae…`), so not one byte of SQL
+moved. The tests that list the migration files and read this one were updated to
+the new name; nothing else in the repository named the old version.
+
+Verified afterwards through the same scoped token, read-only:
+
+| Check | Observed |
+|---|---|
+| Live history | `20261003222350 phase2_schema`, `20261003222456 phase2_atomic_functions`, `20261004085412 phase3_qloo`, `20261004160000 phase4_compilation`, `20261004173000 phase4_validation_boolean`, `20261004200000 phase5_revision_share` |
+| Equal to the committed files, by version, name, and order | **yes** |
+| Rows at `20261004200000` named `phase5_revision_share` | **1** |
+| Rows at `20261004190000` | **0** |
+| Applied statement vs the renamed file | **identical**, SHA-256 `e6140be5b8605e3e…` on both |
+
+Renaming does not change replay order: `20261004200000` still sorts after every
+earlier migration, and a fresh database replaying the files runs the identical
+SQL.
 
 ### A secret-handling defect found and fixed before deploying
 
@@ -1587,13 +1604,28 @@ source contains `.env`** (listed by name through the Vercel API; contents not
 read). That deployment was made by an earlier session. The file is not served:
 `/.env` returns 404 and `/_src` redirects to the Vercel dashboard, which requires
 a signed-in team member. The keys it held at the time are nonetheless stored in
-Vercel's copy of that deployment's source; **rotating them is the owner's
-decision** and was not done here.
+Vercel's copy of that deployment's source. **The owner, who is the only person
+with access to the Vercel project, decided not to rotate them and accepts that
+private copy's risk.** No credential was rotated.
 
 Fixed by a `.vercelignore` that repeats every `.gitignore` rule, including the
 nested `supabase/.gitignore`, with a regression test. Both previews made in this
 session uploaded exactly the 202 tracked files plus two empty directory entries:
 no `.env`, no `.env.local`, no `supabase/.temp`.
+
+**Future uploads, verified with the CLI's own dry run.** `vercel deploy --dry
+--json` lists every file a deployment would upload, and uploads nothing:
+
+| Upload set | Entries | Env files | Git-ignored files |
+|---|---|---|---|
+| With `.vercelignore` (as committed) | 202 | `.env.example` only | **0** |
+| Without it, the same command (counterfactual, file restored afterwards) | 210 | **`.env`**, `.env.example` | **11** |
+
+With the file in place, the 202 entries are the 200 tracked files that Vercel
+does not itself skip, plus `supabase/.temp` and `test-results` as empty
+directory entries (mode `40666`, size 0); `.env`, `.env.local`,
+`supabase/.temp/*`, `.next`, `.venv`, `.vercel`, and `node_modules` are all in
+its ignored list.
 
 ### Two live defects found, regression-tested, and fixed
 
@@ -1678,18 +1710,27 @@ stored captures. No operation exceeded `attempts = 2`.
 `check:fixtures`, `build` (with `.next` deleted first), and `check:secrets`
 (**422** built assets) all pass.
 
+Re-run after the migration rename, on the final tree: `typecheck`, `test`
+(**711 / 711**, 34 files), `check:fixtures`, `build` (`.next` deleted first), and
+`check:secrets` (**422** built assets) pass. `test:e2e` failed **1 of 64** on the
+first run; the failing test's name was not captured, and Playwright clears its
+results on the next run. Three further complete runs passed **64 / 64**, so it is
+recorded as an unreproduced flake rather than as a pass.
+
 ### Live data left behind
 
 Verifier runs write real rows, as earlier phases' did. After this session there
 are 30 versions and 4 publications in total. **One publication is still live**:
-run 3 aborted after publishing and before revoking. Its token was never printed
-or stored and its owner cookie was not kept, so it cannot be opened, and it
-cannot be revoked through the API; revoking it needs a direct `revoked_at`
-update.
+run 3 aborted after publishing and before revoking. It is a **harmless leftover**:
+it names one verifier test version, its read token is 256 random bits that were
+never printed, logged, or stored anywhere (the database holds only its SHA-256
+hash), and its owner cookie was not kept, so nobody can open it and it cannot be
+revoked through the API. It was deliberately left in place rather than widening
+the scoped Supabase token to write to the table.
 
 ### Known limitations
 
-* The migration-history version mismatch above.
+* The orphan test publication above, live with an unknown 256-bit token.
 * A recompiled module may keep the same mechanics: the live interpretation edit
   was correctly labelled `wording`, not `mechanical`. The labels are the
   engine's own, so this is honest, but demonstrating a gate change needs a
@@ -1701,11 +1742,37 @@ update.
 * Run 3's transport failure was not reproduced and has no recorded cause; the
   verifier now prints the transport cause.
 * The production deployment's source still contains `.env` until production is
-  redeployed; the credentials it held were not rotated.
+  redeployed; the credentials it held were not rotated, by the owner's decision.
+* The verifier exempts the Vercel preview toolbar on protected previews only;
+  the production run after the merge is the first one without that exemption
+  against this build.
+* The two fixes found live (ending-copy apply key, public-read cache) were
+  verified on the preview, not yet on production.
+
+## Phase 5 exit gate
+
+| Gate | Result |
+|---|---|
+| Offline gate green | **PASS** |
+| Migration applied live, verified, history equal to the committed files | **PASS** |
+| Phase 4 schema, data, and production deployment intact after the migration | **PASS** |
+| Remove costs zero model and Qloo calls | **PASS** |
+| A real edit and a real replace change one module only; unrelated hashes match | **PASS** |
+| Ending wording previewed, then applied explicitly, labelled wording | **PASS** |
+| Mechanical and wording-only changes receive different labels | **PASS** |
+| Immutable history, deterministic diff | **PASS** |
+| Earlier versions remain playable | **PASS** |
+| Publish, public read from a fresh session, revoke on the next read | **PASS** |
+| No private data in public or exported payloads | **PASS** |
+| Exported HTML plays from `file://` with the network blocked, zero provider requests | **PASS** |
+| Phases 1–4 intact on the preview | **PASS** |
+| Deployed verifier on the preview | **PASS** — 118 / 118 |
+| Future deployment uploads exclude `.env` and every git-ignored file | **PASS** — dry run |
+
+**Phase 5 is complete.**
 
 ### Next step
 
-Phase 5 is **not** marked PASS until the migration-history item is resolved.
-After that it is ready to push and open a PR, which needs explicit
-authorization. Production is redeployed only after the merge. Phase 6 is not
-started.
+Push the branch and open a PR, which needs explicit authorization. Production is
+redeployed only after the merge, and the deployed verifier then runs against
+production without the preview exemption. Phase 6 is not started.
