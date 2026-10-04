@@ -8,6 +8,10 @@ import {
   openAiCompiler,
 } from "../../src/server/compile/compiler";
 import { runBaseStage, runModuleStage, repairNote } from "../../src/server/compile/stages";
+import {
+  BASE_INSTRUCTIONS,
+  moduleInstructions,
+} from "../../src/server/compile/instructions";
 import { scriptedModel } from "./support/phase3-harness";
 import {
   fakeCompiler,
@@ -318,4 +322,49 @@ describe("the production compiler over a scripted transport", () => {
       (error: unknown) => error instanceof ModelError && error.code === "MODEL_TRUNCATED",
     );
   });
+});
+
+/**
+ * What the fixed instruction blocks have to say out loud.
+ *
+ * A real live base compilation failed twice on the same brief because the model
+ * namespaced its dialogue nodes `dialogue.*` and its variables after their
+ * field names, which the Phase 1 validator correctly rejected as
+ * `NAMESPACE_INVALID`. The rule was stated, but every worked example in the
+ * block was an action, so the only concrete evidence the model had pointed at
+ * one of the three kinds the rule covers.
+ *
+ * The repair path behaved exactly as designed throughout — one extra attempt,
+ * the real findings, no third attempt — so the defect was the instruction's
+ * worked examples, not the ceiling and not the validator. These assertions keep
+ * the examples present for all three declared kinds, and keep the two rules the
+ * live failure actually tripped stated in a form that names its consequence.
+ */
+describe("the fixed instruction blocks state the id rules with worked examples", () => {
+  it("names the core namespace for variables, actions, and dialogue nodes alike", () => {
+    expect(BASE_INSTRUCTIONS).toContain('"core."');
+    expect(BASE_INSTRUCTIONS).toMatch(/variable, an action, or a dialogue node/);
+    // A worked example for each declared kind, not only for the six actions.
+    expect(BASE_INSTRUCTIONS).toMatch(/core\.inspect_line/);
+    expect(BASE_INSTRUCTIONS).toMatch(/core\.inspected/);
+    expect(BASE_INSTRUCTIONS).toMatch(/core\.inspect\b/);
+    // And the wrong forms the live failure produced, named as wrong.
+    expect(BASE_INSTRUCTIONS).toMatch(/never dialogue\.inspect_line/);
+    expect(BASE_INSTRUCTIONS).toMatch(/never variable\.inspected/);
+  });
+
+  it("says what happens to a variable that is never read", () => {
+    expect(BASE_INSTRUCTIONS).toMatch(/set by some effect and read by some condition/);
+    expect(BASE_INSTRUCTIONS).toMatch(/only ever set is rejected/);
+  });
+
+  it("still asks each module for its own slot namespace, with no example from another", () => {
+    for (const slot of ["discovery", "commitment"] as const) {
+      const other = slot === "discovery" ? "commitment" : "discovery";
+      const block = moduleInstructions(slot);
+      expect(block).toContain(`starts with "${slot}."`);
+      expect(block).not.toContain(other);
+    }
+  });
+
 });
