@@ -2,7 +2,7 @@
   "name": "firstplayable",
   "version": "0.1.0",
   "private": true,
-  "description": "FirstPlayable — playable-pitch studio. Phase 2: persistent owner-scoped shell, atomic budgets, deployment preflight.",
+  "description": "FirstPlayable \u2014 playable-pitch studio. Phase 3: real Qloo references, bounded proposals, explicit influence approval.",
   "license": "MIT",
   "engines": {
     "node": ">=22.12.0"
@@ -19,6 +19,8 @@
     "check:secrets": "tsx scripts/scan-secrets.ts",
     "smoke:supabase": "tsx scripts/smoke-supabase.ts",
     "smoke:openai": "tsx scripts/smoke-openai.ts",
+    "smoke:qloo": "tsx scripts/smoke-qloo.ts",
+    "smoke:proposal": "tsx scripts/smoke-proposal.ts",
     "verify:deployment": "tsx scripts/verify-deployment.ts"
   },
   "dependencies": {

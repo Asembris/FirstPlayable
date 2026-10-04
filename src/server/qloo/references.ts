@@ -148,10 +148,12 @@ export async function retrieveReferences(
     }),
   );
 
+  // The guard keeps the real clock on purpose. `input.now` pins the capture
+  // timestamps and the cache TTL arithmetic, but the guard's own wait budget
+  // is wall-clock: a frozen clock there would never let the budget expire.
   const launch =
     input.launch ??
     databaseLaunchGuard(input.gateway, input.config, {
-      now: () => input.now,
       ...(input.sleep === undefined ? {} : { sleep: input.sleep }),
     });
 

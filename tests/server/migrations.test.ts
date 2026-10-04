@@ -35,12 +35,12 @@ describe("committed migrations", () => {
     expect(files).toEqual([
       "20261003222350_phase2_schema.sql",
       "20261003222456_phase2_atomic_functions.sql",
-      "20261004100500_phase3_qloo.sql",
+      "20261004085412_phase3_qloo.sql",
     ]);
   });
 
   it("never rewrites an earlier migration's tables or columns", () => {
-    const phase3 = readFileSync(join(migrationsDir, "20261004100500_phase3_qloo.sql"), "utf8");
+    const phase3 = readFileSync(join(migrationsDir, "20261004085412_phase3_qloo.sql"), "utf8");
     expect(/drop\s+(table|column|function|trigger|index)/i.test(phase3)).toBe(false);
     expect(/alter\s+column/i.test(phase3)).toBe(false);
     expect(/create\s+table/i.test(phase3)).toBe(false);
@@ -136,7 +136,7 @@ describe("committed migrations", () => {
   });
 
   it("keeps Qloo launch pacing in its own scope, away from model budgeting", () => {
-    const phase3 = readFileSync(join(migrationsDir, "20261004100500_phase3_qloo.sql"), "utf8");
+    const phase3 = readFileSync(join(migrationsDir, "20261004085412_phase3_qloo.sql"), "utf8");
     // The launch policy writes last_launch_at; the model-budget functions in
     // the phase 2 migration never mention that column, so the two share the
     // table without sharing a row or a counter.

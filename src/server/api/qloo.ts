@@ -136,9 +136,9 @@ export async function handleArtistSearch(
       try {
         const result = await resolveArtist(query, {
           env,
-          launch:
-            deps.launchGuard?.(gateway, config) ??
-            databaseLaunchGuard(gateway, config, { now: () => now }),
+          // The guard keeps the real clock: its wait budget is wall-clock,
+          // while `now` pins the capture timestamp and the TTL arithmetic.
+          launch: deps.launchGuard?.(gateway, config) ?? databaseLaunchGuard(gateway, config),
           now: () => now,
           onQuota: (quota) => {
             if (observedQuotaWithinReserve(quota, config)) deps.onReserveReached?.();

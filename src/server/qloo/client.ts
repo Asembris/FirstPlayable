@@ -319,7 +319,10 @@ async function getJson(
   const sleep =
     deps.sleep ?? ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
   const clock = deps.now ?? (() => new Date());
-  const startedAt = clock().getTime();
+  // Elapsed time is measured on the wall clock, not on `deps.now`: a pinned
+  // clock is there to make capture timestamps deterministic, and reusing it
+  // here would report every request as having taken zero milliseconds.
+  const startedAt = Date.now();
 
   let attempts = 0;
   let lastQuota: QuotaDiagnostics | null = null;
@@ -391,7 +394,7 @@ async function getJson(
           attempts,
           retried: attempts > 1,
           quota: lastQuota,
-          elapsed_ms: clock().getTime() - startedAt,
+          elapsed_ms: Date.now() - startedAt,
         },
       };
     } finally {
