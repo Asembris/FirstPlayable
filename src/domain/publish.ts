@@ -35,14 +35,6 @@ export const PUBLIC_SNAPSHOT_SCHEMA = "fp-public-1.0";
 export const READ_TOKEN_BYTES = 32;
 
 /**
- * How long a public read may be cached, in seconds.
- *
- * Specification section 12: revocation is honoured after at most a five-minute
- * response-cache window. This is that window, stated once.
- */
-export const PUBLIC_CACHE_SECONDS = 300;
-
-/**
  * One line of the approved provenance chain, as a public viewer sees it.
  *
  * Three of the four layers of section 13, plus the engine's own observation.

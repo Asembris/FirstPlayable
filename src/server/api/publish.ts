@@ -27,7 +27,6 @@
  */
 
 import {
-  PUBLIC_CACHE_SECONDS,
   PUBLIC_UNAVAILABLE_MESSAGE,
   type PublicationSummary,
   PublicationSummarySchema,
@@ -221,10 +220,11 @@ export async function handleRevoke(
 /**
  * The public read. No session, no owner, no project.
  *
- * It is cacheable for at most five minutes, which is the revocation window
- * section 12 commits to and the only thing that window is. Everything else
- * about this route is deliberately boring: one hashed lookup, one contract
- * check, one answer.
+ * It is never stored by a shared cache. Section 12 allows a revocation window
+ * of up to five minutes, but the CDN honours `public, max-age` and kept serving
+ * a revoked link for that long, so the answer is `no-store` and revocation
+ * takes effect on the next read. Everything else about this route is
+ * deliberately boring: one hashed lookup, one contract check, one answer.
  */
 export async function handlePublicRead(
   _request: Request,
@@ -253,7 +253,7 @@ export async function handlePublicRead(
       status: 200,
       headers: {
         "x-request-id": requestId,
-        "cache-control": `public, max-age=${PUBLIC_CACHE_SECONDS}`,
+        "cache-control": "no-store",
         "x-robots-tag": "noindex, nofollow",
       },
     });

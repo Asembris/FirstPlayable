@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  PUBLIC_CACHE_SECONDS,
   PUBLIC_UNAVAILABLE_MESSAGE,
   type PublicReadResponse,
   type PublishResponse,
@@ -230,7 +229,7 @@ describe("the public snapshot reveals nothing private", () => {
 });
 
 describe("GET /api/public/:token", () => {
-  it("serves one immutable version, read-only and cacheable for five minutes", async () => {
+  it("serves one immutable version, read-only, and never from a shared cache", async () => {
     const state = await activeProject(["discovery"]);
     const published = await previewAndPublish(state);
     const token = tokenOf(published);
@@ -241,9 +240,9 @@ describe("GET /api/public/:token", () => {
       token,
     );
     expect(response.status).toBe(200);
-    expect(response.headers.get("cache-control")).toBe(
-      `public, max-age=${PUBLIC_CACHE_SECONDS}`,
-    );
+    // A CDN honours `public, max-age` and would keep serving a revoked link,
+    // so nothing may store this response: revocation takes effect on the next read.
+    expect(response.headers.get("cache-control")).toBe("no-store");
     expect(response.headers.get("x-robots-tag")).toContain("noindex");
 
     const read = await body<PublicReadResponse>(response);
