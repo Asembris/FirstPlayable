@@ -277,7 +277,6 @@ describe("the offline gate tests what the repository currently says", () => {
     join(repoRoot, "playwright.config.ts"),
     "utf8",
   );
-
   it("builds the application before the browser gate serves it", () => {
     const webServer = /command:\s*`([^`]+)`/.exec(playwrightConfig);
     expect(webServer, "the browser gate must declare a webServer command").not.toBeNull();
@@ -288,5 +287,71 @@ describe("the offline gate tests what the repository currently says", () => {
       command.indexOf("npm run build") < command.indexOf("npm run start"),
       "the build has to happen before the server starts",
     ).toBe(true);
+  });
+});
+
+/**
+ * An opt-in live command spends real money against real services, and the
+ * phase 4 one writes immutable version rows. Two properties keep that safe:
+ * the command is unreachable without its own guard, and no ordinary gate step
+ * depends on it. The phase 4 smoke additionally has to go through the
+ * controller: a script that composed a model request itself would prove the
+ * provider works and nothing about the compilation this phase is accepting.
+ */
+describe("every live command is opt-in and goes through the real boundary", () => {
+  const packageJson = JSON.parse(
+    readFileSync(join(repoRoot, "package.json"), "utf8"),
+  ) as { scripts: Record<string, string> };
+
+  it("keeps every live command behind its own explicit guard", () => {
+    const guards: Readonly<Record<string, string>> = {
+      "smoke-supabase.ts": "RUN_SUPABASE_SMOKE",
+      "smoke-openai.ts": "RUN_OPENAI_SMOKE",
+      "smoke-qloo.ts": "RUN_QLOO_SMOKE",
+      "smoke-proposal.ts": "RUN_PROPOSAL_SMOKE",
+      "smoke-compile.ts": "RUN_PHASE4_SMOKE",
+      "verify-deployment.ts": "RUN_DEPLOY_VERIFY",
+    };
+    for (const [file, guard] of Object.entries(guards)) {
+      const text = readFileSync(join(repoRoot, "scripts", file), "utf8");
+      expect(text, `${file} must declare its guard`).toContain(`const GUARD = "${guard}"`);
+      expect(
+        /if \(process\.env\[GUARD\] !== "1"\)/.test(text),
+        `${file} must do nothing without its guard`,
+      ).toBe(true);
+    }
+  });
+
+  it("wires no live command into typecheck, test, build, or the browser gate", () => {
+    for (const step of [
+      "typecheck",
+      "test",
+      "test:e2e",
+      "build",
+      "check:fixtures",
+      "check:secrets",
+    ]) {
+      const command = packageJson.scripts[step] ?? "";
+      expect(command, `${step} must not invoke a live command`).not.toMatch(
+        /smoke|verify:deployment|RUN_/,
+      );
+    }
+    expect(packageJson.scripts["smoke:compile"]).toBe("tsx scripts/smoke-compile.ts");
+  });
+
+  it("gives the phase 4 live smoke no path to the model except the controller", () => {
+    const smoke = readFileSync(join(repoRoot, "scripts", "smoke-compile.ts"), "utf8");
+    // It drives the same four locked routes the deployed runtime does. It may
+    // wrap the pinned client to count calls; it may not compose a request, run
+    // a stage, or build a prompt itself.
+    expect(smoke).toContain("handleCompile");
+    expect(smoke).toContain("handleAdvance");
+    expect(smoke).toContain("handleActivate");
+    expect(
+      /generateStructured|runBaseStage|runModuleStage|openAiCompiler|buildBaseCompilationPayload/.test(
+        smoke,
+      ),
+      "the smoke must not reach past the controller",
+    ).toBe(false);
   });
 });
