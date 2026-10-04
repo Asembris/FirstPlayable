@@ -953,6 +953,12 @@ The local live-acceptance half ran on 4 October 2026 on the same branch. Its
 full record, including every failure, is `docs/PHASE4_EVIDENCE.md`. **Phase 4
 fails.** The remaining-gate list below is now a result, not a to-do list.
 
+A later session the same day changed the base compilation architecture in
+response to these results and re-ran the whole offline gate. Phase 4 still
+fails. Read "The Phase 4 recovery amendment" below, and
+`docs/PHASE4_EVIDENCE.md` §12, for what changed and what is still open; this
+section is preserved as the original record.
+
 | Gate | Result |
 |---|---|
 | 1. Migration `20261004160000` applied and verified live | **PASS** |
@@ -1027,6 +1033,116 @@ was left alone.
 `docs/PHASE4_LOCAL_HANDOFF.md` remains the statement of each task, with the
 verification queries, the expected provider-call counts, and the binary gate.
 
+## The Phase 4 recovery amendment — 4 October 2026, later session
+
+**Phase 4 is still not complete.** The architecture changed; the live gate did
+not move. `docs/PHASE4_EVIDENCE.md` §12 and §13 are the full record.
+
+### The change
+
+Item 1 of the "next authorized work" list above — the base-stage design
+question — has been **decided and implemented**: the server now constructs the
+clean base's mechanics deterministically, and the model authors only the clean
+base's narrative copy.
+
+`src/server/compile/base.ts` owns every mechanical element of the clean base
+from the frozen brief alone: the three variable ids and definitions, the six
+action ids and verbs, every target, every availability condition, one
+`{kind: always}` branch per action, every effect, the three dialogue node ids
+and speakers, the three ending ids, and every terminal binding.
+`BaseNarrativeCopySchema` replaces the old base output contract with sixteen
+bounded plain strings keyed semantically — six labels, three dialogue lines,
+three ending title/text pairs, and a title. There is no field in which to put
+an id, a condition, a branch, an effect, an ending id, an extra action, or a
+fourth ending, so the entire measured failure class is unrepresentable rather
+than rejected.
+
+The change was made because the evidence required it, not because it was
+preferred: seven live base compilations produced six distinct deterministic
+finding codes, and after five successive instruction fixes the model still
+failed a different part of a fully prescribed skeleton on most attempts. Every
+value it failed on had exactly one legal answer.
+
+### What did not change
+
+The Phase 1 validator, the one-attempt-plus-one-repair ceiling, the pinned
+model, module isolation, the Qloo boundary, the brief-only base reuse key, and
+the credential-free CI are all untouched. `VALIDATOR_IDENTIFIER` is still
+`fp-engine-validator-1.0` while the compiler, prompt, and schema identifiers
+moved to `4.1`, so "the validator was not weakened" is checkable from a stored
+version row. The assembled base still goes through `verifyBase` →
+`validateScene` with nothing special-cased. Discovery and Commitment remain
+independently model-compiled, because a module's mechanic is a genuine creative
+choice rather than a field with one legal answer.
+
+### Commits
+
+| Commit | Message |
+|---|---|
+| `6809145` | `refactor: make clean base mechanics deterministic` |
+| `62aaca9` | `test: cover deterministic base compilation invariants` |
+
+All 22 earlier Phase 4 commits are preserved unchanged.
+
+### The offline gate at `62aaca9`
+
+`typecheck`, `test` (**30 files, 605 tests**), `test:e2e` (**46** tests),
+`check:fixtures`, `build`, and `check:secrets` all pass from a clean tree with
+`.next` deleted first. `tests/server/compile-base.test.ts` adds 29 tests
+written against the assembled structure rather than against instruction
+wording, including an exact comparison proving the deterministic skeleton
+reproduces the hand-authored Phase 1 fixture `fixtures/second_copy.base.json`.
+
+Phase 3 recorded 425 unit tests and 33 browser tests; Phase 4 now adds 180 unit
+tests and 13 browser tests.
+
+### Why the live gate is still open
+
+The configured model-call budget had **not** reset. Read live from
+`public.budget_buckets` at 2026-10-04 13:20 UTC: **31 of 40** calls used, in a
+window running 2026-10-04 00:00 UTC → 2026-10-05 00:00 UTC, leaving **9**.
+
+The remaining gate needs 13–15 calls at its zero-repair minimum — one-influence
+acceptance, two-influence acceptance, the base-reuse check, the live stale/CAS
+check, and the deployed verification — and roughly double that in the worst
+case. Nine does not fit. No live compilation was started, the cap was not
+raised, the accounting was not bypassed, and no other key, provider, or model
+was used. The window resets at 2026-10-05 00:00 UTC.
+
+One live probe that costs no model call *was* run, closing a gap §4 recorded:
+`scene_versions_validation_passed` was exercised against live Postgres with
+five deliberately invalid validation summaries and an invalid
+`approval_snapshot`, committing nothing. It refused all but one, and the one it
+accepted is a real finding — the constraint casts through `->>`, so a JSON
+*string* `"true"` passes. It is unreachable from this application, whose `ok`
+is always a Zod boolean, and it is recorded as a limitation rather than fixed,
+because fixing it needs a second forward migration and an explicit decision.
+
+### Gate status
+
+| Gate | Result |
+|---|---|
+| 1. Migration `20261004160000` applied and verified live | **PASS** |
+| 2. Real provider generation of a base and a module | **NOT RUN** against the amended architecture |
+| 3. Live `scene_versions` persistence | **FAIL** — `scene_versions` has 0 rows |
+| 4. Live one-influence compilation on a fresh brief | **NOT RUN** — budget window |
+| 5. Live two-influence compilation on a fresh brief | **NOT RUN** — budget window |
+| 6. Vercel deployment of the Phase 4 build | **NOT RUN** — blocked on 4 and 5 |
+| 7. Deployed Phase 4 verification | **NOT RUN** — blocked on 6 |
+| 8. Final Phase 4 evidence with real numbers and every failure | **PASS** — `docs/PHASE4_EVIDENCE.md` |
+
+**Phase 5 remains unauthorized.** The next authorized work is, in order:
+
+1. **Re-run `RUN_PHASE4_SMOKE=1 npm run smoke:compile`** in a fresh budget
+   window, for the one-influence and two-influence gates, the subset reports,
+   the witnesses, base reuse, and the live stale-result compare-and-swap.
+2. **Exercise the immutability trigger** once a real version row exists
+   (`docs/PHASE4_LOCAL_HANDOFF.md` §K).
+3. **Deploy and run `RUN_DEPLOY_VERIFY=1 npm run verify:deployment`**, whose
+   Phase 4 sections are already written and committed.
+4. **Decide** whether to harden `scene_versions_validation_passed` with a
+   second forward migration (`docs/PHASE4_EVIDENCE.md` §13.4).
+
 ## What Phase 4 did not build
 
 No revision command of any kind: no remove, edit, replace, or ending-copy
@@ -1054,7 +1170,9 @@ document records it.
 
 The next authorized work is finishing Phase 4, in this order:
 
-1. **Decide the base-stage design question** in `docs/PHASE4_EVIDENCE.md` §11.3
+1. ~~**Decide the base-stage design question**~~ — **done**, see "The Phase 4
+   recovery amendment" above. The original wording follows, preserved:
+   Decide the base-stage design question in `docs/PHASE4_EVIDENCE.md` §11.3
    — whether the server constructs the base's mechanical skeleton
    deterministically and the model supplies only the title, labels, dialogue,
    and ending text. Every mechanical element is already prescribed and

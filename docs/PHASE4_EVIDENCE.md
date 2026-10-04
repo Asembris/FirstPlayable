@@ -3,6 +3,13 @@
 **Branch:** `feat/phase-4-compilation` · **Date:** 4 October 2026 ·
 **Status:** **FAIL — Phase 4 is not complete**
 
+> **Read §12 as well.** A later session on the same day changed the base
+> compilation architecture in response to the measured failures recorded below,
+> and re-ran the whole offline gate. The live acceptance gate is still not met.
+> Sections 1–11 are the original record and are preserved unchanged; §12 and
+> §13 are the amendment, its coverage, and the budget reason the live gate is
+> still open.
+
 Every figure in this document was observed on this machine against the real
 Supabase project and the real OpenAI account. Nothing here is a projection.
 Where a gate was not reached, this document says so and says why, rather than
@@ -12,7 +19,8 @@ No API key, access token, database password, or cookie secret appears anywhere
 in this file.
 
 **Cloud baseline HEAD:** `2fd70bc3dd6cc54925c34992d5dc3106b36446a0`
-**Final local HEAD:** `67a565a` (see §2)
+**Final local HEAD of this record:** `67a565a` (see §2); after the §12
+amendment, `62aaca9`
 **Nothing was pushed. No pull request was opened.**
 
 ---
@@ -535,3 +543,294 @@ feature tests.
    real brief, a real anchor, real stored references, and a real approval.
    None has a scene version. They are owner-scoped to throwaway anonymous
    sessions and are harmless, but they are real rows.
+
+---
+
+## 12. The recovery amendment — architecture changed, live gate still open
+
+**Date:** 4 October 2026, same day, same branch, later session.
+**Status:** **offline recovery complete; the live acceptance gate is still
+blocked, now by the model-call budget rather than by the architecture.**
+
+Everything above this line is preserved exactly as it was written. The
+nine-run diagnostic record is the reason this section exists, and deleting it
+would delete the evidence that justifies the change.
+
+### 12.1 What changed, and why
+
+The design question recorded as limitation §11.3 — *should the server
+construct the clean base's mechanics deterministically and ask the model only
+for prose?* — has been answered **yes**, and implemented.
+
+The amendment is one sentence: **the server owns the clean base's mechanics;
+the model authors only the clean base's narrative copy.**
+
+This was not a preference. It is what §6 measured. Seven live base
+compilations produced six distinct deterministic finding codes
+(`NAMESPACE_INVALID`, `VARIABLE_NEVER_READ`, `AMBIGUOUS_BRANCH`,
+`ENDING_IDS_INVALID`, `TERMINAL_MAPPING_INVALID`, `NO_PROGRESS`) and one clean
+commit. After five successive instruction fixes the mechanical skeleton was
+fully prescribed in prose, and the model still failed a different part of it on
+most attempts. Every value it was failing on had **exactly one legal answer**,
+fixed by the product contract and identical for every brief. A field with one
+legal answer is the server's to write — the same principle that had already
+removed the module slot, the approval authority, the hook attachment port, and
+the effect operator from model output.
+
+Prose a model may ignore is not a mechanism. A field it cannot reach is.
+
+### 12.2 What the server now owns
+
+`src/server/compile/base.ts` constructs, from the frozen brief alone:
+
+- the three variable ids, their labels, `initial: false`, and `visible: false`;
+- the six core action ids and verbs, read from the validator's own
+  `REQUIRED_CORE_ACTIONS` table so the two cannot disagree;
+- every action's target, from the shared `VERB_TARGET_KIND` derivation;
+- every action's availability condition;
+- exactly one `{kind: always}` branch per action;
+- every effect, with `set_true` written by the server;
+- the three dialogue node ids and each node's speaker;
+- the three ending ids and each terminal action's ending binding;
+- the fixed port table, as before.
+
+### 12.3 What the model still writes
+
+`BaseNarrativeCopySchema` is a flat strict object of **sixteen bounded plain
+strings**, keyed semantically rather than by executable identifier:
+
+```
+title
+inspect_label  ask_context_label  ask_terms_label
+give_label     withhold_label     leave_label
+inspect_dialogue  context_dialogue  commitment_dialogue
+give_ending_title  give_ending_text
+keep_ending_title  keep_ending_text
+leave_ending_title leave_ending_text
+```
+
+There is no field in which to put an id, a namespace, a variable, a condition,
+a clause, an atom, a branch, an effect, an ending id, a port, an extra action,
+or a fourth ending. Those are not rejected values; they are unrepresentable
+ones, which is why the whole observed failure class cannot recur. The labels
+are purely presentational: nothing reads one programmatically, because the
+engine, the validator, the port table, the witness search, and the provenance
+binding all address an action by its server-assigned id.
+
+### 12.4 What was explicitly *not* changed
+
+| Not changed | Evidence |
+|---|---|
+| The validator | `VALIDATOR_IDENTIFIER` is still `fp-engine-validator-1.0`, while the compiler, prompt, and schema identifiers all moved to `4.1`. A stored version records all four, so the claim is checkable from a row. |
+| The retry ceiling | still one attempt plus at most one repair; `OPERATION_MAX_ATTEMPTS` untouched |
+| The model | still the pinned `gpt-4o-mini-2024-07-18`; no fallback model, provider, or routing exists |
+| Module architecture | Discovery and Commitment remain independently model-compiled. A module's mechanic is a genuine creative choice, so it was left alone. |
+| Module isolation | unchanged; the sentinel suite is unchanged and still passes |
+| Qloo | no new call anywhere; the base payload is still the brief alone |
+| Base reuse keying | still the brief-only payload hash; no artist, Qloo evidence, approval, proposal, reference, or cultural context enters it |
+| CI | still credential-free; the real smoke is still opt-in and still asserted out of `npm test`, `build`, `test:e2e`, and CI |
+
+The assembled base goes through the **same** `verifyBase` → `validateScene`
+path it always did. Nothing special-cases a server-authored core, and nothing
+skips graph validation because the mechanics are now trusted. If a
+deterministic base ever failed the validator, that would be a defect in this
+application's own skeleton code, and it is meant to read that way.
+
+### 12.5 The commits
+
+| Commit | Message |
+|---|---|
+| `6809145` | `refactor: make clean base mechanics deterministic` |
+| `62aaca9` | `test: cover deterministic base compilation invariants` |
+
+All 22 earlier Phase 4 commits are preserved unchanged. Nothing was amended,
+squashed, or force-pushed.
+
+### 12.6 Offline regression coverage
+
+`tests/server/compile-base.test.ts` is new: **29 tests**, written against the
+assembled structure rather than against instruction wording, which is the
+specific weakness of the architecture it replaces.
+
+The strongest single assertion: **`baseCoreFromCopy(SECOND_COPY_BRIEF,
+validBaseCopy())` reproduces the hand-authored Phase 1 fixture
+`fixtures/second_copy.base.json` exactly** — every action id, verb, target,
+availability condition, branch, effect and ending binding, every dialogue node
+and speaker, and every string a player reads. The one permitted difference is
+the three variable *labels*, which are `visible: false` and therefore never
+read by a creator or a player. The deterministic skeleton is not a new state
+machine; it is the one Phase 1 froze.
+
+Each live failure class, now checked as a property of the assembled value:
+
+| Live failure (§6) | Now |
+|---|---|
+| `NAMESPACE_INVALID` | every declared id of all three kinds is `core.`-prefixed by construction; an ending id is asserted never to be an action, variable, or dialogue id |
+| `VARIABLE_NEVER_READ` / `VARIABLE_NEVER_WRITTEN` | all three variables are asserted both written by an effect and read by a condition |
+| required action disabled by `{kind: never}` | no code path can produce it; asserted for all six |
+| `AMBIGUOUS_BRANCH` | exactly one branch per action, asserted |
+| ending ids used as dialogue ids | asserted impossible |
+| `NO_PROGRESS` | every nonterminal action is asserted to write a previously-false variable, and the real graph layer agrees |
+
+Plus: the contract rejects twelve named mechanical fields and every extra,
+missing, or empty copy field; a brief with a different room, character, object,
+role, and tone produces a structurally identical skeleton with different
+targets, speaker, and copy, and validates through the unchanged validator; the
+base input hash does not move when approvals change while the module keys do;
+and copy failures that *can* still happen — a control character, a forbidden
+phrase — are rejected and repaired with a payload that carries no mechanic.
+
+### 12.7 The offline gate at `62aaca9`
+
+Run from a clean tree, with `.next` deleted first.
+
+| Command | Result |
+|---|---|
+| `npm run typecheck` | passed, exit 0 |
+| `npm test` | passed, exit 0 — **30 files, 605 tests**, 0 failures |
+| `npm run test:e2e` | passed, exit 0 — **46** Playwright tests, 0 failures |
+| `npm run check:fixtures` | passed, exit 0 |
+| `npm run build` | passed, exit 0 |
+| `npm run check:secrets` | passed, exit 0 — 165 tracked, 332 built files scanned |
+
+605 tests against 578 at `67a565a`: 29 new in `compile-base.test.ts`, and two
+net removals where a base rejection test was replaced by an
+unrepresentability assertion that is strictly stronger.
+
+### 12.8 Why the live gate is still open: the model-call budget
+
+Read live from `public.budget_buckets` before any compile was started, at
+**2026-10-04 13:20 UTC**:
+
+| Fact | Observed |
+|---|---|
+| `model_calls.used_calls` | **31** of **40** |
+| `model_calls.used_tokens` | 129,089 |
+| Window | 2026-10-04 00:00 UTC → **2026-10-05 00:00 UTC** |
+| Calls remaining in the window | **9** |
+| `qloo_calls.used_calls` | 5, unchanged |
+
+**The window had not reset.** What the remaining live gate needs, at its
+*zero-repair* minimum, under the amended architecture:
+
+| Gate | Minimum calls |
+|---|---|
+| One-influence acceptance (fresh project: proposal + base + Discovery) | 3 |
+| Two-influence acceptance (fresh project: proposal + base + Discovery + Commitment) | 4 |
+| Base-reuse check (one slot recompiles) | 1 |
+| Live stale/CAS check (disposable project: proposal + base, then rebuild) | 2–3 |
+| Deployed verification (fresh project through the production build) | 3–4 |
+| **Total** | **13–15**, and roughly double in the worst case with one repair per model stage |
+
+Nine does not fit, and does not nearly fit. Starting section A alone would
+spend three calls and still leave the gate unreachable, so no live compilation
+was started. The cap was **not** raised, the accounting was **not** bypassed,
+no other key, provider, or model was used, and no speculative compile was run.
+
+**Offline recovery complete; waiting for model budget reset.** The window
+resets at 2026-10-05 00:00 UTC.
+
+### 12.9 One live probe that cost no model call, and a real finding
+
+§4 recorded that the `scene_versions_validation_passed` constraint was unproven
+against live Postgres because the §K probes need a version row. The *negative*
+probe does not: a deliberately invalid insert needs only a project id. It was
+run against the live database inside a `DO` block whose final `raise` aborted
+the whole statement, so **nothing was committed** — `scene_versions` is still
+**0 rows**, and `pending_version_id` and `active_version_id` are null on all 29
+projects, confirmed afterwards.
+
+| Probe `validation_summary` | Result |
+|---|---|
+| `{"ok": false, "subsets": [], "witnesses": []}` | **refused**, `23514`, `scene_versions_validation_passed` |
+| `{"ok": true, "witnesses": []}` (no `subsets`) | **refused**, `23514`, same constraint |
+| `{"ok": true, "subsets": []}` (no `witnesses`) | **refused**, `23514`, same constraint |
+| `{"subsets": [], "witnesses": []}` (no `ok`) | **refused**, `23514`, same constraint |
+| `{"ok": "true", "subsets": [], "witnesses": []}` | **ACCEPTED** |
+| `approval_snapshot` as a JSON object | **refused**, `23514`, `scene_versions_approval_snapshot_is_array` |
+
+**The constraint is live and it works, with one narrow gap.** It is written
+`((validation_summary ->> 'ok')::boolean IS TRUE)`. `->>` yields *text*, so the
+JSON **string** `"true"` casts to boolean true and passes, as would `"t"`,
+`"yes"`, `"on"`, and `"1"`. A comparison on the JSON value itself —
+`validation_summary -> 'ok' = 'true'::jsonb` — would not admit them.
+
+How much this matters, stated honestly:
+
+- **It is not reachable from this application.** Every insert goes through
+  `commit_scene_version` with a `ValidationSummaryView`, whose `ok` is a Zod
+  `boolean` and therefore always a JSON boolean. There is no code path that
+  could produce the string form.
+- **It is still a weaker database guarantee than the migration intends**, and
+  the migration's stated intent is that "only validated versions are inserted"
+  is a database guarantee rather than a convention.
+- **It was not fixed here.** Fixing it means a second forward migration applied
+  to live DDL, which is outside this narrowly-scoped amendment, and
+  `docs/PHASE4_LOCAL_HANDOFF.md` §E forbids editing the existing migration
+  file. It is recorded as limitation §13.4 for an explicit decision.
+
+The row-level immutability trigger remains unexercised live, because that probe
+genuinely needs a committed version row and none exists. No valid-looking row
+was inserted to create one: fabricating a `scene_versions` row would corrupt
+the evidence table this document reports on.
+
+### 12.10 Gate status after the amendment
+
+| Phase 4 gate (handoff §Q) | Result |
+|---|---|
+| 1. Offline gate green locally | **PASS** (§12.7) |
+| 2. `20261004160000` applied and verified live | **PASS** (§4) |
+| 3. Fresh brief, **one** real approved influence, playable scene | **NOT RUN** — budget (§12.8) |
+| 4. Fresh brief, **two** real approved influences, playable scene | **NOT RUN** — budget (§12.8) |
+| 5. No pending/rejected/other-slot evidence entered a module prompt | **PASS**, offline sentinels; not contradicted live |
+| 6. Mechanical witness per active module, stored on the version | **NOT RUN** — needs gate 3 |
+| 7. Every supported removal subset validates, stored on the version | **NOT RUN** — needs gate 3 |
+| 8. A live stale result cannot activate; previous version survives failure | **PARTIAL** (§8), unchanged |
+| 9. Repair never exceeded its ceiling — no stage with `attempts > 2` | **PASS** (§6), unchanged |
+| 10. Deployed application satisfies every box of handoff §O | **NOT RUN** (§9) |
+| 11. Evidence records the real numbers, including every failure | **PASS** — this document |
+
+**Phase 4 therefore still fails its gate, and Phase 5 is not authorized.**
+
+The honest one-line summary of this session: *the architecture was changed in
+response to measured live reliability evidence, the change is complete and
+fully covered offline, and not one live compilation was run against it, because
+the configured budget for the window could not hold the gate.* The first
+architecture did not succeed, and nothing here should be read as saying it did.
+
+---
+
+## 13. Known limitations, after the amendment
+
+Limitations 1, 2, 4, 5, 6, 7, and 8 of §11 stand as written, with these
+changes.
+
+1. **§11.1 stands.** No fresh scene has ever been compiled. This is still the
+   Phase 4 gate and it is still not met. The reason has changed: it is no
+   longer the architecture, it is the budget window.
+2. **§11.2 is addressed, but not yet proven live.** The base stage's
+   reliability was the open question, and the deterministic skeleton removes
+   the whole measured failure class *by construction* — proven offline against
+   the real validator and the real Phase 1 fixture, and **not yet observed
+   against the real provider.** The remaining base-stage risk is now copy-only:
+   a forbidden phrase, a text bound, a refusal, or truncation. That is a
+   smaller and better-understood surface, and it is an expectation until a live
+   run confirms it.
+3. **§11.3 is resolved.** The design question is decided and implemented
+   (§12.1). The `validateScene`-skips-graph-analysis interaction noted
+   alongside it is unchanged and still true; it simply no longer has base
+   mechanics to interact with.
+4. **New: `scene_versions_validation_passed` admits a JSON string `"true"`**
+   for its `ok` field, because it casts through `->>` (§12.9). Unreachable from
+   this application, but a weaker database guarantee than intended. Not fixed
+   here: it needs a second forward migration and an explicit decision.
+5. **The deterministic skeleton is now a single point of failure for the base,
+   in exchange for removing a probabilistic one.** If it is wrong, it is wrong
+   for every brief, every time, rather than occasionally. That is the trade
+   being made deliberately, and it is why the amendment is covered by 29
+   structural tests and by an exact comparison against the authoritative
+   Phase 1 fixture rather than by a smoke run.
+6. **The three base variable labels are server constants**, so they no longer
+   echo the brief's own object the way the hand-authored fixture's did
+   ("Object inspected", not "Letter inspected"). All three are
+   `visible: false`, so no creator and no player ever reads one.
