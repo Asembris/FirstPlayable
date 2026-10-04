@@ -181,9 +181,13 @@ export function moduleFromModelOutput(
     when: gate.when,
     blocked_text: gate.blocked_text,
   }));
+  // The slot's one effect port, written here rather than taken from the
+  // module. A module has no field in which to name an attachment point, so it
+  // cannot attach to the other slot's port even by mistake.
+  const hookPort = FIXED_PORTS[slot].effect_action_ids[0];
   const hooks: OnAction[] = output.on_actions.map((hook) => ({
     id: hook.id,
-    action_id: hook.action_id,
+    action_id: hookPort,
     when: hook.when,
     effects: toEffects(hook.effects),
     dialogue_id: hook.dialogue_id,

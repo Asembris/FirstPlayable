@@ -261,7 +261,6 @@ function moduleToModelOutput(module: InfluenceModule): ModuleCompilationOutput {
     })),
     on_actions: module.on_actions.map((hook) => ({
       id: hook.id,
-      action_id: hook.action_id,
       when: hook.when,
       effects: hook.effects.map((effect) => ({ var_id: effect.var_id })),
       dialogue_id: hook.dialogue_id,
@@ -343,7 +342,6 @@ export function validCommitmentOutput(): ModuleCompilationOutput {
     on_actions: [
       {
         id: "commitment.context_hook",
-        action_id: "core.ask_context",
         when: { kind: "always" },
         effects: [{ var_id: "commitment.cost_named" }],
         dialogue_id: "commitment.named_text",

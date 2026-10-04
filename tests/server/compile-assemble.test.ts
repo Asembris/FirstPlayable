@@ -6,6 +6,7 @@ import {
   SECOND_COPY_DISCOVERY_V1,
 } from "../../fixtures/second-copy";
 import { FIXED_PORTS } from "../../src/domain/limits";
+import { ModuleCompilationOutputSchema } from "../../src/domain/compile";
 import {
   assembleScene,
   coreFromModelOutput,
@@ -405,5 +406,69 @@ describe("subset validation", () => {
     ]);
     expect(verdict.ok, JSON.stringify(verdict.summary.finding_codes)).toBe(true);
     expect(SECOND_COPY_BASE.modules).toEqual([]);
+  });
+});
+
+/**
+ * The hook port is the server's to write, not the module's to name.
+ *
+ * A real live Discovery module attached its hook to `core.ask_context`, which
+ * is the Commitment slot's effect port. The validator rejected it correctly
+ * with `HOOK_PORT_INVALID`, the one permitted repair did not recover, and the
+ * compilation failed — all of which behaved as designed. But a slot has exactly
+ * one effect port, so there was never a choice to delegate: the module was
+ * being asked to restate something the server already knew, and the only
+ * possible wrong answer was the other slot's port.
+ *
+ * `ModelOnActionSchema` therefore has no `action_id`, and
+ * `moduleFromModelOutput` writes the slot's port itself. These assertions keep
+ * that true from both directions: the contract refuses the field, and the
+ * assembled module carries the right port for each slot.
+ */
+describe("a module cannot name the port it attaches to", () => {
+  it("has no action field on a hook in the model-facing contract", () => {
+    const withPort = {
+      ...validCommitmentOutput(),
+      on_actions: [
+        {
+          id: "commitment.context_hook",
+          // The field a live attempt mis-filled. It is no longer accepted.
+          action_id: "core.inspect",
+          when: { kind: "always" } as const,
+          effects: [{ var_id: "commitment.cost_named" }],
+          dialogue_id: "commitment.named_text",
+        },
+      ],
+    };
+    const parsed = ModuleCompilationOutputSchema.safeParse(withPort);
+    expect(parsed.success, "a hook must not be able to name an action").toBe(false);
+  });
+
+  it("attaches every hook to its own slot's effect port", () => {
+    for (const slot of ["discovery", "commitment"] as const) {
+      const output = slot === "discovery" ? validDiscoveryOutput() : validCommitmentOutput();
+      const built = moduleFromModelOutput(
+        output,
+        slot,
+        slot === "discovery" ? DISCOVERY_APPROVAL.approval_id : COMMITMENT_APPROVAL.approval_id,
+        worldFromBrief(SECOND_COPY_BRIEF),
+      );
+      const expected = FIXED_PORTS[slot].effect_action_ids[0];
+      expect(built.on_actions.length, `${slot} must declare a hook`).toBeGreaterThan(0);
+      for (const hook of built.on_actions) {
+        expect(hook.action_id, `${slot} hook ${hook.id}`).toBe(expected);
+      }
+    }
+  });
+
+  it("still lets a gate name its port, because that choice is a real one", () => {
+    // Commitment really has two gate ports, so that stays the module's choice
+    // and `GATE_PORT_INVALID` keeps checking it — see the wrong-port case in
+    // "one module against the clean base" above. A hook has no such choice.
+    expect(FIXED_PORTS.commitment.gate_action_ids.length).toBe(2);
+    expect(FIXED_PORTS.discovery.gate_action_ids.length).toBe(1);
+    for (const slot of ["discovery", "commitment"] as const) {
+      expect(FIXED_PORTS[slot].effect_action_ids.length, `${slot} effect ports`).toBe(1);
+    }
   });
 });

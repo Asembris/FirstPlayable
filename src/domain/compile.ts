@@ -114,9 +114,21 @@ const ModelGateSchema = z.strictObject({
   blocked_text: z.string().min(1).max(TEXT.gate_blocked_text),
 });
 
+/**
+ * One hook, without the action it attaches to.
+ *
+ * A slot has exactly one effect port — `core.inspect` for discovery,
+ * `core.ask_context` for commitment — so there is nothing for a module to
+ * choose and no reason to let it name one. The server writes `action_id` from
+ * {@link FIXED_PORTS} when it builds the module, for the same reason it writes
+ * `slot` and `approval_id`: it already knows the only legal answer, and a field
+ * a module cannot fill is a port it cannot mis-attach to.
+ *
+ * Gates keep their `action_id`, because the commitment slot really does have
+ * two gate ports to choose between, and `GATE_PORT_INVALID` still checks it.
+ */
 const ModelOnActionSchema = z.strictObject({
   id: ModelIdSchema,
-  action_id: ModelIdSchema,
   when: ConditionSchema,
   effects: z.array(ModelEffectSchema),
   dialogue_id: ModelIdSchema.nullable(),
