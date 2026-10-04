@@ -36,21 +36,22 @@ function watchForeignRequests(page: Page, baseURL: string): string[] {
 const UPSTREAM_HOSTS = ["qloo.com", "api.openai.com", "supabase.co", "supabase.in"];
 
 /**
- * Controls phase 5 owns. No button or link in phase 4 may offer one.
+ * Controls that exist only once a version has been confirmed.
  *
- * This is deliberately a scan of *actionable* elements rather than of all
- * page text: the project header legitimately says "revision 5", and a word
- * ban on body text would make that a false positive.
+ * Phase 5 owns revision, comparison, publication, and export, and every one of
+ * them acts on a version the creator confirmed — so before activation none of
+ * them may be offered. This is deliberately a scan of *actionable* elements
+ * rather than of all page text: the project header legitimately says
+ * "revision 5", and a word ban on body text would make that a false positive.
  */
-const PHASE_5_CONTROLS = [
+const POST_ACTIVATION_CONTROLS = [
   "revise",
-  "revision",
+  "remove this influence",
   "publish",
-  "share",
+  "withdraw",
   "export",
-  "revoke",
-  "public link",
-  "kinder",
+  "download an offline",
+  "rewrite this ending",
   "compare",
 ];
 
@@ -271,23 +272,37 @@ test("the browser speaks only to this application, never to an upstream host", a
   }
 });
 
-test("no phase 5 revision, share, or export control appears", async ({ page }) => {
-  await installPhase4Api(page, { activated: true });
+/**
+ * Nothing acts on a version the creator has not confirmed.
+ *
+ * Before activation the studio offers the build and the review, and no
+ * revision, comparison, publication, or export control at all — which is the
+ * ordering the whole product depends on: a creator revises, compares, shares,
+ * and exports the scene they said yes to.
+ */
+test("offers no revision, comparison, share, or export before a version is confirmed", async ({
+  page,
+}) => {
+  await installPhase4Api(page);
   await page.goto(`/studio/${PROJECT_ID}`);
-  await expect(page.getByTestId("active-playable")).toBeVisible();
+  await expect(page.getByTestId("compile-panel")).toBeVisible();
 
   const labels = await page
     .locator("button, a, [role=button], input, select, textarea")
     .evaluateAll((nodes) =>
       nodes.map((node) => (node.textContent ?? "").toLowerCase()),
     );
-  for (const control of PHASE_5_CONTROLS) {
+  for (const control of POST_ACTIVATION_CONTROLS) {
     expect(
       labels.filter((label) => label.includes(control)),
-      `phase 5 control "${control}" is offered`,
+      `"${control}" is offered before a version was confirmed`,
     ).toEqual([]);
   }
-  // And no raw JSON or provider log view either.
+  await expect(page.getByTestId("revision-panel")).toHaveCount(0);
+  await expect(page.getByTestId("publish-panel")).toHaveCount(0);
+  await expect(page.getByTestId("version-compare")).toHaveCount(0);
+
+  // And no raw JSON or provider log view, in either phase.
   const text = (await page.locator("body").innerText()).toLowerCase();
   expect(text).not.toContain("schema_version");
   expect(text).not.toContain("prompt");

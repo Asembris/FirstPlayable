@@ -31,6 +31,7 @@ import {
   type VersionState,
 } from "@/domain/compile";
 import { SLOTS } from "@/domain/limits";
+import { type RevisionDiffView, RevisionDiffViewSchema } from "@/domain/revision";
 import type { Slot } from "@/domain/influence";
 import { safeParseScene } from "@/domain/scene";
 import { appErrors } from "../security/errors";
@@ -38,6 +39,22 @@ import type { DataGateway, ProjectRow, SceneVersionRow, SessionRow } from "./gat
 
 /** How many versions a project read lists. Bounded, newest first. */
 export const VERSION_LIST_LIMIT = 8;
+
+/** How many share links a project read lists. Bounded, newest first. */
+export const PUBLICATION_LIST_LIMIT = 8;
+
+/**
+ * One version's stored comparison, or null.
+ *
+ * Null covers three honest cases and no dishonest one: a first version has no
+ * parent, a version committed before this phase has no stored diff, and a
+ * stored value that no longer satisfies the contract is not partially trusted.
+ */
+export function revisionDiffOf(row: SceneVersionRow): RevisionDiffView | null {
+  if (row.revision_diff === null || row.revision_diff === undefined) return null;
+  const parsed = RevisionDiffViewSchema.safeParse(row.revision_diff);
+  return parsed.success ? parsed.data : null;
+}
 
 function stateOf(row: SceneVersionRow, project: ProjectRow): VersionState {
   if (project.pending_version_id === row.id) return "pending";
@@ -77,6 +94,7 @@ export function toVersionSummary(
     model_identifier: row.model_identifier,
     compiler_identifier: row.compiler_identifier,
     validator_identifier: row.validator_identifier,
+    revision_label: revisionDiffOf(row)?.label ?? null,
   };
   const parsed = SceneVersionSummarySchema.safeParse(candidate);
   return parsed.success ? parsed.data : null;
@@ -128,6 +146,7 @@ export function toPlayableView(
     scene: scene.scene,
     validation: validation.data,
     scene_changed: sceneChangedFrom(scene.scene, validation.data),
+    diff: revisionDiffOf(row),
   };
   const parsed = PlayableViewSchema.safeParse(candidate);
   return parsed.success ? parsed.data : null;
@@ -181,4 +200,27 @@ export async function readPlayableForProject(
   const row = await readVersionRow(gateway, session, project, versionId);
   if (row === null) return null;
   return toPlayableView(row, project);
+}
+
+/**
+ * The version the shown playable revised, for the previous/current comparison.
+ *
+ * It follows the stored `parent_version_id` rather than "the version before
+ * this one by date", because a declined build leaves a row that was never
+ * anybody's parent. Null whenever there is no parent or the parent is no longer
+ * readable; the comparison then simply is not offered.
+ */
+export async function readPreviousPlayable(
+  gateway: DataGateway,
+  session: SessionRow,
+  project: ProjectRow,
+  playable: PlayableView | null,
+): Promise<PlayableView | null> {
+  if (playable === null) return null;
+  const current = await readVersionRow(gateway, session, project, playable.version_id);
+  const parentId = current?.parent_version_id ?? null;
+  if (parentId === null) return null;
+  const parent = await readVersionRow(gateway, session, project, parentId);
+  if (parent === null) return null;
+  return toPlayableView(parent, project);
 }

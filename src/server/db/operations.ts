@@ -33,6 +33,8 @@ export const OPERATION_STAGES = [
   "module_discovery",
   "module_commitment",
   "ending_copy",
+  /** One deterministic phase 5 revision command. */
+  "revision",
   "validate",
   "smoke",
 ] as const;

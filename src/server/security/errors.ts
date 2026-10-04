@@ -26,6 +26,19 @@ export const ERROR_CODES = {
   BODY_MALFORMED: "BODY_MALFORMED",
   /** The body parsed but failed the authoritative Zod contract. */
   VALIDATION_FAILED: "VALIDATION_FAILED",
+  /**
+   * A well-formed creator command was refused for a reason the creator needs.
+   *
+   * `VALIDATION_FAILED` deliberately says one fixed sentence and keeps its
+   * detail server-side, because its detail is field paths out of a rejected
+   * body. A phase 5 refusal is different: "that slot is empty", "this wording
+   * was not previewed", "this would not have preserved what it does not own",
+   * and "that version is still awaiting your review" are four different things
+   * to do next, and the creator cannot act without knowing which. Every message
+   * carried under this code is a fixed sentence this application wrote — never a
+   * provider message, a database error, or a field path.
+   */
+  REQUEST_REFUSED: "REQUEST_REFUSED",
   /** No live anonymous owner session accompanied the request. */
   SESSION_REQUIRED: "SESSION_REQUIRED",
   /** Nonexistent, or owned by somebody else. Deliberately indistinguishable. */
@@ -161,6 +174,13 @@ const FACTORY = {
       publicMessage: "Some details in this request are not acceptable.",
       retryable: false,
       ...(diagnostic === undefined ? {} : { diagnostic }),
+    }),
+  refused: (publicMessage: string) =>
+    new AppError({
+      code: ERROR_CODES.REQUEST_REFUSED,
+      status: 422,
+      publicMessage,
+      retryable: false,
     }),
   sessionRequired: () =>
     new AppError({

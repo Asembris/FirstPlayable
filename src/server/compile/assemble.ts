@@ -46,6 +46,7 @@ import type {
   Condition,
   CoreScene,
   DialogueNode,
+  EndingCopyOverride,
   Gate,
   InfluenceModule,
   InfluenceReference,
@@ -369,6 +370,17 @@ export type AssembleInput = {
   readonly modules: readonly InfluenceModule[];
   /** The approvals the controller froze. One per compiled module. */
   readonly approvals: readonly ApprovedInfluence[];
+  /**
+   * The creator's explicit ending-wording overrides, carried through every
+   * recomposition (specification section 9).
+   *
+   * They are an input to composition, not an edit of a version, which is what
+   * makes an applied wording change survive a later module recompile. The
+   * composer replaces one ending's `text` with each one and touches nothing
+   * else, so a module stage — which passes none — composes identically to
+   * before.
+   */
+  readonly endingCopyOverrides?: readonly EndingCopyOverride[];
 };
 
 export type AssembleResult =
@@ -439,7 +451,7 @@ export function assembleScene(input: AssembleInput): AssembleResult {
       },
     },
     modules,
-    ending_copy_overrides: [],
+    ending_copy_overrides: [...(input.endingCopyOverrides ?? [])],
     influences,
     provenance,
   };

@@ -23,6 +23,7 @@ import type {
 } from "../../../src/server/compile/compiler";
 import {
   BASE_SCHEMA_NAME,
+  ENDING_COPY_SCHEMA_NAME,
   MODULE_SCHEMA_NAME,
 } from "../../../src/server/compile/compiler";
 import { ModelError } from "../../../src/server/model/openai";
@@ -60,11 +61,14 @@ export type FakeCompiler = SceneCompiler & {
 export function fakeCompiler(script: {
   base?: readonly CompilerScriptEntry[];
   module?: readonly CompilerScriptEntry[];
+  /** Phase 5: one ending's rewritten prose, per call. */
+  endingCopy?: readonly CompilerScriptEntry[];
 }): FakeCompiler {
   const requests: { schemaName: string; instructions: string; payload: unknown }[] = [];
   const queues = new Map<string, CompilerScriptEntry[]>([
     [BASE_SCHEMA_NAME, [...(script.base ?? [])]],
     [MODULE_SCHEMA_NAME, [...(script.module ?? [])]],
+    [ENDING_COPY_SCHEMA_NAME, [...(script.endingCopy ?? [])]],
   ]);
   let calls = 0;
 

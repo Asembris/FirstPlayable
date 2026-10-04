@@ -25,19 +25,27 @@
  * result locally through the Phase 1 engine, and confirm or decline it. A
  * compiled scene never becomes the active version by itself.
  *
- * What it deliberately does not render: a revision control, an ending-copy
- * editor, a version comparison, or a share or export action. Those are phases
- * 5 and 6.
+ * Phase 5 adds the three panels below the compilation one: change one idea or
+ * one ending's wording, compare the previous and current versions by replaying
+ * the same choices locally, and publish a version-pinned read-only link or
+ * download a self-contained offline playable.
+ *
+ * What it deliberately does not render: the phase 6 visual system. This shell is
+ * functional and plain on purpose.
  */
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import type { PlayableView, SceneVersionSummary } from "@/domain/compile";
 import type { ProjectView, ReferencesView } from "@/domain/project";
+import type { PublicationSummary } from "@/domain/publish";
 import { AnchorPanel } from "./AnchorPanel";
 import { CompilePanel } from "./CompilePanel";
 import { ApprovedInfluences } from "./ApprovedInfluences";
+import { PublishPanel } from "./PublishPanel";
 import { ReferenceRows } from "./ReferenceRows";
+import { RevisionPanel } from "./RevisionPanel";
+import { VersionCompare } from "./VersionCompare";
 import { ErrorPanel, getJson, type RequestFailure } from "./shared";
 
 type Loaded = {
@@ -46,7 +54,10 @@ type Loaded = {
   /** The version awaiting review, else the active one, else null. */
   /** Absent before phase 4 compiled anything; null when nothing is readable. */
   playable?: PlayableView | null;
+  /** The version `playable` revised, for the local previous/current comparison. */
+  previous_playable?: PlayableView | null;
   versions?: SceneVersionSummary[];
+  publications?: PublicationSummary[];
 };
 
 type State =
@@ -120,11 +131,12 @@ export function ProjectClient({ projectId }: { projectId: string }): React.JSX.E
     );
   }
 
-  const { project, references, playable, versions } = state.data;
+  const { project, references, playable, versions, publications } = state.data;
+  const previous = state.data.previous_playable ?? null;
   return (
     <main className="studio">
       <header className="studio__header">
-        <p className="cover__eyebrow">Persisted project · phase 4 compilation</p>
+        <p className="cover__eyebrow">Persisted project · revise, compare, share</p>
         <h1 className="cover__title" data-testid="project-title">
           {project.title}
         </h1>
@@ -195,6 +207,26 @@ export function ProjectClient({ projectId }: { projectId: string }): React.JSX.E
         project={project}
         playable={playable ?? null}
         versions={versions ?? []}
+        onChanged={() => void load()}
+      />
+
+      <RevisionPanel
+        projectId={project.id}
+        project={project}
+        playable={playable ?? null}
+        onChanged={() => void load()}
+      />
+
+      {playable != null && previous !== null ? (
+        <VersionCompare current={playable} previous={previous} />
+      ) : null}
+
+      <PublishPanel
+        projectId={project.id}
+        project={project}
+        playable={playable ?? null}
+        versions={versions ?? []}
+        publications={publications ?? []}
         onChanged={() => void load()}
       />
 

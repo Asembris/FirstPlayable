@@ -85,6 +85,18 @@ import {
   SessionRowSchema,
   type SetProjectReferencesInput,
   type SetProposalDraftInput,
+  type EndingCopyOverridesUpdate,
+  EndingCopyOverridesUpdateSchema,
+  type PublicationCommit,
+  PublicationCommitSchema,
+  type PublicationList,
+  PublicationListSchema,
+  type PublicationRead,
+  PublicationReadSchema,
+  type PublicationRevoke,
+  PublicationRevokeSchema,
+  type PublishVersionInput,
+  type SetEndingCopyOverridesInput,
 } from "./gateway";
 
 function createServerClient(): SupabaseClient {
@@ -539,6 +551,7 @@ class SupabaseGateway implements DataGateway {
       p_schema_identifier: input.schemaIdentifier,
       p_compiler_identifier: input.compilerIdentifier,
       p_validator_identifier: input.validatorIdentifier,
+      p_revision_diff: input.revisionDiff ?? null,
     });
     if (error !== null) persistenceFailure("commitSceneVersion", error.message);
     return parseRpc("commitSceneVersion", SceneVersionCommitSchema, data);
@@ -580,6 +593,90 @@ class SupabaseGateway implements DataGateway {
     });
     if (error !== null) persistenceFailure("readSceneVersions", error.message);
     return parseRpc("readSceneVersions", SceneVersionReadSchema, data);
+  }
+
+  // -------------------------------------------------------------------------
+  // Phase 5: ending-copy overrides, publication, and the public read
+  // -------------------------------------------------------------------------
+
+  async setProjectEndingCopyOverrides(
+    input: SetEndingCopyOverridesInput,
+  ): Promise<EndingCopyOverridesUpdate> {
+    const { data, error } = await this.#client.rpc("set_project_ending_copy_overrides", {
+      p_project_id: input.projectId,
+      p_owner_session_id: input.ownerSessionId,
+      p_expected_revision: input.expectedRevision,
+      p_overrides: [...input.overrides],
+    });
+    if (error !== null) persistenceFailure("setProjectEndingCopyOverrides", error.message);
+    return parseRpc(
+      "setProjectEndingCopyOverrides",
+      EndingCopyOverridesUpdateSchema,
+      data,
+    );
+  }
+
+  async publishSceneVersion(input: PublishVersionInput): Promise<PublicationCommit> {
+    const { data, error } = await this.#client.rpc("publish_scene_version", {
+      p_project_id: input.projectId,
+      p_owner_session_id: input.ownerSessionId,
+      p_expected_revision: input.expectedRevision,
+      p_version_id: input.versionId,
+      p_read_token_hash: input.readTokenHash,
+      p_public_snapshot: input.publicSnapshot,
+    });
+    if (error !== null) persistenceFailure("publishSceneVersion", error.message);
+    return parseRpc("publishSceneVersion", PublicationCommitSchema, data);
+  }
+
+  async revokePublication(
+    publicationId: string,
+    ownerSessionId: string,
+  ): Promise<PublicationRevoke> {
+    const { data, error } = await this.#client.rpc("revoke_publication", {
+      p_publication_id: publicationId,
+      p_owner_session_id: ownerSessionId,
+    });
+    if (error !== null) persistenceFailure("revokePublication", error.message);
+    return parseRpc("revokePublication", PublicationRevokeSchema, data);
+  }
+
+  async readPublicationByToken(readTokenHash: string): Promise<PublicationRead> {
+    const { data, error } = await this.#client.rpc("read_publication_by_token", {
+      p_read_token_hash: readTokenHash,
+    });
+    if (error !== null) persistenceFailure("readPublicationByToken", error.message);
+    return parseRpc("readPublicationByToken", PublicationReadSchema, data);
+  }
+
+  async readPublicationsForOwner(
+    projectId: string,
+    ownerSessionId: string,
+    limit: number,
+  ): Promise<PublicationList> {
+    const { data, error } = await this.#client.rpc("read_publications_for_owner", {
+      p_project_id: projectId,
+      p_owner_session_id: ownerSessionId,
+      p_limit: limit,
+    });
+    if (error !== null) persistenceFailure("readPublicationsForOwner", error.message);
+    return parseRpc("readPublicationsForOwner", PublicationListSchema, data);
+  }
+
+  async countOperationsForOwnerSince(
+    ownerSessionId: string,
+    stages: readonly string[],
+    since: string,
+  ): Promise<number> {
+    if (stages.length === 0) return 0;
+    const { count, error } = await this.#client
+      .from("operations")
+      .select("id", { count: "exact", head: true })
+      .eq("owner_session_id", ownerSessionId)
+      .in("stage", [...stages])
+      .gte("created_at", since);
+    if (error !== null) persistenceFailure("countOperationsForOwnerSince", error.message);
+    return count ?? 0;
   }
 
   async confirmProjectAnchor(input: ConfirmAnchorInput): Promise<AnchorConfirmation> {

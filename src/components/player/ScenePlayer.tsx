@@ -18,6 +18,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import type { Id, Scene } from "../../domain/scene";
+import { viewOf } from "../../engine/compose";
 import {
   availableActions,
   initialState,
@@ -40,10 +41,17 @@ type Play = {
 export function ScenePlayer({
   scene,
   testIdPrefix = "scene",
+  onPrefixChange,
 }: {
   scene: Scene;
   /** So a page with two players can address each one in a browser test. */
   testIdPrefix?: string;
+  /**
+   * Reports the action ids actually taken, in order, so a comparison view can
+   * replay the creator's own choices in another version. It is a notification
+   * about local state: this component still makes no request of any kind.
+   */
+  onPrefixChange?: (prefix: readonly Id[]) => void;
 }): React.JSX.Element {
   const fresh = useCallback(
     (): Play => ({ state: initialState(scene), transcript: [], endingId: null }),
@@ -51,23 +59,31 @@ export function ScenePlayer({
   );
   const [play, setPlay] = useState<Play>(fresh);
   const [sequence, setSequence] = useState(0);
+  /** The legal actions taken in this run, for a comparison view to replay. */
+  const [taken, setTaken] = useState<readonly Id[]>([]);
 
   const reset = useCallback(() => {
     // A reset is a new run from the initial state. No flag is migrated and no
     // request is made.
     setPlay(fresh());
-  }, [fresh]);
+    setTaken([]);
+    onPrefixChange?.([]);
+  }, [fresh, onPrefixChange]);
 
   const choices = useMemo(
     () => (play.endingId === null ? availableActions(scene, play.state) : []),
     [scene, play.state, play.endingId],
   );
 
+  /**
+   * The ending as the *composed* view has it, not as `core.endings` declares it.
+   *
+   * A creator ending-copy override replaces one ending's text during
+   * composition (`composeScene`), so reading `core.endings` directly would show
+   * the wording the override was applied to replace.
+   */
   const ending = useMemo(
-    () =>
-      play.endingId === null
-        ? null
-        : (scene.core.endings.find((candidate) => candidate.id === play.endingId) ?? null),
+    () => (play.endingId === null ? null : (viewOf(scene).endingById.get(play.endingId) ?? null)),
     [scene, play.endingId],
   );
 
@@ -100,8 +116,15 @@ export function ScenePlayer({
         transcript: [...current.transcript, ...added],
         endingId: result.ending === null ? null : result.ending.id,
       }));
+      // Only a nonterminal, legal action extends the replay prefix: a prefix
+      // that ends the scene cannot be replayed past its own ending.
+      if (result.ending === null) {
+        const next = [...taken, actionId];
+        setTaken(next);
+        onPrefixChange?.(next);
+      }
     },
-    [scene, play.state, sequence],
+    [scene, play.state, sequence, taken, onPrefixChange],
   );
 
   const npc = scene.world.characters[0];

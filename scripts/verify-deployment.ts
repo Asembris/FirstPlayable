@@ -13,15 +13,84 @@
  *      recorded, so a direct Supabase or OpenAI call would be caught, and the
  *      rendered HTML is scanned for credential shapes.
  *
+ * From phase 5 it also revises one fresh two-influence scene end to end —
+ * edit, replace, ending wording, remove — checks every stored diff against the
+ * engine's own recomputation, publishes a version, plays it from a browser with
+ * no session, revokes it, and plays the exported file from disk offline.
+ *
+ * A preview deployment sits behind Vercel Authentication. Set
+ * `VERCEL_AUTOMATION_BYPASS_SECRET` to the project's existing automation bypass
+ * secret to verify one; it is sent to the target origin only and never printed.
+ *
  * It is never part of `npm test`, `npm run test:e2e`, or `npm run build`.
  * It prints no credential: cookie values are only ever passed back as headers.
  */
 
 import { chromium, type Browser, type BrowserContext } from "@playwright/test";
 
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { pathToFileURL } from "node:url";
+
+import type { CompilationStatus } from "../src/domain/compile";
+import type { RevisionDiffView } from "../src/domain/revision";
+import type { Scene } from "../src/domain/scene";
+import { mechanicalSignature } from "../src/engine/diff";
 import { sha256Hex } from "../src/engine/hash";
+import { revisionDiffView } from "../src/server/revision/diff";
 
 const GUARD = "RUN_DEPLOY_VERIFY";
+
+/**
+ * A preview deployment sits behind Vercel Authentication. When this variable
+ * holds the project's existing automation-bypass secret, every request to the
+ * target origin — and only that origin — carries it as a header. It is the
+ * same variable name the Vercel CLI reads, it is never printed, and production
+ * needs none of it.
+ */
+const BYPASS_ENV = "VERCEL_AUTOMATION_BYPASS_SECRET";
+const BYPASS_HEADER = "x-vercel-protection-bypass";
+/**
+ * A preview also injects the Vercel toolbar, a script from vercel.live that
+ * production never serves. Asking Vercel to skip it keeps the same-origin
+ * checks about this application rather than about the preview's toolbar.
+ */
+const SKIP_TOOLBAR_HEADER = "x-vercel-skip-toolbar";
+
+function bypassSecret(): string | null {
+  const value = process.env[BYPASS_ENV];
+  return value === undefined || value.trim().length === 0 ? null : value.trim();
+}
+
+/** Adds the bypass header to this script's own requests to the target origin. */
+function installFetchBypass(base: string): void {
+  const secret = bypassSecret();
+  if (secret === null) return;
+  const inner = globalThis.fetch;
+  globalThis.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
+    const url = input instanceof Request ? input.url : String(input);
+    if (!url.startsWith(base)) return inner(input, init);
+    const headers = new Headers(init?.headers ?? (input instanceof Request ? input.headers : undefined));
+    headers.set(BYPASS_HEADER, secret);
+    headers.set(SKIP_TOOLBAR_HEADER, "1");
+    return inner(input, { ...init, headers });
+  }) as typeof fetch;
+}
+
+/** A browser context whose requests to the target origin carry the bypass. */
+async function deploymentContext(browser: Browser, base: string): Promise<BrowserContext> {
+  const context = await browser.newContext();
+  const secret = bypassSecret();
+  if (secret !== null) {
+    await context.route(`${base}/**`, (route) =>
+      route.continue({
+        headers: { ...route.request().headers(), [BYPASS_HEADER]: secret, [SKIP_TOOLBAR_HEADER]: "1" },
+      }),
+    );
+  }
+  return context;
+}
 
 type Check = { label: string; ok: boolean; detail: string };
 const checks: Check[] = [];
@@ -252,10 +321,25 @@ async function inContext(
   return { requests, html };
 }
 
+/**
+ * The Vercel preview toolbar's loader. Vercel's build adds it to a client chunk
+ * and activates it on preview deployments only; production never requests it,
+ * and neither the request header nor anything in this repository turns it off.
+ * It is exempted only on a protected preview (the bypass is in use), and only
+ * this exact path — every other foreign request still fails the check.
+ */
+const PREVIEW_TOOLBAR_PREFIX = "https://vercel.live/_next-live/feedback/";
+let previewToolbarExempted = 0;
+
 function foreignRequests(requests: readonly string[], base: string): string[] {
-  return requests.filter(
-    (url) => !url.startsWith(base) && !url.startsWith("data:") && !url.startsWith("blob:"),
-  );
+  return requests.filter((url) => {
+    if (url.startsWith(base) || url.startsWith("data:") || url.startsWith("blob:")) return false;
+    if (bypassSecret() !== null && url.startsWith(PREVIEW_TOOLBAR_PREFIX)) {
+      previewToolbarExempted += 1;
+      return false;
+    }
+    return true;
+  });
 }
 
 async function browserChecks(base: string): Promise<void> {
@@ -265,7 +349,7 @@ async function browserChecks(base: string): Promise<void> {
   let browser: Browser | null = null;
   try {
     browser = await chromium.launch();
-    const ownerContext = await browser.newContext();
+    const ownerContext = await deploymentContext(browser, base);
     let projectUrl: string | null = null;
     let projectId: string | null = null;
 
@@ -324,7 +408,7 @@ async function browserChecks(base: string): Promise<void> {
       );
 
       // A second context with its own empty cookie jar.
-      const strangerContext = await browser.newContext();
+      const strangerContext = await deploymentContext(browser, base);
       const stranger = await inContext(strangerContext, base, async (page) => {
         await page.goto(projectUrl ?? base, { waitUntil: "load" });
         await page
@@ -347,7 +431,7 @@ async function browserChecks(base: string): Promise<void> {
     }
 
     // The saved example, on the deployment, with no database or model call.
-    const playContext = await browser.newContext();
+    const playContext = await deploymentContext(browser, base);
     const played = await inContext(playContext, base, async (page) => {
       await page.goto(`${base}/example`, { waitUntil: "networkidle" });
       await page.getByTestId("choice-core.inspect").click();
@@ -736,7 +820,7 @@ async function phase3BrowserFlow(base: string): Promise<void> {
   let browser: Browser | null = null;
   try {
     browser = await chromium.launch();
-    const context = await browser.newContext();
+    const context = await deploymentContext(browser, base);
     const page = await context.newPage();
     const requests: string[] = [];
     page.on("request", (request) => requests.push(request.url()));
@@ -924,7 +1008,7 @@ async function phase4BrowserFlow(base: string): Promise<void> {
   let browser: Browser | null = null;
   try {
     browser = await chromium.launch();
-    const context = await browser.newContext();
+    const context = await deploymentContext(browser, base);
     const page = await context.newPage();
     let requests: string[] = [];
     page.on("request", (request) => requests.push(request.url()));
@@ -1073,21 +1157,18 @@ async function phase4BrowserFlow(base: string): Promise<void> {
       (await page.getByTestId("version-list").innerText()).replace(/\s+/g, " ").trim().slice(0, 140),
     );
 
-    // ------------------------------------------------- no phase 5 capability
-    const actionable = await page
-      .locator("button, a, [role=button], input, select, textarea")
-      .allInnerTexts();
-    const offending = actionable
-      .map((label) => label.trim().toLowerCase())
-      .filter((label) =>
-        ["revise", "publish", "share", "export", "revoke", "public link", "compare"].some(
-          (banned) => label.includes(banned),
-        ),
-      );
+    // ------------------------------- phase 5 controls on an activated version
+    // Before phase 5 this asserted the opposite. Revision, publication, and
+    // export are offered only once a version has been confirmed current.
+    const offered = await Promise.all(
+      ["revision-panel", "publish-panel", "export-download"].map(
+        async (id) => [id, await page.getByTestId(id).count()] as const,
+      ),
+    );
     record(
-      "no deployed revision, share, publish, export, or compare control exists",
-      offending.length === 0,
-      offending.join(", ") || `${actionable.length} actionable elements checked`,
+      "the activated version offers revision, publication, and offline export",
+      offered.every(([, count]) => count === 1),
+      offered.map(([id, count]) => `${id}:${count}`).join(" "),
     );
 
     // ------------------------------------------------------------ isolation
@@ -1147,7 +1228,7 @@ async function phase4BrowserFlow(base: string): Promise<void> {
     await context.close();
 
     // A genuinely separate browser, with its own empty cookie jar.
-    const stranger = await browser.newContext();
+    const stranger = await deploymentContext(browser, base);
     const strangerPage = await stranger.newPage();
     await strangerPage.goto(`${base}/studio/${projectId}`, { waitUntil: "load" });
     await strangerPage.getByTestId("project-unavailable").waitFor({ timeout: 30_000 });
@@ -1267,6 +1348,896 @@ async function freshServerPersistence(base: string): Promise<void> {
   console.log("  owner cookie, so keep it out of any file that git tracks.");
 }
 
+/* ---------------------------------------------------------------- phase 5 */
+
+const PHASE5_BRIEF = {
+  title: "The Unsigned Receipt",
+  premise:
+    "At a repair-shop counter just before closing, Orla asks for the radio she left for mending last month. You are the clerk on the late shift. Decide what to ask, whether to promise it back, and whether to hand it over.",
+  player_role: "Repair-shop clerk",
+  room: {
+    id: "shop",
+    name: "Repair-shop counter",
+    description: "The blinds are half down. One mended radio waits on the shelf.",
+  },
+  character: { id: "orla", name: "Orla", role: "Customer asking for her radio" },
+  object: {
+    id: "radio",
+    name: "Mended radio",
+    description: "A valve radio, mended last week, with its receipt still unsigned.",
+  },
+  tone: "intimate",
+  cultural_anchor_query: null,
+  forbidden_wording: [],
+};
+
+/** Keys a public snapshot may carry, and nothing else (src/domain/publish.ts). */
+const PUBLIC_SNAPSHOT_KEYS = [
+  "active_slots",
+  "created_at",
+  "identifiers",
+  "provenance",
+  "provenance_included",
+  "scene",
+  "schema",
+  "title",
+  "version_id",
+].sort();
+
+type P5Project = {
+  id: string;
+  revision: number;
+  active_version_id: string | null;
+  pending_version_id: string | null;
+  approved_slots: string[];
+  approvals: { approval_id: string; slot: string; reference_id: string; approved_text: string }[];
+  proposals: {
+    proposal_id: string;
+    slot: string;
+    reference_id: string;
+    idea: string;
+    intended_interaction: string;
+    capture_id: string | null;
+    entity_id: string;
+  }[];
+};
+type P5Playable = {
+  version_id: string;
+  state: string;
+  scene: Scene;
+  diff: RevisionDiffView | null;
+};
+type P5State = {
+  project: P5Project;
+  playable: P5Playable | null;
+  previous_playable: P5Playable | null;
+  versions: {
+    id: string;
+    parent_version_id: string | null;
+    state: string;
+    base_hash: string;
+    module_hashes: Partial<Record<string, string>>;
+    active_slots: string[];
+    revision_label: string | null;
+  }[];
+  publications: { id: string; scene_version_id: string; revoked_at: string | null }[];
+};
+type P5Revision = {
+  outcome: string;
+  project: P5Project;
+  pending_version_id: string | null;
+  diff: RevisionDiffView | null;
+  preview: { ending_id: string; current_text: string; proposed_text: string; preview_hash: string } | null;
+  model_calls: number;
+};
+
+async function p5Call<T>(
+  base: string,
+  path: string,
+  cookie: string | null,
+  body?: unknown,
+  method = "POST",
+): Promise<{ status: number; body: T; text: string }> {
+  const headers: Record<string, string> = {};
+  if (cookie !== null) headers["cookie"] = cookie;
+  if (method !== "GET") {
+    headers["origin"] = base;
+    if (body !== undefined) headers["content-type"] = "application/json";
+  }
+  const response = await fetch(`${base}${path}`, {
+    method,
+    headers,
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  });
+  const text = await response.text();
+  let parsed: unknown = null;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    parsed = null;
+  }
+  return { status: response.status, body: parsed as T, text };
+}
+
+async function p5Session(base: string): Promise<string | null> {
+  const response = await fetch(`${base}/api/session`, {
+    method: "POST",
+    headers: { origin: base, "content-type": "application/json" },
+    body: "{}",
+  });
+  return cookieValue(response);
+}
+
+/**
+ * Builds and advances one compilation until it has no next stage. Returns the
+ * provider calls the controller itself reported, summed across the advances.
+ */
+async function p5Compile(
+  base: string,
+  cookie: string,
+  projectId: string,
+  revision: number,
+): Promise<{ state: string; versionId: string | null; providerCalls: number; maxAttempts: number }> {
+  const started = await p5Call<{ status: CompilationStatus }>(
+    base,
+    `/api/projects/${projectId}/compile`,
+    cookie,
+    { expected_revision: revision },
+  );
+  if (started.status >= 300) throw new Error(`compile ${started.status}: ${started.text.slice(0, 200)}`);
+  let status = started.body.status;
+  let providerCalls = 0;
+  for (let index = 0; index < 12 && status.next_stage !== null; index += 1) {
+    const advanced = await p5Call<{ status: CompilationStatus; model_calls: number }>(
+      base,
+      `/api/operations/${status.operation_id}/advance`,
+      cookie,
+      {},
+    );
+    if (advanced.status >= 300) {
+      throw new Error(`advance ${advanced.status}: ${advanced.text.slice(0, 200)}`);
+    }
+    status = advanced.body.status;
+    providerCalls += advanced.body.model_calls;
+    if (status.state === "FAILED") break;
+  }
+  return {
+    state: status.state,
+    versionId: status.version_id,
+    providerCalls,
+    maxAttempts: Math.max(0, ...status.stages.map((stage) => stage.attempts)),
+  };
+}
+
+async function p5Read(base: string, cookie: string, projectId: string): Promise<P5State> {
+  const read = await p5Call<P5State>(base, `/api/projects/${projectId}`, cookie, undefined, "GET");
+  if (read.status !== 200) throw new Error(`read ${read.status}`);
+  return read.body;
+}
+
+async function p5Activate(
+  base: string,
+  cookie: string,
+  projectId: string,
+  revision: number,
+  versionId: string,
+): Promise<number> {
+  const activated = await p5Call(base, `/api/projects/${projectId}/activate`, cookie, {
+    expected_revision: revision,
+    version_id: versionId,
+  });
+  return activated.status;
+}
+
+/** JSON with object keys sorted, because Postgres `jsonb` does not keep key order. */
+function canonical(value: unknown): string {
+  return JSON.stringify(value, (_key, entry: unknown) =>
+    entry !== null && typeof entry === "object" && !Array.isArray(entry)
+      ? Object.fromEntries(
+          Object.entries(entry as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b)),
+        )
+      : entry,
+  );
+}
+
+/**
+ * The engine's own recomputation of a stored diff, from exactly the inputs the
+ * server had: the two stored scenes, and no id yet for the version being
+ * inserted — the row a diff is stored on is its own "after" version.
+ */
+function sameDiff(stored: RevisionDiffView, before: P5Playable, after: P5Playable): boolean {
+  const recomputed = revisionDiffView({
+    before: { versionId: before.version_id, scene: before.scene },
+    after: { versionId: null, scene: after.scene },
+    changedBy: stored.changed_by,
+  });
+  return recomputed !== null && canonical(recomputed) === canonical(stored);
+}
+
+/**
+ * The deployed Phase 5 loop: revise one idea, compare, publish, revoke, export.
+ *
+ * It drives the real routes over HTTP so every count is the server's own:
+ * provider calls come from each response, hashes from each stored version, and
+ * each diff is recomputed here from the two stored scenes through the same
+ * engine and compared byte for byte with the one the server stored. Then a
+ * genuinely separate browser plays the public link, and a third plays the
+ * exported file from disk with the network blocked.
+ *
+ * It spends real model calls: one proposal draft, one two-slot compilation,
+ * one recompilation per edit or replace, and one ending-wording preview.
+ */
+async function phase5Flow(base: string): Promise<void> {
+  console.log("");
+  console.log("  Deployed phase 5 revision, publication, and export");
+
+  try {
+    const cookie = await p5Session(base);
+    if (cookie === null) {
+      record("phase 5 could establish a session", false, "no cookie");
+      return;
+    }
+
+    // ------------------------------------------- two real approved influences
+    const created = await p5Call<{ project: P5Project }>(base, "/api/projects", cookie, {
+      brief: PHASE5_BRIEF,
+    });
+    const projectId = created.body?.project?.id;
+    if (created.status !== 201 || projectId === undefined) {
+      record("phase 5 could create a project", false, `status ${created.status}`);
+      return;
+    }
+    const searched = await p5Call<{
+      search: { capture_id: string | null; candidates: { entity_id: string; name: string }[] };
+      project: P5Project;
+    }>(base, `/api/projects/${projectId}/artist-search`, cookie, { query: "Radiohead" });
+    const candidate = searched.body.search.candidates.find(
+      (entry) => entry.name.toLowerCase() === "radiohead",
+    );
+    if (candidate === undefined) {
+      record("phase 5 could confirm the canonical artist", false, `status ${searched.status}`);
+      return;
+    }
+    const anchored = await p5Call<{ project: P5Project }>(
+      base,
+      `/api/projects/${projectId}/anchor`,
+      cookie,
+      {
+        expected_revision: searched.body.project.revision,
+        search_capture_id: searched.body.search.capture_id,
+        entity_id: candidate.entity_id,
+      },
+      "PUT",
+    );
+    const retrieved = await p5Call<{ project: P5Project }>(
+      base,
+      `/api/projects/${projectId}/references`,
+      cookie,
+      { expected_revision: anchored.body.project.revision },
+    );
+    const proposed = await p5Call<{ project: P5Project; model_calls: number }>(
+      base,
+      `/api/projects/${projectId}/proposals`,
+      cookie,
+      { expected_revision: retrieved.body.project.revision },
+    );
+    if (proposed.status !== 200) {
+      record("phase 5 received a proposal draft", false, `status ${proposed.status}`);
+      return;
+    }
+    const draft = proposed.body.project.proposals;
+    const pick = (slot: string) => draft.find((entry) => entry.slot === slot);
+    const firstDiscovery = pick("discovery");
+    const firstCommitment = pick("commitment");
+    if (firstDiscovery === undefined || firstCommitment === undefined) {
+      record(
+        "the draft offers a proposal for each slot",
+        false,
+        draft.map((entry) => entry.slot).join(",") || "empty",
+      );
+      return;
+    }
+    let revision = proposed.body.project.revision;
+    for (const chosen of [firstDiscovery, firstCommitment]) {
+      const decided = await p5Call<{ project: P5Project }>(
+        base,
+        `/api/projects/${projectId}/decisions`,
+        cookie,
+        { expected_revision: revision, kind: "accept", proposal_id: chosen.proposal_id },
+      );
+      revision = decided.body.project.revision;
+    }
+
+    const first = await p5Compile(base, cookie, projectId, revision);
+    let state = await p5Read(base, cookie, projectId);
+    record(
+      "a fresh two-influence scene compiles on the deployment",
+      first.state !== "FAILED" && first.versionId !== null &&
+        state.project.pending_version_id === first.versionId,
+      `${first.providerCalls} provider calls, state ${first.state}`,
+    );
+    if (first.versionId === null) return;
+    await p5Activate(base, cookie, projectId, state.project.revision, first.versionId);
+    state = await p5Read(base, cookie, projectId);
+    const v1 = state.playable;
+    const v1Summary = state.versions.find((entry) => entry.id === first.versionId);
+    if (v1 === null || v1Summary === undefined) {
+      record("the first version became active", false, "no active playable");
+      return;
+    }
+    const v1Sorted = [...v1Summary.active_slots].sort().join("+");
+    record(
+      "the first version is active with both influences",
+      state.project.active_version_id === first.versionId && v1Sorted === "commitment+discovery",
+      v1Sorted,
+    );
+
+    // ----------------------------------------------- edit one interpretation
+    const editText =
+      "Reading the receipt aloud reveals a second signature, and she will not take the radio until that name is said.";
+    const edited = await p5Call<P5Revision>(base, `/api/projects/${projectId}/revisions`, cookie, {
+      expected_revision: state.project.revision,
+      kind: "edit",
+      slot: "discovery",
+      approved_text: editText,
+      intended_effect: "Asking about the signature opens a question the clerk can then put to her.",
+    });
+    record(
+      "an arbitrary interpretation edit records one approval and makes no provider call",
+      edited.status === 200 &&
+        edited.body.outcome === "requires_compilation" &&
+        edited.body.model_calls === 0 &&
+        state.project.active_version_id === edited.body.project.active_version_id,
+      `${edited.status} ${edited.body?.outcome ?? edited.text.slice(0, 120)}, calls ${edited.body?.model_calls}`,
+    );
+    const second = await p5Compile(base, cookie, projectId, edited.body.project.revision);
+    state = await p5Read(base, cookie, projectId);
+    const v2Summary = state.versions.find((entry) => entry.id === second.versionId);
+    record(
+      "the edit recompiles only its own slot, with exactly one provider call",
+      second.state !== "FAILED" && second.providerCalls === 1,
+      `${second.providerCalls} provider call(s), state ${second.state}, max attempts ${second.maxAttempts}`,
+    );
+    record(
+      "the base and the other slot's module hashes are identical; the edited slot's is not",
+      v2Summary !== undefined &&
+        v2Summary.base_hash === v1Summary.base_hash &&
+        v2Summary.module_hashes["commitment"] === v1Summary.module_hashes["commitment"] &&
+        v2Summary.module_hashes["discovery"] !== v1Summary.module_hashes["discovery"],
+      v2Summary === undefined
+        ? "no second version"
+        : `base ${v2Summary.base_hash.slice(0, 10)}=${v1Summary.base_hash.slice(0, 10)}, commitment ${String(
+            v2Summary.module_hashes["commitment"] === v1Summary.module_hashes["commitment"],
+          )}`,
+    );
+    const pendingV2 = state.playable;
+    record(
+      "the edited version's stored diff names discovery and preserves world, core, and commitment",
+      pendingV2 !== null &&
+        pendingV2.diff !== null &&
+        pendingV2.diff.changed_slots.join(",") === "discovery" &&
+        pendingV2.diff.unchanged.world &&
+        pendingV2.diff.unchanged.core &&
+        pendingV2.diff.unchanged.modules["commitment"] === true,
+      pendingV2?.diff === null || pendingV2 === null
+        ? "no diff"
+        : `label ${pendingV2.diff.label}, mechanical ${pendingV2.diff.mechanical_change}`,
+    );
+    record(
+      "and that stored diff is exactly what the engine recomputes from the two stored scenes",
+      pendingV2 !== null && pendingV2.diff !== null && sameDiff(pendingV2.diff, v1, pendingV2),
+      "deterministic, byte-identical",
+    );
+    record(
+      "the previous version is untouched and still active while the edit awaits review",
+      state.project.active_version_id === first.versionId &&
+        state.playable?.version_id === second.versionId,
+      `active ${state.project.active_version_id?.slice(0, 8)}…, pending ${second.versionId?.slice(0, 8)}…`,
+    );
+    if (second.versionId === null || pendingV2 === null) return;
+    await p5Activate(base, cookie, projectId, state.project.revision, second.versionId);
+    state = await p5Read(base, cookie, projectId);
+    const v2 = state.playable as P5Playable;
+    record(
+      "the previous version stays playable beside the current one",
+      state.previous_playable?.version_id === first.versionId &&
+        state.versions.some((entry) => entry.id === first.versionId),
+      `${state.versions.length} versions listed`,
+    );
+
+    // --------------------------------- publish this version, before revising on
+    const previewed = await p5Call<{ snapshot: Record<string, unknown>; snapshot_hash: string }>(
+      base,
+      `/api/projects/${projectId}/publish`,
+      cookie,
+      {
+        expected_revision: state.project.revision,
+        version_id: v2.version_id,
+        include_provenance: true,
+        preview: true,
+      },
+    );
+    const afterPreview = await p5Read(base, cookie, projectId);
+    record(
+      "a publication preview returns the document and publishes nothing",
+      previewed.status === 200 && afterPreview.publications.length === 0,
+      `status ${previewed.status}, ${afterPreview.publications.length} publications`,
+    );
+    const wrongHash = await p5Call(base, `/api/projects/${projectId}/publish`, cookie, {
+      expected_revision: state.project.revision,
+      version_id: v2.version_id,
+      include_provenance: false,
+      preview: false,
+      snapshot_hash: previewed.body.snapshot_hash,
+    });
+    record(
+      "publishing a document other than the previewed one is refused",
+      wrongHash.status >= 400 && wrongHash.status < 500,
+      `status ${wrongHash.status}`,
+    );
+    const stranger = await p5Session(base);
+    const strangerPublish = await p5Call(base, `/api/projects/${projectId}/publish`, stranger, {
+      expected_revision: state.project.revision,
+      version_id: v2.version_id,
+      include_provenance: true,
+      preview: true,
+    });
+    record("another session cannot preview or publish this project", strangerPublish.status === 404, `status ${strangerPublish.status}`);
+    const published = await p5Call<{
+      play_path: string;
+      publication: { id: string; scene_version_id: string };
+    }>(base, `/api/projects/${projectId}/publish`, cookie, {
+      expected_revision: state.project.revision,
+      version_id: v2.version_id,
+      include_provenance: true,
+      preview: false,
+      snapshot_hash: previewed.body.snapshot_hash,
+    });
+    const playPath = published.body?.play_path ?? "";
+    const token = playPath.split("/").pop() ?? "";
+    record(
+      "publishing the previewed version returns a version-pinned read link once",
+      published.status === 201 &&
+        published.body.publication.scene_version_id === v2.version_id &&
+        /^\/play\/[A-Za-z0-9_-]{43}$/.test(playPath),
+      `status ${published.status}, path /play/<${token.length}-character token>`,
+    );
+    const publicationId = published.body?.publication?.id ?? "";
+
+    // ----------------------------------------------- replace one influence
+    state = await p5Read(base, cookie, projectId);
+    const currentCommitment = state.project.approvals.find((entry) => entry.slot === "commitment");
+    const alternative = state.project.proposals.find(
+      (entry) => entry.slot === "commitment" && entry.reference_id !== currentCommitment?.reference_id,
+    );
+    if (alternative === undefined) {
+      record(
+        "the draft offers a different commitment reference to replace with",
+        false,
+        "no alternative commitment proposal in the current draft",
+      );
+    } else {
+      const replaced = await p5Call<P5Revision>(base, `/api/projects/${projectId}/revisions`, cookie, {
+        expected_revision: state.project.revision,
+        kind: "replace",
+        slot: "commitment",
+        proposal_id: alternative.proposal_id,
+      });
+      const third = await p5Compile(base, cookie, projectId, replaced.body.project.revision);
+      state = await p5Read(base, cookie, projectId);
+      const v3Summary = state.versions.find((entry) => entry.id === third.versionId);
+      const v2Summary2 = state.versions.find((entry) => entry.id === v2.version_id);
+      record(
+        "replacing one influence makes no call itself and recompiles that slot with one call",
+        replaced.status === 200 &&
+          replaced.body.model_calls === 0 &&
+          third.state !== "FAILED" &&
+          third.providerCalls === 1,
+        `${replaced.status} ${replaced.body?.outcome}, then ${third.providerCalls} provider call(s)`,
+      );
+      record(
+        "the base and the discovery module are untouched by the replacement",
+        v3Summary !== undefined &&
+          v2Summary2 !== undefined &&
+          v3Summary.base_hash === v2Summary2.base_hash &&
+          v3Summary.module_hashes["discovery"] === v2Summary2.module_hashes["discovery"] &&
+          v3Summary.module_hashes["commitment"] !== v2Summary2.module_hashes["commitment"],
+        v3Summary === undefined ? "no third version" : `label ${v3Summary.revision_label}`,
+      );
+      if (third.versionId !== null && state.playable !== null) {
+        record(
+          "the replacement's stored diff is exactly the engine's recomputation",
+          state.playable.diff !== null && sameDiff(state.playable.diff, v2, state.playable),
+          `changed ${state.playable.diff?.changed_slots.join(",")}`,
+        );
+        await p5Activate(base, cookie, projectId, state.project.revision, third.versionId);
+        state = await p5Read(base, cookie, projectId);
+      }
+    }
+
+    // ------------------------------------ ending wording, previewed then applied
+    const beforeCopy = state.playable as P5Playable;
+    const previewCopy = await p5Call<P5Revision>(base, `/api/projects/${projectId}/revisions`, cookie, {
+      expected_revision: state.project.revision,
+      kind: "ending_copy_preview",
+      ending_id: "end.give",
+      request: "Make this ending kinder to her.",
+    });
+    const afterPreviewCopy = await p5Read(base, cookie, projectId);
+    const previewBody = previewCopy.body?.preview;
+    record(
+      "an ending rewrite is previewed with one text-only provider call and applies nothing",
+      previewCopy.status === 200 &&
+        previewCopy.body.outcome === "preview" &&
+        previewCopy.body.model_calls === 1 &&
+        previewBody !== null &&
+        previewBody !== undefined &&
+        afterPreviewCopy.project.active_version_id === beforeCopy.version_id &&
+        afterPreviewCopy.project.pending_version_id === null,
+      `${previewCopy.status} ${previewCopy.body?.outcome ?? previewCopy.text.slice(0, 160)}`,
+    );
+    if (previewBody !== null && previewBody !== undefined) {
+      const forged = await p5Call(base, `/api/projects/${projectId}/revisions`, cookie, {
+        expected_revision: afterPreviewCopy.project.revision,
+        kind: "ending_copy_apply",
+        ending_id: "end.give",
+        // Valid wording that is not the previewed wording.
+        text:
+          previewBody.proposed_text.length < 1100
+            ? `${previewBody.proposed_text} And the gate opens.`
+            : previewBody.proposed_text.slice(0, -1),
+        preview_hash: previewBody.preview_hash,
+      });
+      record(
+        "applying wording other than the previewed text is refused",
+        forged.status >= 400 && forged.status < 500 && forged.text.includes("PREVIEW_MISMATCH"),
+        `status ${forged.status}`,
+      );
+      const applied = await p5Call<P5Revision>(base, `/api/projects/${projectId}/revisions`, cookie, {
+        expected_revision: afterPreviewCopy.project.revision,
+        kind: "ending_copy_apply",
+        ending_id: "end.give",
+        text: previewBody.proposed_text,
+        preview_hash: previewBody.preview_hash,
+      });
+      const copyDiff = applied.body?.diff;
+      record(
+        "the explicit apply composes a version with no provider call, labelled wording",
+        applied.status === 200 &&
+          applied.body.outcome === "version_pending" &&
+          applied.body.model_calls === 0 &&
+          copyDiff !== null &&
+          copyDiff !== undefined &&
+          copyDiff.label === "wording" &&
+          copyDiff.mechanical_change === false &&
+          copyDiff.structure_identical,
+        `${applied.status} ${applied.body?.outcome ?? applied.text.slice(0, 160)}, label ${copyDiff?.label}`,
+      );
+      state = await p5Read(base, cookie, projectId);
+      const copied = state.playable;
+      // An applied wording is an override beside the base ending, never an edit
+      // of the base ending itself, so the base text stays byte-identical.
+      const overrides = copied?.scene.ending_copy_overrides ?? [];
+      record(
+        "only that one ending's wording changed, as an override, with mechanics identical",
+        copied !== null &&
+          beforeCopy.scene.ending_copy_overrides.length === 0 &&
+          overrides.length === 1 &&
+          overrides[0]?.ending_id === "end.give" &&
+          overrides[0]?.text === previewBody.proposed_text &&
+          canonical(copied.scene.core.endings) === canonical(beforeCopy.scene.core.endings) &&
+          canonical(mechanicalSignature(copied.scene)) ===
+            canonical(mechanicalSignature(beforeCopy.scene)),
+        `${overrides.length} override(s), base endings and mechanical signature identical`,
+      );
+      if (copied !== null && applied.body.pending_version_id !== null) {
+        record(
+          "the wording diff is exactly the engine's recomputation",
+          copied.diff !== null && sameDiff(copied.diff, beforeCopy, copied),
+          `summary: ${copied.diff?.summary[0] ?? "none"}`,
+        );
+        await p5Activate(base, cookie, projectId, state.project.revision, applied.body.pending_version_id);
+        state = await p5Read(base, cookie, projectId);
+      }
+    }
+
+    // -------------------------------------------------- remove one influence
+    const beforeRemove = state.playable as P5Playable;
+    const beforeRemoveSummary = state.versions.find((entry) => entry.id === beforeRemove.version_id);
+    const removed = await p5Call<P5Revision>(base, `/api/projects/${projectId}/revisions`, cookie, {
+      expected_revision: state.project.revision,
+      kind: "remove",
+      slot: "discovery",
+    });
+    state = await p5Read(base, cookie, projectId);
+    const afterRemove = state.playable;
+    const removedSummary = state.versions.find((entry) => entry.id === removed.body?.pending_version_id);
+    record(
+      "removing an influence composes a validated version with zero provider calls",
+      removed.status === 200 &&
+        removed.body.outcome === "version_pending" &&
+        removed.body.model_calls === 0 &&
+        removedSummary !== undefined &&
+        removedSummary.active_slots.join(",") === "commitment",
+      `${removed.status} ${removed.body?.outcome ?? removed.text.slice(0, 160)}, calls ${removed.body?.model_calls}`,
+    );
+    record(
+      "the removal preserves the base and the remaining module, and keeps the applied wording",
+      removedSummary !== undefined &&
+        beforeRemoveSummary !== undefined &&
+        removedSummary.base_hash === beforeRemoveSummary.base_hash &&
+        removedSummary.module_hashes["commitment"] === beforeRemoveSummary.module_hashes["commitment"] &&
+        removedSummary.module_hashes["discovery"] === undefined &&
+        afterRemove !== null &&
+        beforeRemove.scene.ending_copy_overrides.length === 1 &&
+        canonical(afterRemove.scene.ending_copy_overrides) ===
+          canonical(beforeRemove.scene.ending_copy_overrides),
+      `label ${afterRemove?.diff?.label ?? "none"}, mechanical ${afterRemove?.diff?.mechanical_change}`,
+    );
+    record(
+      "the removal's stored diff is exactly the engine's recomputation",
+      afterRemove !== null && afterRemove.diff !== null && sameDiff(afterRemove.diff, beforeRemove, afterRemove),
+      `removed ${afterRemove?.diff?.removed_action_ids.length ?? 0} action(s)`,
+    );
+    if (removed.body?.pending_version_id) {
+      await p5Activate(base, cookie, projectId, state.project.revision, removed.body.pending_version_id);
+      state = await p5Read(base, cookie, projectId);
+    }
+
+    // ------------------------------------------------ immutable version history
+    const history = state.versions;
+    const historyAgain = (await p5Read(base, cookie, projectId)).versions;
+    record(
+      "every version is still listed, linked to its parent, and reads back identically",
+      history.length >= 4 &&
+        history.some((entry) => entry.id === first.versionId) &&
+        history.filter((entry) => entry.parent_version_id !== null).length === history.length - 1 &&
+        JSON.stringify(history) === JSON.stringify(historyAgain),
+      history.map((entry) => `${entry.id.slice(0, 6)}:${entry.revision_label ?? "first"}`).join(" "),
+    );
+
+    // ---------------------------------------- the public link, from a stranger
+    const publicRead = await p5Call<{ snapshot: Record<string, unknown>; published_at: string }>(
+      base,
+      `/api/public/${token}`,
+      null,
+      undefined,
+      "GET",
+    );
+    const snapshot = publicRead.body?.snapshot ?? {};
+    record(
+      "the public link still plays the version it was published from, after four more revisions",
+      publicRead.status === 200 && snapshot["version_id"] === v2.version_id,
+      `status ${publicRead.status}, version ${String(snapshot["version_id"]).slice(0, 8)}…`,
+    );
+    record(
+      "the public payload carries exactly the whitelisted keys",
+      JSON.stringify(Object.keys(snapshot).sort()) === JSON.stringify(PUBLIC_SNAPSHOT_KEYS) &&
+        JSON.stringify(Object.keys(publicRead.body ?? {}).sort()) ===
+          JSON.stringify(["published_at", "snapshot"]),
+      Object.keys(snapshot).sort().join(","),
+    );
+    const unapproved = draft
+      .filter(
+        (entry) =>
+          entry.proposal_id !== firstDiscovery.proposal_id &&
+          entry.proposal_id !== firstCommitment.proposal_id,
+      )
+      .map((entry) => entry.idea);
+    const privateMarkers = [
+      projectId,
+      PHASE5_BRIEF.premise,
+      "Radiohead",
+      cookie.split("=")[1] ?? "fp_owner",
+      ...draft.flatMap((entry) => [entry.capture_id ?? "", entry.entity_id]),
+      ...unapproved,
+    ].filter((marker) => marker.length > 0);
+    const leakedPrivate = privateMarkers.filter((marker) => publicRead.text.includes(marker));
+    const leakedShapes = CREDENTIAL_SHAPES.filter((shape) => shape.pattern.test(publicRead.text));
+    record(
+      "no project id, brief, artist, owner cookie, capture, entity id, or unapproved idea is public",
+      leakedPrivate.length === 0 && leakedShapes.length === 0,
+      leakedPrivate.length === 0
+        ? `${privateMarkers.length} private markers checked, ${unapproved.length} unapproved ideas`
+        : `${leakedPrivate.length} leaked`,
+    );
+    let browser: Browser | null = null;
+    try {
+      browser = await chromium.launch();
+      const viewer = await deploymentContext(browser, base);
+      const page = await viewer.newPage();
+      const requests: string[] = [];
+      page.on("request", (request) => requests.push(request.url()));
+      await page.goto(`${base}${playPath}`, { waitUntil: "load" });
+      await page.getByTestId("public-player").waitFor({ timeout: 30_000 });
+      const loadedVersion = (await page.getByTestId("public-version-id").innerText()).trim();
+      const beforePlay = requests.length;
+      let ended = false;
+      for (let stepIndex = 0; stepIndex < 14 && !ended; stepIndex += 1) {
+        const enabled = page.locator('[data-testid^="public-choice-"]:not([disabled])');
+        if ((await enabled.count()) === 0) break;
+        await enabled.first().click();
+        ended = (await page.getByTestId("public-ending").count()) === 1;
+      }
+      const playRequests = requests.slice(beforePlay);
+      record(
+        "a fresh browser with no session plays the shared version to an ending, read-only",
+        loadedVersion === v2.version_id && ended && playRequests.length === 0,
+        `ended ${ended}, ${playRequests.length} requests during play`,
+      );
+      const actionable = (await page.locator("button, a, input, select, textarea").allInnerTexts())
+        .join(" ")
+        .toLowerCase();
+      const owned = ["publish", "revoke", "withdraw", "export", "download", "remove this influence", "build"]
+        .filter((word) => actionable.includes(word));
+      const robots = await page.locator('meta[name="robots"]').getAttribute("content");
+      const shareHtml = await page.content();
+      record(
+        "the shared page offers no owner control, is noindex, and renders nothing private",
+        owned.length === 0 &&
+          (robots ?? "").includes("noindex") &&
+          privateMarkers.every((marker) => !shareHtml.includes(marker)),
+        owned.join(",") || `robots "${robots}"`,
+      );
+      const upstream = requests.filter((url) => /qloo\.com|api\.openai\.com|supabase\.(co|in)/i.test(url));
+      record(
+        "the shared page reached no provider and no foreign origin",
+        upstream.length === 0 && foreignRequests(requests, base).length === 0,
+        foreignRequests(requests, base).join(", ") || "same-origin only",
+      );
+      await viewer.close();
+
+      // ----------------------------------------------------------- revocation
+      const strangerRevoke = await p5Call(base, `/api/publications/${publicationId}`, stranger, undefined, "DELETE");
+      record("another session cannot revoke the link", strangerRevoke.status === 404, `status ${strangerRevoke.status}`);
+      const revoked = await p5Call<{ outcome: string }>(
+        base,
+        `/api/publications/${publicationId}`,
+        cookie,
+        undefined,
+        "DELETE",
+      );
+      const afterRevoke = await p5Call(base, `/api/public/${token}`, null, undefined, "GET");
+      const unknown = await p5Call(base, `/api/public/${"A".repeat(43)}`, null, undefined, "GET");
+      const strip = (text: string) => text.replace(/"request_id":"[^"]+"/, "");
+      record(
+        "revoking stops the token on the very next read, indistinguishable from an unknown one",
+        revoked.status === 200 &&
+          revoked.body.outcome === "revoked" &&
+          afterRevoke.status === 404 &&
+          unknown.status === 404 &&
+          strip(afterRevoke.text) === strip(unknown.text),
+        `revoke ${revoked.status}, next read ${afterRevoke.status}`,
+      );
+      const again = await p5Call<{ outcome: string }>(base, `/api/publications/${publicationId}`, cookie, undefined, "DELETE");
+      record("revoking twice is idempotent", again.status === 200 && again.body.outcome === "already_revoked", again.body?.outcome ?? `${again.status}`);
+      const fresh = await deploymentContext(browser, base);
+      const freshPage = await fresh.newPage();
+      await freshPage.goto(`${base}${playPath}`, { waitUntil: "load" });
+      // Wait for either outcome, so a link that still plays is recorded as a
+      // failure here rather than ending the checks that follow.
+      await freshPage
+        .getByTestId("public-unavailable")
+        .or(freshPage.getByTestId("public-player"))
+        .waitFor({ timeout: 30_000 });
+      record(
+        "a fresh browser opening the revoked link sees the clean unavailable screen",
+        (await freshPage.getByTestId("public-unavailable").count()) === 1 &&
+          (await freshPage.getByTestId("public-player").count()) === 0,
+        (await freshPage.getByTestId("public-unavailable").count()) === 1
+          ? "public-unavailable shown"
+          : "the revoked link still played",
+      );
+      await fresh.close();
+
+      // ------------------------------------------------------- offline export
+      const activeId = state.project.active_version_id ?? "";
+      const exported = await fetch(`${base}/api/projects/${projectId}/export?version=${activeId}`, {
+        headers: { cookie },
+      });
+      const exportHtml = await exported.text();
+      const strangerExport = await p5Call(base, `/api/projects/${projectId}/export?version=${activeId}`, stranger, undefined, "GET");
+      const anonymousExport = await p5Call(base, `/api/projects/${projectId}/export?version=${activeId}`, null, undefined, "GET");
+      record(
+        "the export is an owner-only attachment",
+        exported.status === 200 &&
+          (exported.headers.get("content-disposition") ?? "").startsWith("attachment") &&
+          strangerExport.status === 404 &&
+          anonymousExport.status === 401,
+        `owner ${exported.status}, stranger ${strangerExport.status}, anonymous ${anonymousExport.status}`,
+      );
+      const exportLeaks = [
+        ...privateMarkers.filter((marker) => exportHtml.includes(marker)),
+        ...CREDENTIAL_SHAPES.filter((shape) => shape.pattern.test(exportHtml)).map((shape) => shape.name),
+      ];
+      const externalRefs = [...exportHtml.matchAll(/(?:src|href)\s*=\s*["']?(https?:|\/\/)/gi)].length;
+      record(
+        "the exported bytes carry no private data, credential, provider host, or external reference",
+        exportLeaks.length === 0 &&
+          externalRefs === 0 &&
+          !/qloo|openai|supabase/i.test(exportHtml),
+        exportLeaks.length === 0 ? `${exportHtml.length} bytes clean` : `${exportLeaks.length} leaked`,
+      );
+      const directory = mkdtempSync(join(tmpdir(), "fp-deployed-export-"));
+      const file = join(directory, "exported.html");
+      writeFileSync(file, exportHtml, "utf8");
+      const offline = await browser.newContext({ offline: true });
+      const offlinePage = await offline.newPage();
+      const blocked: string[] = [];
+      await offlinePage.route(/^(https?|wss?):/, async (route) => {
+        blocked.push(route.request().url());
+        await route.abort();
+      });
+      const violations: string[] = [];
+      offlinePage.on("console", (message) => {
+        if (/Content Security Policy|Refused to/i.test(message.text())) violations.push(message.text());
+      });
+      await offlinePage.goto(pathToFileURL(file).href);
+      await offlinePage.locator(".fp-choices").waitFor({ timeout: 15_000 });
+      let offlineEnded = false;
+      for (let stepIndex = 0; stepIndex < 14 && !offlineEnded; stepIndex += 1) {
+        const enabled = offlinePage.locator(".fp-choice:not(.fp-choice-locked):not([disabled])");
+        if ((await enabled.count()) === 0) break;
+        await enabled.first().click();
+        offlineEnded = (await offlinePage.locator(".fp-ending").count()) > 0;
+      }
+      // At an ending the player offers "Play it again"; mid-scene, "Start over".
+      await offlinePage
+        .locator("button", { hasText: offlineEnded ? "Play it again" : "Start over" })
+        .first()
+        .click();
+      const resetTranscript = await offlinePage.locator(".fp-transcript li").count();
+      const resetChoices = await offlinePage.locator(".fp-choice").count();
+      record(
+        "the exported file plays from file:// to an ending and resets, with the network offline",
+        offlineEnded && resetTranscript === 0 && resetChoices > 0,
+        `ended ${offlineEnded}, transcript after reset ${resetTranscript}, ${resetChoices} choices offered`,
+      );
+      record(
+        "and it requested nothing at all — no OpenAI, Qloo, Supabase, or any other host",
+        blocked.length === 0 && violations.length === 0,
+        blocked.join(", ") || `0 requests, ${violations.length} policy violations`,
+      );
+      await offline.close();
+
+      // ------------------------------------------------ the owner's studio
+      const studio = await deploymentContext(browser, base);
+      const ownerValue = cookie.slice("fp_owner=".length);
+      await studio.addCookies([{ name: "fp_owner", value: ownerValue, url: base, httpOnly: true, secure: true }]);
+      const studioPage = await studio.newPage();
+      await studioPage.goto(`${base}/studio/${projectId}`, { waitUntil: "load" });
+      await studioPage.getByTestId("version-compare").waitFor({ timeout: 60_000 });
+      const panels = await Promise.all(
+        ["revision-panel", "version-compare", "publish-panel", "export-download", "publication-list"].map(
+          async (id) => [id, await studioPage.getByTestId(id).count()] as const,
+        ),
+      );
+      record(
+        "the owner's studio shows revision, comparison, the withdrawn link, and export",
+        panels.every(([, count]) => count === 1) &&
+          (await studioPage.getByTestId("publication-list").innerText()).toLowerCase().includes("withdrawn"),
+        panels.map(([id, count]) => `${id}:${count}`).join(" "),
+      );
+      await studio.close();
+    } finally {
+      await browser?.close();
+    }
+  } catch (error) {
+    record(
+      "the deployed phase 5 workflow completed",
+      false,
+      error instanceof Error
+        ? // A bare "fetch failed" hides the transport reason, which is in `cause`.
+          `${error.name}: ${error.message.slice(0, 300)}${
+            error.cause instanceof Error
+              ? ` (cause: ${(error.cause as { code?: string }).code ?? error.cause.name}: ${error.cause.message.slice(0, 160)})`
+              : ""
+          }`
+        : "unknown",
+    );
+  }
+}
+
 async function main(): Promise<void> {
   if (process.env[GUARD] !== "1") {
     console.log(
@@ -1289,9 +2260,11 @@ async function main(): Promise<void> {
     return;
   }
   const base = raw.trim().replace(/\/+$/, "");
+  installFetchBypass(base);
 
   console.log("verify:deployment");
   console.log(`  target            ${base}`);
+  console.log(`  protection bypass ${bypassSecret() === null ? "not used" : "sent to the target origin only"}`);
   console.log("");
 
   const landing = await fetch(`${base}/`);
@@ -1307,11 +2280,17 @@ async function main(): Promise<void> {
   await browserChecks(base);
   await phase3BrowserFlow(base);
   await phase4BrowserFlow(base);
+  await phase5Flow(base);
   await freshServerPersistence(base);
   await clientBundleScan(base);
 
   const failed = checks.filter((check) => !check.ok).length;
   console.log("");
+  if (previewToolbarExempted > 0) {
+    console.log(
+      `  note: ${previewToolbarExempted} request(s) to the Vercel preview toolbar (${PREVIEW_TOOLBAR_PREFIX}) were exempted from the same-origin checks; production is checked without this exemption`,
+    );
+  }
   console.log(
     failed === 0
       ? `verify:deployment OK — ${checks.length} checks passed`

@@ -247,6 +247,53 @@ export function buildModuleCompilationPayload(
   };
 }
 
+/* ------------------------------------------------ the ending-copy payload */
+
+/**
+ * One ending-copy stage's whole payload (specification section 9).
+ *
+ * Three parameters, and the consequence is the point: the frozen brief, one
+ * ending's own wording, and the creator's request. There is no parameter for an
+ * influence module, a cultural reference, an evidence excerpt, a proposal
+ * accepted or dismissed, a composed scene, another ending, or a transcript. So
+ * a copy operation cannot become an unowned path through which retained
+ * cultural module text survives a rejection — not because this function filters
+ * such text out, but because no argument carries any.
+ *
+ * `base_text` and `current_text` are both sent because they answer different
+ * questions: what the encounter originally said, and what the creator is
+ * actually looking at now after any earlier edit of their own.
+ */
+export type EndingCopyPayload = {
+  readonly stage: "ending_copy";
+  readonly brief: BriefForCompiler;
+  readonly ending: {
+    id: string;
+    title: string;
+    base_text: string;
+    current_text: string;
+  };
+  readonly request: string;
+};
+
+export function buildEndingCopyPayload(
+  brief: Brief,
+  ending: { id: string; title: string; baseText: string; currentText: string },
+  request: string,
+): EndingCopyPayload {
+  return {
+    stage: "ending_copy",
+    brief: toBriefForCompiler(brief),
+    ending: {
+      id: ending.id,
+      title: ending.title,
+      base_text: ending.baseText,
+      current_text: ending.currentText,
+    },
+    request,
+  };
+}
+
 /* ----------------------------------------------------- the repair payload */
 
 /**

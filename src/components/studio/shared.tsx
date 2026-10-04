@@ -55,7 +55,7 @@ function asFailure(status: number, body: unknown): RequestFailure {
 
 async function send<T>(
   path: string,
-  method: "GET" | "POST" | "PUT",
+  method: "GET" | "POST" | "PUT" | "DELETE",
   body?: unknown,
 ): Promise<RequestResult<T>> {
   let response: Response;
@@ -94,6 +94,17 @@ export function putJson<T>(path: string, body: unknown): Promise<RequestResult<T
 
 export function getJson<T>(path: string): Promise<RequestResult<T>> {
   return send<T>(path, "GET");
+}
+
+/**
+ * The one mutating request with no body: owner-only revocation.
+ *
+ * It still goes through this client, so it still carries the browser's `Origin`
+ * header and the same-origin credential rule rather than being a bare `fetch`
+ * somewhere in a component.
+ */
+export function deleteJson<T>(path: string): Promise<RequestResult<T>> {
+  return send<T>(path, "DELETE");
 }
 
 /**

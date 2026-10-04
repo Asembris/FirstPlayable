@@ -22,7 +22,12 @@ import {
   readProjectViewForOwner,
   toProjectView,
 } from "../db/projects";
-import { listVersionSummaries, readPlayableForProject } from "../db/versions";
+import {
+  listVersionSummaries,
+  PUBLICATION_LIST_LIMIT,
+  readPlayableForProject,
+  readPreviousPlayable,
+} from "../db/versions";
 import { referencesViewFromProject } from "./qloo";
 import { refreshOwnerActivity, requireOwnerSession } from "../db/sessions";
 import { appErrors, errorResponse, newRequestId } from "../security/errors";
@@ -34,6 +39,7 @@ import {
 } from "../security/request";
 import { readOwnerSecret } from "../security/session";
 import type { PlayableView, SceneVersionSummary } from "@/domain/compile";
+import { type PublicationSummary, PublicationSummarySchema } from "@/domain/publish";
 import type { RouteDeps } from "./deps";
 
 const ProjectIdSchema = z.uuid();
@@ -100,15 +106,52 @@ export async function handleReadProject(
     // every subsequent choice and reset run locally through the Phase 1
     // engine, with no further request of any kind.
     const playable = await readPlayableForProject(gateway, session, row);
+    // Phase 5 adds the version this one revised, so the previous/current
+    // switch and the same-choices replay run locally too, and the project's
+    // share links, so the publish panel can show and revoke them.
+    const previous = await readPreviousPlayable(gateway, session, row, playable);
     const versions =
       row.active_version_id === null && row.pending_version_id === null
         ? []
         : await listVersionSummaries(gateway, session, row);
+    const publications = await listPublications(gateway, session, row.id);
 
-    return json(project, requestId, 200, references, playable, versions);
+    return json(
+      project,
+      requestId,
+      200,
+      references,
+      playable,
+      previous,
+      versions,
+      publications,
+    );
   } catch (error) {
     return errorResponse(error, requestId);
   }
+}
+
+/**
+ * The owner's share links for one project.
+ *
+ * It carries no read token: only the token's hash is stored, and the plaintext
+ * was returned exactly once, by the publish that created it.
+ */
+async function listPublications(
+  gateway: ReturnType<RouteDeps["gateway"]>,
+  session: { id: string },
+  projectId: string,
+): Promise<PublicationSummary[]> {
+  const read = await gateway.readPublicationsForOwner(
+    projectId,
+    session.id,
+    PUBLICATION_LIST_LIMIT,
+  );
+  if (read.outcome !== "read") return [];
+  return read.publications.flatMap((row) => {
+    const parsed = PublicationSummarySchema.safeParse(row);
+    return parsed.success ? [parsed.data] : [];
+  });
 }
 
 function json(
@@ -117,10 +160,19 @@ function json(
   status: number,
   references: ReferencesView | null = null,
   playable: PlayableView | null = null,
+  previousPlayable: PlayableView | null = null,
   versions: readonly SceneVersionSummary[] = [],
+  publications: readonly PublicationSummary[] = [],
 ): Response {
   return Response.json(
-    { project, references, playable, versions },
+    {
+      project,
+      references,
+      playable,
+      previous_playable: previousPlayable,
+      versions,
+      publications,
+    },
     {
       status,
       headers: { "x-request-id": requestId, "cache-control": "no-store" },
