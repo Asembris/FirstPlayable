@@ -13,7 +13,7 @@ import { QLOO_FIXTURES } from "../../../fixtures/qloo";
 import { SECOND_COPY_BRIEF } from "../../../fixtures/second-copy";
 import type { Brief } from "../../../src/domain/brief";
 import { BUDGET_DEFAULTS, QLOO_DEFAULTS } from "../../../src/server/config";
-import type { QlooConfig, QlooEnv } from "../../../src/server/config";
+import type { BudgetConfig, QlooConfig, QlooEnv } from "../../../src/server/config";
 import type { Phase3Deps } from "../../../src/server/api/deps";
 import { handleCreateProject } from "../../../src/server/api/projects";
 import { handleCreateSession } from "../../../src/server/api/session";
@@ -97,10 +97,76 @@ export function canonicalTransport(): Transport {
   });
 }
 
+// ---------------------------------------------------------------------------
+// A scripted model client
+// ---------------------------------------------------------------------------
+
+export type ModelScript = {
+  /** The structured value the provider "parsed". */
+  parsed?: unknown;
+  /** Raw text instead, so the adapter's own JSON parsing is exercised. */
+  text?: string;
+  model?: string;
+  status?: string;
+  refusal?: string;
+  usage?: { input_tokens: number; output_tokens: number; total_tokens: number } | null;
+  /** Throw instead of answering, for the transport-failure branch. */
+  throws?: Error;
+};
+
+export type ScriptedModel = {
+  client: { responses: { parse: (body: Record<string, unknown>) => Promise<unknown> } };
+  /** Every request body the adapter sent, so a test can inspect the payload. */
+  requests: Record<string, unknown>[];
+};
+
+/**
+ * A provider stand-in that replays scripted envelopes.
+ *
+ * It answers in the shape the real Responses API returns, so the adapter's own
+ * checks — pinned model, refusal, truncation, oversize, Zod validation — all
+ * run exactly as they do against the provider.
+ */
+export function scriptedModel(script: readonly ModelScript[]): ScriptedModel {
+  const requests: Record<string, unknown>[] = [];
+  let index = 0;
+  return {
+    requests,
+    client: {
+      responses: {
+        parse: async (requestBody: Record<string, unknown>) => {
+          requests.push(requestBody);
+          const step = script[Math.min(index, script.length - 1)];
+          index += 1;
+          if (step === undefined) throw new Error("no scripted model response");
+          if (step.throws !== undefined) throw step.throws;
+          return {
+            id: `resp_${index}`,
+            model: step.model ?? "gpt-4o-mini-2024-07-18",
+            status: step.status ?? "completed",
+            output_text: step.text ?? null,
+            output_parsed: step.parsed ?? null,
+            output:
+              step.refusal === undefined
+                ? []
+                : [{ type: "message", content: [{ type: "refusal", refusal: step.refusal }] }],
+            usage:
+              step.usage === undefined
+                ? { input_tokens: 1_200, output_tokens: 320, total_tokens: 1_520 }
+                : step.usage,
+          };
+        },
+      },
+    } as unknown as ScriptedModel["client"],
+  };
+}
+
 export type Harness = {
   gateway: MemoryGateway;
   deps: Phase3Deps;
   transport: Transport;
+  /** Present only when the harness was given a model script. */
+  model: ScriptedModel | null;
   /** Launch leases granted, so a test can assert pacing and concurrency. */
   launches: string[];
   advance: (ms: number) => void;
@@ -110,6 +176,9 @@ export type Harness = {
 export type HarnessOptions = {
   transport?: Transport;
   qloo?: Partial<QlooConfig>;
+  budget?: Partial<BudgetConfig>;
+  /** Scripted provider envelopes for the proposal stage. */
+  model?: readonly ModelScript[];
   /** Counts reserve-reached signals the routes emitted. */
   onReserveReached?: () => void;
 };
@@ -126,22 +195,25 @@ export function harness(options: HarnessOptions = {}): Harness {
 
   const transport = options.transport ?? canonicalTransport();
   const config: QlooConfig = { ...QLOO_DEFAULTS, ...options.qloo };
+  const budget = { ...BUDGET_DEFAULTS, ...options.budget };
+  const model = options.model === undefined ? null : scriptedModel(options.model);
   const launches: string[] = [];
 
   const deps: Phase3Deps = {
     gateway: () => gateway,
-    budget: () => BUDGET_DEFAULTS,
+    budget: () => budget,
     qlooEnv: () => QLOO_ENV,
     qloo: () => config,
     now,
     fetchImpl: transport.fetchImpl,
     launchGuard: (store, qlooConfig) => trackingGuard(store, qlooConfig, launches, now, advance),
+    ...(model === null ? {} : { modelClient: model.client }),
     ...(options.onReserveReached === undefined
       ? {}
       : { onReserveReached: options.onReserveReached }),
   };
 
-  return { gateway, deps, transport, launches, advance, now };
+  return { gateway, deps, transport, model, launches, advance, now };
 }
 
 /**

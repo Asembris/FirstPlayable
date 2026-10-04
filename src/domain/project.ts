@@ -249,6 +249,32 @@ export const ReferencesResponseSchema = z.strictObject({
 
 export type ReferencesResponse = z.infer<typeof ReferencesResponseSchema>;
 
+/**
+ * `POST /api/projects/:id/proposals`.
+ *
+ * One field. There is no prompt, no instructions, no model name, no
+ * temperature, no reference list, and no evidence in this body: all of it
+ * comes from the server's own frozen state, which is what keeps this route
+ * from being an arbitrary prompt endpoint.
+ */
+export const ProposalsRequestSchema = z.strictObject({
+  expected_revision: z.number().int().positive(),
+});
+
+export type ProposalsRequest = z.infer<typeof ProposalsRequestSchema>;
+
+export const ProposalsResponseSchema = z.strictObject({
+  project: ProjectViewSchema,
+  /** Provider calls this request made. Zero when a committed result replayed. */
+  model_calls: z.number().int().nonnegative().max(2),
+  /** True when the one permitted structural repair was needed. */
+  repaired: z.boolean(),
+  /** True when an idempotent retry returned the already-committed draft. */
+  replayed: z.boolean(),
+});
+
+export type ProposalsResponse = z.infer<typeof ProposalsResponseSchema>;
+
 export const SessionResponseSchema = z.strictObject({
   established: z.boolean(),
   expires_at: z.string(),

@@ -23,6 +23,7 @@ import {
 } from "../config";
 import type { DataGateway } from "../db/gateway";
 import { supabaseGateway } from "../db/supabase-gateway";
+import type { ResponsesClient } from "../model/openai";
 import type { QlooLaunchGuard } from "../qloo/client";
 
 export type RouteDeps = {
@@ -50,6 +51,12 @@ export type Phase3Deps = RouteDeps & {
   qloo: () => QlooConfig;
   fetchImpl?: typeof fetch;
   launchGuard?: (gateway: DataGateway, config: QlooConfig) => QlooLaunchGuard;
+  /**
+   * Overridable only so a test can supply refusal, truncation, invalid-output,
+   * and repair branches without a paid call. Production omits it, so the one
+   * pinned client in `src/server/model/openai.ts` is always used.
+   */
+  modelClient?: ResponsesClient;
   /** Observes the judging-reserve signal, for the evidence record. */
   onReserveReached?: () => void;
 };
