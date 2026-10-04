@@ -21,6 +21,27 @@ import { appErrors } from "../security/errors";
 import {
   type AnchorConfirmation,
   AnchorConfirmationSchema,
+  COMPILATION_STATE_COLUMNS,
+  OPERATION_SUMMARY_COLUMNS,
+  type CommitSceneVersionInput,
+  type CompilationStateRow,
+  CompilationStateRowSchema,
+  type CompilationStateUpdate,
+  CompilationStateUpdateSchema,
+  type CompileLease,
+  CompileLeaseSchema,
+  type OperationPark,
+  OperationParkSchema,
+  type OperationSummary,
+  OperationSummarySchema,
+  type SceneVersionCommit,
+  SceneVersionCommitSchema,
+  type SceneVersionRead,
+  SceneVersionReadSchema,
+  type SetCompilationStateInput,
+  type VersionActivation,
+  VersionActivationSchema,
+  type VersionDecisionInput,
   type AppendDecisionInput,
   type BudgetReconciliation,
   BudgetReconciliationSchema,
@@ -393,6 +414,173 @@ class SupabaseGateway implements DataGateway {
   // -------------------------------------------------------------------------
   // Project state writes
   // -------------------------------------------------------------------------
+
+  // -------------------------------------------------------------------------
+  // Phase 4: compilation state, leases, versions, and activation
+  // -------------------------------------------------------------------------
+
+  /**
+   * The two large compilation columns.
+   *
+   * A separate read with its own column list, so the project projection every
+   * route returns stays free of a 96 KiB base scene.
+   */
+  async findProjectCompilationState(
+    projectId: string,
+    ownerSessionId: string,
+  ): Promise<CompilationStateRow | null> {
+    const { data, error } = await this.#client
+      .from("projects")
+      .select(COMPILATION_STATE_COLUMNS)
+      .eq("id", projectId)
+      .eq("owner_session_id", ownerSessionId)
+      .maybeSingle();
+    if (error !== null) persistenceFailure("findProjectCompilationState", error.message);
+    if (data === null) return null;
+    return parseRpc("findProjectCompilationState", CompilationStateRowSchema, data);
+  }
+
+  async findOperationForOwner(
+    operationId: string,
+    ownerSessionId: string,
+  ): Promise<OperationSummary | null> {
+    const { data, error } = await this.#client
+      .from("operations")
+      .select(OPERATION_SUMMARY_COLUMNS)
+      .eq("id", operationId)
+      .eq("owner_session_id", ownerSessionId)
+      .maybeSingle();
+    if (error !== null) persistenceFailure("findOperationForOwner", error.message);
+    if (data === null) return null;
+    return parseRpc("findOperationForOwner", OperationSummarySchema, data);
+  }
+
+  async findLatestOperation(
+    projectId: string,
+    ownerSessionId: string,
+    stage: string,
+  ): Promise<OperationSummary | null> {
+    const { data, error } = await this.#client
+      .from("operations")
+      .select(OPERATION_SUMMARY_COLUMNS)
+      .eq("project_id", projectId)
+      .eq("owner_session_id", ownerSessionId)
+      .eq("stage", stage)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error !== null) persistenceFailure("findLatestOperation", error.message);
+    if (data === null) return null;
+    return parseRpc("findLatestOperation", OperationSummarySchema, data);
+  }
+
+  async leaseCompileOperation(
+    operationId: string,
+    ownerSessionId: string,
+    leaseSeconds: number,
+  ): Promise<CompileLease> {
+    const { data, error } = await this.#client.rpc("lease_compile_operation", {
+      p_operation_id: operationId,
+      p_owner_session_id: ownerSessionId,
+      p_lease_seconds: leaseSeconds,
+    });
+    if (error !== null) persistenceFailure("leaseCompileOperation", error.message);
+    return parseRpc("leaseCompileOperation", CompileLeaseSchema, data);
+  }
+
+  async parkOperation(
+    operationId: string,
+    ownerSessionId: string,
+    result: unknown,
+  ): Promise<OperationPark> {
+    const { data, error } = await this.#client.rpc("park_operation", {
+      p_operation_id: operationId,
+      p_owner_session_id: ownerSessionId,
+      p_result: result ?? null,
+    });
+    if (error !== null) persistenceFailure("parkOperation", error.message);
+    return parseRpc("parkOperation", OperationParkSchema, data);
+  }
+
+  async setProjectCompilationState(
+    input: SetCompilationStateInput,
+  ): Promise<CompilationStateUpdate> {
+    const { data, error } = await this.#client.rpc("set_project_compilation_state", {
+      p_project_id: input.projectId,
+      p_owner_session_id: input.ownerSessionId,
+      p_expected_revision: input.expectedRevision,
+      p_base_scene: input.baseScene ?? null,
+      p_base_hash: input.baseHash,
+      p_pending_modules: input.pendingModules ?? null,
+      p_workflow_state: input.workflowState,
+    });
+    if (error !== null) persistenceFailure("setProjectCompilationState", error.message);
+    return parseRpc("setProjectCompilationState", CompilationStateUpdateSchema, data);
+  }
+
+  async commitSceneVersion(input: CommitSceneVersionInput): Promise<SceneVersionCommit> {
+    const { data, error } = await this.#client.rpc("commit_scene_version", {
+      p_project_id: input.projectId,
+      p_owner_session_id: input.ownerSessionId,
+      p_expected_revision: input.expectedRevision,
+      p_expected_base_hash: input.expectedBaseHash,
+      p_expected_approvals: input.expectedApprovals,
+      p_operation_id: input.operationId,
+      p_parent_version_id: input.parentVersionId,
+      p_input_hash: input.inputHash,
+      p_base_hash: input.baseHash,
+      p_module_hashes: input.moduleHashes,
+      p_scene: input.scene,
+      p_validation_summary: input.validationSummary,
+      p_input_snapshot: input.inputSnapshot,
+      p_approval_snapshot: input.approvalSnapshot,
+      p_model_identifier: input.modelIdentifier,
+      p_prompt_identifier: input.promptIdentifier,
+      p_schema_identifier: input.schemaIdentifier,
+      p_compiler_identifier: input.compilerIdentifier,
+      p_validator_identifier: input.validatorIdentifier,
+    });
+    if (error !== null) persistenceFailure("commitSceneVersion", error.message);
+    return parseRpc("commitSceneVersion", SceneVersionCommitSchema, data);
+  }
+
+  async activateSceneVersion(input: VersionDecisionInput): Promise<VersionActivation> {
+    const { data, error } = await this.#client.rpc("activate_scene_version", {
+      p_project_id: input.projectId,
+      p_owner_session_id: input.ownerSessionId,
+      p_expected_revision: input.expectedRevision,
+      p_version_id: input.versionId,
+    });
+    if (error !== null) persistenceFailure("activateSceneVersion", error.message);
+    return parseRpc("activateSceneVersion", VersionActivationSchema, data);
+  }
+
+  async declineSceneVersion(input: VersionDecisionInput): Promise<VersionActivation> {
+    const { data, error } = await this.#client.rpc("decline_scene_version", {
+      p_project_id: input.projectId,
+      p_owner_session_id: input.ownerSessionId,
+      p_expected_revision: input.expectedRevision,
+      p_version_id: input.versionId,
+    });
+    if (error !== null) persistenceFailure("declineSceneVersion", error.message);
+    return parseRpc("declineSceneVersion", VersionActivationSchema, data);
+  }
+
+  async readSceneVersions(
+    projectId: string,
+    ownerSessionId: string,
+    versionId: string | null,
+    limit: number,
+  ): Promise<SceneVersionRead> {
+    const { data, error } = await this.#client.rpc("read_scene_versions", {
+      p_project_id: projectId,
+      p_owner_session_id: ownerSessionId,
+      p_version_id: versionId,
+      p_limit: limit,
+    });
+    if (error !== null) persistenceFailure("readSceneVersions", error.message);
+    return parseRpc("readSceneVersions", SceneVersionReadSchema, data);
+  }
 
   async confirmProjectAnchor(input: ConfirmAnchorInput): Promise<AnchorConfirmation> {
     const { data, error } = await this.#client.rpc("confirm_project_anchor", {

@@ -17,6 +17,17 @@
 import { createHash, randomUUID } from "node:crypto";
 import type {
   AnchorConfirmation,
+  CommitSceneVersionInput,
+  CompilationStateRow,
+  CompilationStateUpdate,
+  CompileLease,
+  OperationPark,
+  SceneVersionCommit,
+  SceneVersionRead,
+  SceneVersionRow,
+  SetCompilationStateInput,
+  VersionActivation,
+  VersionDecisionInput,
   AppendDecisionInput,
   BudgetReconciliation,
   BudgetReservation,
@@ -82,7 +93,13 @@ type BucketRecord = {
   last_launch_at: string | null;
 };
 
-type ProjectRecord = ProjectRow & { base_scene: unknown };
+type ProjectRecord = ProjectRow & {
+  base_scene: unknown;
+  pending_modules: Record<string, unknown>;
+};
+
+/** One immutable version row. Contents never change after insert. */
+type VersionRecord = SceneVersionRow & { project_id: string };
 
 type DecisionRecord = InfluenceDecisionRow;
 
@@ -95,6 +112,7 @@ export class MemoryGateway implements DataGateway {
   readonly buckets = new Map<string, BucketRecord>();
   readonly decisions: DecisionRecord[] = [];
   readonly captures = new Map<string, QlooCaptureRow>();
+  readonly versions: VersionRecord[] = [];
 
   /** Every granted Qloo launch, in order, so a test can assert the pacing. */
   readonly qlooLaunches: { label: string; at: string; leaseId: string }[] = [];
@@ -138,6 +156,16 @@ export class MemoryGateway implements DataGateway {
       "confirmProjectAnchor",
       "setProjectReferences",
       "setProjectProposalDraft",
+      "findProjectCompilationState",
+      "findOperationForOwner",
+      "findLatestOperation",
+      "leaseCompileOperation",
+      "parkOperation",
+      "setProjectCompilationState",
+      "commitSceneVersion",
+      "activateSceneVersion",
+      "declineSceneVersion",
+      "readSceneVersions",
     ];
     for (const method of methods) this.failing.add(method);
   }
@@ -219,8 +247,10 @@ export class MemoryGateway implements DataGateway {
       active_approvals: {},
       proposal_draft: null,
       base_scene: null,
+      pending_modules: {},
       base_hash: null,
       active_version_id: null,
+      pending_version_id: null,
       workflow_state: "DRAFT",
       created_at: nowIso,
       updated_at: nowIso,
@@ -251,9 +281,12 @@ export class MemoryGateway implements DataGateway {
     return count;
   }
 
-  /** The column projection the real gateway selects: never `base_scene`. */
+  /**
+   * The column projection the real gateway selects: never `base_scene` and
+   * never `pending_modules`.
+   */
   #projectRow(record: ProjectRecord): ProjectRow {
-    const { base_scene: _omitted, ...row } = record;
+    const { base_scene: _base, pending_modules: _modules, ...row } = record;
     return {
       ...row,
       reference_capture_ids: [...row.reference_capture_ids],
@@ -731,6 +764,311 @@ export class MemoryGateway implements DataGateway {
   // Project state writes
   // -------------------------------------------------------------------------
 
+  // -------------------------------------------------------------------------
+  // Phase 4: compilation state, leases, versions, and activation
+  // -------------------------------------------------------------------------
+
+  async findProjectCompilationState(
+    projectId: string,
+    ownerSessionId: string,
+  ): Promise<CompilationStateRow | null> {
+    this.#guard("findProjectCompilationState");
+    await Promise.resolve();
+    const project = this.projects.get(projectId);
+    if (project === undefined || project.owner_session_id !== ownerSessionId) return null;
+    return {
+      base_scene: project.base_scene,
+      base_hash: project.base_hash,
+      pending_modules: { ...project.pending_modules },
+    };
+  }
+
+  async findOperationForOwner(
+    operationId: string,
+    ownerSessionId: string,
+  ): Promise<OperationSummary | null> {
+    this.#guard("findOperationForOwner");
+    await Promise.resolve();
+    const record = this.operations.get(operationId);
+    if (record === undefined || record.owner_session_id !== ownerSessionId) return null;
+    return summarize(record);
+  }
+
+  async findLatestOperation(
+    projectId: string,
+    ownerSessionId: string,
+    stage: string,
+  ): Promise<OperationSummary | null> {
+    this.#guard("findLatestOperation");
+    await Promise.resolve();
+    const matching = [...this.operations.values()]
+      .filter(
+        (record) =>
+          record.project_id === projectId &&
+          record.owner_session_id === ownerSessionId &&
+          record.stage === stage,
+      )
+      .sort((a, b) => b.created_at.localeCompare(a.created_at));
+    const newest = matching[0];
+    return newest === undefined ? null : summarize(newest);
+  }
+
+  /** Mirrors `lease_compile_operation`: a mutex that spends no attempt. */
+  async leaseCompileOperation(
+    operationId: string,
+    ownerSessionId: string,
+    leaseSeconds: number,
+  ): Promise<CompileLease> {
+    this.#guard("leaseCompileOperation");
+    if (leaseSeconds < 1 || leaseSeconds > 3600) {
+      throw appErrors.persistenceUnavailable("lease seconds out of range");
+    }
+    await Promise.resolve();
+    const record = this.operations.get(operationId);
+    if (record === undefined || record.owner_session_id !== ownerSessionId) {
+      return { outcome: "not_found" };
+    }
+    // The SQL restricts this to the controller row, so a model stage cannot
+    // acquire a lease without spending an attempt.
+    if (record.stage !== "compile") return { outcome: "not_found" };
+    if (record.status === "succeeded" || record.status === "failed") {
+      return { outcome: "settled", operation: summarize(record) };
+    }
+    const nowMs = this.now().getTime();
+    if (record.lease_expires_at !== null && Date.parse(record.lease_expires_at) > nowMs) {
+      return { outcome: "lease_held", operation: summarize(record) };
+    }
+    record.status = "running";
+    record.lease_expires_at = new Date(nowMs + leaseSeconds * 1000).toISOString();
+    record.updated_at = this.now().toISOString();
+    return { outcome: "leased", operation: summarize(record) };
+  }
+
+  /** Mirrors `park_operation`: release the lease, keep the attempt ceiling. */
+  async parkOperation(
+    operationId: string,
+    ownerSessionId: string,
+    result: unknown,
+  ): Promise<OperationPark> {
+    this.#guard("parkOperation");
+    await Promise.resolve();
+    const record = this.operations.get(operationId);
+    if (record === undefined || record.owner_session_id !== ownerSessionId) {
+      return { outcome: "not_found" };
+    }
+    if (record.status === "succeeded" || record.status === "failed") {
+      return { outcome: "already_settled", operation: summarize(record) };
+    }
+    record.status = "reserved";
+    if (result !== null && result !== undefined) record.result = result;
+    record.lease_expires_at = this.now().toISOString();
+    record.updated_at = this.now().toISOString();
+    return { outcome: "parked", operation: summarize(record) };
+  }
+
+  async setProjectCompilationState(
+    input: SetCompilationStateInput,
+  ): Promise<CompilationStateUpdate> {
+    this.#guard("setProjectCompilationState");
+    await Promise.resolve();
+    const project = this.projects.get(input.projectId);
+    if (project === undefined || project.owner_session_id !== input.ownerSessionId) {
+      return { outcome: "not_found" };
+    }
+    if (project.revision !== input.expectedRevision) {
+      return { outcome: "revision_conflict", current_revision: project.revision };
+    }
+    if (input.baseScene !== null && input.baseScene !== undefined) {
+      project.base_scene = input.baseScene;
+    }
+    if (input.baseHash !== null) project.base_hash = input.baseHash;
+    if (input.pendingModules !== null && input.pendingModules !== undefined) {
+      project.pending_modules = input.pendingModules as Record<string, unknown>;
+    }
+    if (input.workflowState !== null) project.workflow_state = input.workflowState;
+    project.updated_at = this.now().toISOString();
+    // The revision is deliberately unchanged: a compilation is derived from a
+    // revision, not a creator edit to one.
+    return {
+      outcome: "updated",
+      revision: project.revision,
+      base_hash: project.base_hash,
+      workflow_state: project.workflow_state,
+    };
+  }
+
+  /** Mirrors `commit_scene_version`, including its compare-and-swap triple. */
+  async commitSceneVersion(input: CommitSceneVersionInput): Promise<SceneVersionCommit> {
+    this.#guard("commitSceneVersion");
+    await Promise.resolve();
+    const project = this.projects.get(input.projectId);
+    if (project === undefined || project.owner_session_id !== input.ownerSessionId) {
+      return { outcome: "not_found" };
+    }
+    const sameApprovals =
+      JSON.stringify(sortedKeys(project.active_approvals)) ===
+      JSON.stringify(sortedKeys(input.expectedApprovals));
+    if (
+      project.revision !== input.expectedRevision ||
+      (project.base_hash ?? "") !== (input.expectedBaseHash ?? "") ||
+      !sameApprovals
+    ) {
+      return { outcome: "stale_input", current_revision: project.revision };
+    }
+    // The table's own check constraint refuses an unvalidated summary.
+    const summary = input.validationSummary as { ok?: unknown } | null;
+    if (
+      summary === null ||
+      typeof summary !== "object" ||
+      summary.ok !== true ||
+      !("subsets" in summary) ||
+      !("witnesses" in summary)
+    ) {
+      throw appErrors.persistenceUnavailable(
+        "scene_versions_validation_passed: only a validated version is a version",
+      );
+    }
+    const createdAt = this.now().toISOString();
+    const record: VersionRecord = {
+      id: randomUUID(),
+      project_id: input.projectId,
+      parent_version_id: input.parentVersionId,
+      input_hash: input.inputHash,
+      base_hash: input.baseHash,
+      module_hashes: { ...input.moduleHashes },
+      validation_summary: input.validationSummary,
+      input_snapshot: input.inputSnapshot,
+      approval_snapshot: input.approvalSnapshot,
+      model_identifier: input.modelIdentifier,
+      prompt_identifier: input.promptIdentifier,
+      schema_identifier: input.schemaIdentifier,
+      compiler_identifier: input.compilerIdentifier,
+      validator_identifier: input.validatorIdentifier,
+      operation_id: input.operationId,
+      created_at: createdAt,
+      scene: input.scene,
+    };
+    this.versions.push(record);
+    // Reviewable, not current: `active_version_id` is untouched.
+    project.pending_version_id = record.id;
+    project.pending_modules = {};
+    project.workflow_state = "REVIEW_PLAYABLE";
+    project.updated_at = createdAt;
+    return {
+      outcome: "committed",
+      version_id: record.id,
+      created_at: createdAt,
+      revision: project.revision,
+    };
+  }
+
+  async activateSceneVersion(input: VersionDecisionInput): Promise<VersionActivation> {
+    this.#guard("activateSceneVersion");
+    await Promise.resolve();
+    const project = this.projects.get(input.projectId);
+    if (project === undefined || project.owner_session_id !== input.ownerSessionId) {
+      return { outcome: "not_found" };
+    }
+    const version = this.versions.find(
+      (candidate) => candidate.id === input.versionId && candidate.project_id === input.projectId,
+    );
+    if (version === undefined) return { outcome: "not_found" };
+
+    if (project.active_version_id === input.versionId) {
+      return {
+        outcome: "already_active",
+        active_version_id: project.active_version_id,
+        pending_version_id: project.pending_version_id,
+        workflow_state: project.workflow_state,
+      };
+    }
+    if (project.revision !== input.expectedRevision) {
+      return { outcome: "revision_conflict", current_revision: project.revision };
+    }
+    if (project.pending_version_id !== input.versionId) return { outcome: "not_pending" };
+
+    const frozenApprovals: Record<string, unknown> = {};
+    for (const entry of (version.approval_snapshot ?? []) as { slot?: string; approval_id?: string }[]) {
+      if (typeof entry.slot === "string" && typeof entry.approval_id === "string") {
+        frozenApprovals[entry.slot] = entry.approval_id;
+      }
+    }
+    const snapshot = (version.input_snapshot ?? {}) as { project_revision?: unknown };
+    const sameRevision = String(snapshot.project_revision ?? "") === String(project.revision);
+    const sameApprovals =
+      JSON.stringify(sortedKeys(frozenApprovals)) ===
+      JSON.stringify(sortedKeys(project.active_approvals));
+    if (
+      !sameRevision ||
+      (version.base_hash ?? "") !== (project.base_hash ?? "") ||
+      !sameApprovals
+    ) {
+      return { outcome: "stale_input", current_revision: project.revision };
+    }
+
+    project.active_version_id = input.versionId;
+    project.pending_version_id = null;
+    project.workflow_state = "READY";
+    project.updated_at = this.now().toISOString();
+    return {
+      outcome: "activated",
+      active_version_id: project.active_version_id,
+      pending_version_id: null,
+      workflow_state: project.workflow_state,
+    };
+  }
+
+  async declineSceneVersion(input: VersionDecisionInput): Promise<VersionActivation> {
+    this.#guard("declineSceneVersion");
+    await Promise.resolve();
+    const project = this.projects.get(input.projectId);
+    if (project === undefined || project.owner_session_id !== input.ownerSessionId) {
+      return { outcome: "not_found" };
+    }
+    if (project.revision !== input.expectedRevision) {
+      return { outcome: "revision_conflict", current_revision: project.revision };
+    }
+    if (project.pending_version_id !== input.versionId) return { outcome: "not_pending" };
+    // The declined version row is untouched; the previous active one stays active.
+    project.pending_version_id = null;
+    project.workflow_state = project.active_version_id === null ? "AWAITING_APPROVAL" : "READY";
+    project.updated_at = this.now().toISOString();
+    return {
+      outcome: "declined",
+      active_version_id: project.active_version_id,
+      pending_version_id: null,
+      workflow_state: project.workflow_state,
+    };
+  }
+
+  async readSceneVersions(
+    projectId: string,
+    ownerSessionId: string,
+    versionId: string | null,
+    limit: number,
+  ): Promise<SceneVersionRead> {
+    this.#guard("readSceneVersions");
+    if (limit < 1 || limit > 50) {
+      throw appErrors.persistenceUnavailable("limit out of range");
+    }
+    await Promise.resolve();
+    const project = this.projects.get(projectId);
+    if (project === undefined || project.owner_session_id !== ownerSessionId) {
+      return { outcome: "not_found" };
+    }
+    const rows = this.versions
+      .filter(
+        (candidate) =>
+          candidate.project_id === projectId &&
+          (versionId === null || candidate.id === versionId),
+      )
+      .sort((a, b) => b.created_at.localeCompare(a.created_at))
+      .slice(0, limit)
+      // The scene travels only when one version is named.
+      .map((candidate) => ({ ...candidate, scene: versionId === null ? null : candidate.scene }));
+    return { outcome: "read", versions: rows };
+  }
+
   async confirmProjectAnchor(input: ConfirmAnchorInput): Promise<AnchorConfirmation> {
     this.#guard("confirmProjectAnchor");
     await Promise.resolve();
@@ -860,6 +1198,13 @@ export class MemoryGateway implements DataGateway {
     project.updated_at = this.now().toISOString();
     return { outcome: "updated", revision: project.revision };
   }
+}
+
+/** Stable key/value pairs, so two approval maps compare by content. */
+function sortedKeys(value: Record<string, unknown>): [string, unknown][] {
+  return Object.keys(value)
+    .sort()
+    .map((key) => [key, value[key]] as [string, unknown]);
 }
 
 function anchorEntityOf(project: ProjectRecord): string {

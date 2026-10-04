@@ -103,6 +103,7 @@ describe("owner-scoped project access", () => {
       "brief",
       "created_at",
       "id",
+      "pending_version_id",
       "proposals",
       "provenance",
       "reference_capture_ids",
@@ -188,9 +189,28 @@ describe("the gateway contract itself enforces owner scoping", () => {
     "insertQlooCapture",
   ] as const;
 
-  it("declares exactly the owner-scoped or scope-keyed methods phases 2 and 3 need", () => {
+  /**
+   * Phase 4's additions are all owner-scoped too: the compilation state read,
+   * the two operation reads, the controller lease, the park, the artifact
+   * write, the version commit, the two review decisions, and the version read.
+   */
+  const PHASE_4_METHODS = [
+    "activateSceneVersion",
+    "commitSceneVersion",
+    "declineSceneVersion",
+    "findLatestOperation",
+    "findOperationForOwner",
+    "findProjectCompilationState",
+    "leaseCompileOperation",
+    "parkOperation",
+    "readSceneVersions",
+    "setProjectCompilationState",
+  ] as const;
+
+  it("declares exactly the owner-scoped or scope-keyed methods phases 2 to 4 need", () => {
     const methods = [...interfaceBody.matchAll(/^\s{2}(\w+)\(/gm)].map((match) => match[1]).sort();
     expect(methods).toEqual([
+      ...PHASE_4_METHODS,
       "appendInfluenceDecision",
       "completeOperation",
       "confirmProjectAnchor",
@@ -228,7 +248,9 @@ describe("the gateway contract itself enforces owner scoping", () => {
       const parameters = method[2] ?? "";
       if (parameters.includes("ownerSessionId")) continue;
 
-      const typeName = /:\s*(\w+)\s*$/.exec(parameters.trim())?.[1];
+      // A multi-line parameter list ends with a trailing comma, so the type
+      // name is the last identifier after the last colon either way.
+      const typeName = /:\s*(\w+),?\s*$/.exec(parameters.trim())?.[1];
       expect(typeName, `${name} must name its input type`).toBeDefined();
       const declaration = new RegExp(
         `export type ${typeName} = \\{([\\s\\S]*?)\\n\\};`,
@@ -246,7 +268,9 @@ describe("the gateway contract itself enforces owner scoping", () => {
     expect(decisionReads.length).toBeGreaterThan(1);
     for (const read of decisionReads) {
       const parameters = read[2] ?? "";
-      const typeName = /:\s*(\w+)\s*$/.exec(parameters.trim())?.[1];
+      // A multi-line parameter list ends with a trailing comma, so the type
+      // name is the last identifier after the last colon either way.
+      const typeName = /:\s*(\w+),?\s*$/.exec(parameters.trim())?.[1];
       const declaration =
         typeName === undefined
           ? null
