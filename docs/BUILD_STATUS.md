@@ -1,11 +1,12 @@
 # FirstPlayable — build status
 
-**Completed phases:** Phase 1 and Phase 2.
-**Next authorized phase:** Phase 3 — real Qloo references and explicit influence approval.
+**Completed phases:** Phase 1, Phase 2 and Phase 3.
+**Next authorized phase:** Phase 4 — bounded compilation and fresh playable generation.
 
-This file is append-only across phases. The Phase 1 record below is unchanged;
-the Phase 2 record follows it. Every number in both sections comes from a
-command that was actually run in this repository.
+This file is append-only across phases. The Phase 1 and Phase 2 records below
+are unchanged; the continuous-integration record and then the Phase 3 record
+follow them. Every number in every section comes from a command that was
+actually run in this repository.
 
 ---
 
@@ -438,6 +439,9 @@ secret appears in any tracked file, built asset, client chunk, or response body.
 in section 17. Phase 2's exit gate passed, so Phase 3 is authorized to begin; it
 is **not** implemented. No later phase is authorized.
 
+*(That was the state when this section was written. Phase 3 is now complete; see
+its own section at the end of this file.)*
+
 ---
 
 # Continuous integration
@@ -509,3 +513,270 @@ working tree on `22.22.0`:
 
 These are local results. GitHub Actions had not yet executed this workflow when
 this record was written, so no claim is made about a remote run.
+
+---
+
+# Phase 3 — real Qloo references and explicit influence approval
+
+**Branch of this record:** `feat/phase-3-qloo`
+**Date of this record:** 4 October 2026
+**Status:** PASS
+**Full evidence:** `docs/PHASE3_QLOO_EVIDENCE.md`
+
+This section appends to the record. The Phase 1 and Phase 2 sections above are
+unchanged, and nothing here revises a figure either of them reported. Every
+number below comes from a command that was actually run in this repository.
+
+## What Phase 3 implemented
+
+| Deliverable | Where |
+|---|---|
+| Three-operation Qloo adapter, with no general proxy | `src/server/qloo/client.ts` |
+| Upstream shapes pinned from real captures | `src/server/qloo/contracts.ts` |
+| Strict normalization and the evidence model | `src/server/qloo/normalize.ts`, `src/domain/qloo.ts` |
+| Capture cache, TTL policy, consented stale fallback | `src/server/qloo/cache.ts` |
+| Database-backed global launch policy and quota reserve | `src/server/qloo/limiter.ts` |
+| Parallel first-hop orchestration with independent domain outcomes | `src/server/qloo/references.ts` |
+| Context firewall payload builders | `src/server/influence/payload.ts` |
+| Bounded proposal stage with one permitted repair | `src/server/influence/proposals.ts` |
+| Approvals resolved from immutable history | `src/server/influence/approvals.ts` |
+| Three-layer provenance | `src/server/influence/provenance.ts` |
+| The five frozen Phase 3 routes | `src/server/api/{qloo,proposals,decisions}.ts` |
+| Artist confirmation, reference rows, decisions, provenance drawer | `src/components/studio/` |
+| One forward migration | `supabase/migrations/20261004085412_phase3_qloo.sql` |
+| Redacted real captures for deterministic tests | `fixtures/qloo/` |
+| Opt-in live smokes | `scripts/smoke-qloo.ts`, `scripts/smoke-proposal.ts` |
+
+## Commands run, and their results
+
+| Command | Result |
+|---|---|
+| `npm run typecheck` | passed, exit 0 |
+| `npm test` | passed, exit 0 — 23 files, 425 tests, 0 failures |
+| `npm run check:fixtures` | passed, exit 0 |
+| `npm run build` | passed, exit 0 — 13 routes, 4 static and 9 server-rendered on demand |
+| `npm run check:secrets` | passed, exit 0 — 129 tracked and 277 built files scanned |
+| `npm run test:e2e` | passed, exit 0 — 33 Playwright tests, 0 failures |
+| `RUN_QLOO_SMOKE=1 npm run smoke:qloo` | passed, exit 0 |
+| `QLOO_SMOKE_ARTIST="Taylor Swift" RUN_QLOO_SMOKE=1 npm run smoke:qloo` | passed, exit 0 |
+| `RUN_PROPOSAL_SMOKE=1 npm run smoke:proposal` | passed, exit 0 |
+| `RUN_DEPLOY_VERIFY=1 DEPLOY_URL=https://firstplayable.vercel.app npm run verify:deployment` | passed, exit 0 — 54 of 54 checks |
+
+Phase 3 added 197 unit tests and 20 Playwright tests. Phase 1's and Phase 2's
+tests remain green inside the same totals.
+
+## The verified Qloo surface
+
+Three frozen operations and no fourth:
+
+```http
+GET {base}/search?query=<encoded>&types=urn:entity:artist&take=5
+GET {base}/v2/insights?filter.type=urn:entity:movie&signal.interests.entities=<uuid>&take=10
+GET {base}/v2/insights?filter.type=urn:entity:videogame&signal.interests.entities=<uuid>&take=10
+```
+
+Host: `hackathon.api.qloo.com`. Key in `X-Api-Key`, server only.
+`urn:entity:videogame` is the working type; the string `video_game` appears
+nowhere in the repository.
+
+**There is no parameter echo** in either observed envelope. The application
+records that absence and preserves the outbound request fingerprint; it does not
+read an absent echo as proof the parameters were applied, and it does not claim
+to detect every silently ignored parameter. The real defences are the pinned
+contract tests and a hard failure when a returned `subtype` contradicts the
+requested `filter.type`.
+
+## Live retrieval, observed
+
+| Fact | Value |
+|---|---|
+| Confirmed artist | Radiohead, `70CAE5BF-2F4C-445C-A3E5-4EDACFC3591C`, returned at rank 1 of 5 |
+| Confirmation rule | explicit creator choice; the smoke confirms by exact name, never by position |
+| Movies, first three usable | Children of Men (2006), Being John Malkovich (1999), Moon (2009) |
+| Videogames, first three usable | Mass Effect 2 (2010), Dragon Age: Origins (2009), Mass Effect (2007) |
+| Rows normalized per domain | 10 of 10, all usable, 0 duplicates, 0 malformed |
+| Uncached creation cost | **3 calls** — one search, two first hops |
+| Repeat of the identical retrieval | **0 calls**, including from a separate process |
+| Quota reported | limit 10,000; remaining 9,547 → 9,542 across this phase; per-second limit 5 |
+| Retries triggered live | none; the budget is covered deterministically in tests |
+
+All three historically observed titles per domain were still present. Nothing in
+the application injects them: the smoke reports the comparison rather than
+requiring it.
+
+A second artist was verified live — Taylor Swift,
+`4BBEF799-A0C4-4110-AB01-39216993C312` — returning a completely different
+neighbourhood, so the path is not Radiohead-specific.
+
+**Moon's canonical context was recovered, not invented.** The
+duplicate-identity material is verbatim from `properties.plot_summary`.
+
+## Cache and rate policy, observed
+
+Artist search TTL 24 h and first-hop TTL 7 days, both read back from the live
+database as `23:59:59.867` and `6 days 23:59:59.368`. Empty search TTL 10 min
+and the 30-day consented stale ceiling are covered by tests. Launch spacing
+≥ 250 ms and ≤ 2 concurrent leases are enforced by `reserve_qloo_launch` under a
+row lock, which commits before the socket opens — no database transaction is
+held across network I/O.
+
+Three separate `budget_buckets` rows keep Qloo pacing away from model
+budgeting: `model_calls` (limit 40, 4 used, 19,980 tokens), `qloo_calls`
+(limit 9,500 after the 500-call judging reserve, 5 used), and `qloo_launch`
+(limit 2, the only scope that writes `last_launch_at`).
+
+## The proposal stage
+
+One bounded structured call on the pinned `gpt-4o-mini-2024-07-18`, over the
+frozen brief and at most six eligible references, with one permitted structural
+repair and no fallback model or provider.
+
+| Observation | Value |
+|---|---|
+| Model calls, live local run | 1, `repaired: false` |
+| Token usage | 4,247 in · 945 out · 5,192 total |
+| List-price cost estimate | ~$0.00120 — arithmetic, not a billed amount |
+| Proposals returned | 6 locally, 5 on the deployment; both inside the 1–6 contract |
+| Idempotent replay | `model_calls: 0`, committed draft returned, one provider request total |
+
+The route accepts one field, `expected_revision`. A body carrying
+`instructions`, `model`, `prompt`, `references`, `evidence`, or `temperature` is
+refused and no model call is made. The server assigns every proposal id and
+every piece of reference identity from the frozen capture.
+
+## Explicit creator decisions
+
+Default approved count is **zero**, by construction: `active_approvals` is
+written only by `append_influence_decision`, only from the decisions route, and
+only on an explicit creator action. Accept, edit, replace, reject, and remove
+all work; accepting into an occupied slot is refused so that replacement is
+always explicit and records its predecessor; at most one approval per slot.
+Editing changes interpretation text and never the stored Qloo evidence — a test
+serializes every capture row before an edit and asserts byte equality
+afterwards. History is append-only, and a decision taken against a stale
+revision is refused with no row written.
+
+## Isolation
+
+Five distinct sentinels — rejected, unselected, other-slot, artist, and
+unusable — are planted in synthetic payloads, retrieved through the real routes,
+and are all absent from the compiler-facing approved payload, whose key set is
+exactly `approval_id, approved_text, evidence, intended_effect, reference, slot`.
+The positive half is asserted too: the proposal payload does contain the
+rejected, unselected, and other-slot sentinels while they are still eligible,
+without which the negative assertions would prove nothing.
+
+**The guarantee is dataflow and ownership isolation.** It is not a claim that a
+language model could never independently invent a semantically similar idea from
+the brief. No test here asserts that, because none could.
+
+## Provenance
+
+Three layers — Qloo retrieved, FirstPlayable proposed, Creator approved — and
+no fourth. The live chain's key set is
+`approval_id, approved, proposed, retrieved, slot`: there is no `scene_changed`
+field, so a creator cannot be shown a mechanical consequence no compiler
+produced. Affinity appears nowhere in the chain, and the rendered studio was
+scanned for `affinity`, `confidence`, `best match`, any `NN%` figure, and
+`Qloo recommends|proves|says|knows|generated` — all absent.
+
+## Migration and database state
+
+One forward migration, applied through the same authorised Supabase management
+connection Phase 2 used, because `supabase db push` still cannot run from this
+machine for the two reasons in `docs/DEPLOYMENT_PREFLIGHT.md` §2. No permission
+was broadened and the database password was never requested. The remote history
+recorded version `20261004085412`, so the local file was renamed to match.
+
+It adds `projects.proposal_draft`, `budget_buckets.last_launch_at`, one index,
+and five functions. It drops nothing, alters no column, and creates no table.
+Read back from the live catalog: 8 tables, 0 policies, all five new functions
+`SECURITY INVOKER` with `search_path` pinned to `''` and granted to
+`service_role` only.
+
+Live rows after this phase: 6 captures, 4 append-only decisions, 4 anchored
+projects each holding one approval, 4 succeeded proposal operations, and
+**0 `scene_versions`** and **0 `publications`** — Phase 4 and Phase 5 are not
+implemented.
+
+## Deployment
+
+Production: **https://firstplayable.vercel.app**
+
+`QLOO_API_KEY`, `QLOO_API_BASE_URL`, `OPENAI_API_KEY`, and `OPENAI_CHAT_MODEL`
+were added to Production and Preview as sensitive values, read from the local
+environment by the CLI without printing them.
+`SUPABASE_ACCESS_TOKEN` and the database password were deliberately not
+uploaded, and no `NEXT_PUBLIC_` variant of any secret exists.
+
+The deployed verification passed 54 of 54 checks, including the whole Phase 3
+workflow twice: once over HTTP and once through a real browser on the live site.
+The browser run confirmed a real artist search with nothing preselected, an
+explicit confirmation click, real first-hop cards, one real proposal call, zero
+default approvals, one Approve click freezing one influence, the three-layer
+provenance drawer with no scene-change claim, survival across a full reload, 40
+requests all same-origin, no direct Qloo, OpenAI, or Supabase request, and no
+credential in the rendered page or in any of the 8 client chunks.
+
+Nothing in production was intentionally broken. Outage and failure branches are
+covered by the deterministic local and browser suites.
+
+## Known failures and limitations of Phase 3
+
+No gate failed. The limitations are recorded in full in
+`docs/PHASE3_QLOO_EVIDENCE.md` §19. The ones that most affect how this record
+should be read:
+
+1. The header-based judging-reserve halt is **best-effort within one
+   retrieval**; two hops launched 250 ms apart may both predate the first
+   quota header. The enforced pre-call guard is the local 9,500-call counter.
+2. `qloo_calls.used_calls` under-counts by one, because the first smoke run
+   predated the script change that made it reserve around its own artist
+   search. The route has always reserved.
+3. The offline browser suite mocks this application's own API, so that CI needs
+   no credential. The real deployed UI is exercised by `verify:deployment`.
+4. Only Chromium is installed for Playwright — inherited from Phases 1 and 2.
+5. The forbidden-attribution guard is **literal**, over an enumerated set of
+   sixteen phrases, and is deliberately not applied to creator-authored text.
+6. **One** proposal call was observed, not a distribution. No claim about
+   typical proposal quality, repair frequency, or token variance follows from
+   one sample.
+7. The three-artist release smoke of specification section 16 has not been run;
+   two artists were verified. That smoke belongs to Phase 7.
+
+## What Phase 3 did not build
+
+No core or module generation, no compilation, no scene activation, no repair of
+generated scenes, no revision generation, no `/api/operations/:id/advance`
+controller, no publication, no sharing, no offline export, and no comparator.
+No third Qloo domain, no multi-hop, no trends, audiences, demographics,
+explainability, compare endpoint, popularity floor, Qloo weight, graph
+traversal, culture graph, location discovery, affinity-as-quality score, or
+taste percentage. No RAG, embeddings, vector database, LangChain, LangGraph,
+multi-agent system, MCP, Redis, queue worker, or new service.
+
+`tests/engine/fixtures.test.ts` asserts the exact route file list and the
+absence of any route named for a later phase.
+
+## Phase 3 exit gate
+
+Every binary item passed. The work is on `feat/phase-3-qloo`; Phase 1's and
+Phase 2's tests remain green; only the three frozen Qloo operations exist and
+the API key stays server-only; real artist search, explicit confirmation, and
+both real first hops succeed locally and on the deployment; field mappings,
+evidence field paths, and hashes come from real captures with no invented
+metadata; a repeat retrieval makes zero upstream calls and the fresh path costs
+three; one bounded structured proposal call works with recorded token usage and
+the phase 2 budget primitive; the default approved count is zero and accept,
+edit, dismiss, and explicit replacement all work with an append-only history and
+at most one approval per slot; every sentinel is absent from the
+compiler-facing payload; provenance shows exactly three layers with no fake
+scene-change step; the production deployment performs the whole flow with real
+services and the browser never reaches an upstream host; and no secret appears
+in any tracked file, built asset, client chunk, or response body.
+
+## Next authorized phase
+
+**Phase 4 — bounded compilation and fresh playable generation**, as specified in
+section 17. Phase 3's exit gate passed, so Phase 4 is authorized to begin; it is
+**not** implemented. No later phase is authorized.
