@@ -189,15 +189,52 @@ describe("no external service reaches the engine or the player", () => {
     }
   });
 
-  it("declares only the phase 2 route subset, and no phase 3 route", () => {
+  /**
+   * The frozen route surface, phase by phase. Phase 3 adds exactly its slice
+   * of specification section 11 and nothing else.
+   */
+  it("declares only the phase 2 and phase 3 route subset", () => {
     const routes = walk(join(repoRoot, "src", "app"))
       .filter((file) => /route\.(ts|tsx)$/.test(file))
       .map((file) => relative(join(repoRoot, "src", "app"), file).split("\\").join("/"))
       .sort();
     expect(routes).toEqual([
+      "api/projects/[id]/anchor/route.ts",
+      "api/projects/[id]/artist-search/route.ts",
+      "api/projects/[id]/references/route.ts",
       "api/projects/[id]/route.ts",
       "api/projects/route.ts",
       "api/session/route.ts",
     ]);
+  });
+
+  /**
+   * Compilation, activation, revision, publication, export, and the public
+   * share belong to phases 4 and 5. None of them may exist yet, and no route
+   * may expose an arbitrary Qloo or model request either.
+   */
+  it("declares no phase 4 or phase 5 route, and no arbitrary upstream route", () => {
+    const routes = walk(join(repoRoot, "src", "app"))
+      .filter((file) => /route\.(ts|tsx)$/.test(file))
+      .map((file) => relative(join(repoRoot, "src", "app"), file).split("\\").join("/"));
+    for (const laterPhase of [
+      "compile",
+      "activate",
+      "revisions",
+      "operations",
+      "publish",
+      "publications",
+      "public",
+      "export",
+      "qloo",
+      "openai",
+      "model",
+      "prompt",
+    ]) {
+      expect(
+        routes.filter((route) => route.includes(laterPhase)),
+        `${laterPhase} is not part of phase 3`,
+      ).toEqual([]);
+    }
   });
 });

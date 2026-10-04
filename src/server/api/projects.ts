@@ -11,8 +11,18 @@
  */
 
 import { z } from "zod";
-import { CreateProjectRequestSchema, type ProjectView } from "@/domain/project";
-import { createProject, readProjectForOwner, toProjectView } from "../db/projects";
+import {
+  CreateProjectRequestSchema,
+  type ProjectView,
+  type ReferencesView,
+} from "@/domain/project";
+import {
+  createProject,
+  readProjectForOwner,
+  readProjectViewForOwner,
+  toProjectView,
+} from "../db/projects";
+import { referencesViewFromProject } from "./qloo";
 import { refreshOwnerActivity, requireOwnerSession } from "../db/sessions";
 import { appErrors, errorResponse, newRequestId } from "../security/errors";
 import {
@@ -77,15 +87,26 @@ export async function handleReadProject(
     const row = await readProjectForOwner(gateway, session, projectId);
     if (row === null) throw appErrors.notFound();
 
-    return json(toProjectView(row), requestId, 200);
+    // The studio's retrieved references come back out of the immutable
+    // captures the project points at. A reload therefore costs zero upstream
+    // calls, which is a control-flow property rather than a claim.
+    const project = await readProjectViewForOwner(gateway, session, row);
+    const references = await referencesViewFromProject(gateway, project.reference_capture_ids);
+
+    return json(project, requestId, 200, references);
   } catch (error) {
     return errorResponse(error, requestId);
   }
 }
 
-function json(project: ProjectView, requestId: string, status: number): Response {
+function json(
+  project: ProjectView,
+  requestId: string,
+  status: number,
+  references: ReferencesView | null = null,
+): Response {
   return Response.json(
-    { project },
+    { project, references },
     {
       status,
       headers: { "x-request-id": requestId, "cache-control": "no-store" },

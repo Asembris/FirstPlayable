@@ -91,19 +91,28 @@ describe("owner-scoped project access", () => {
     const project = await createProject(gateway, session, { brief: SECOND_COPY_BRIEF }, LIMITS);
     const view = toProjectView(project);
 
+    // The whole public shape. Provider diagnostics, request fingerprints,
+    // quota counters, the owner session id, the clean base scene, and the
+    // private affinity values are all absent by construction.
     expect(Object.keys(view).sort()).toEqual([
       "active_version_id",
+      "anchor",
       "anchor_confirmed",
+      "approvals",
       "approved_slots",
       "brief",
       "created_at",
       "id",
+      "proposals",
+      "reference_capture_ids",
       "revision",
       "title",
       "updated_at",
       "workflow_state",
     ]);
     expect(JSON.stringify(view)).not.toContain(session.id);
+    expect(JSON.stringify(view)).not.toContain("affinity");
+    expect(JSON.stringify(view)).not.toContain("request_fingerprint");
   });
 
   it("enforces the per-session daily project allowance in the database", async () => {

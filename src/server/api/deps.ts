@@ -13,9 +13,17 @@
  * contracts, and ownership predicates the deployed runtime executes.
  */
 
-import { budgetConfig, type BudgetConfig } from "../config";
+import {
+  budgetConfig,
+  type BudgetConfig,
+  qlooConfig,
+  type QlooConfig,
+  qlooEnv,
+  type QlooEnv,
+} from "../config";
 import type { DataGateway } from "../db/gateway";
 import { supabaseGateway } from "../db/supabase-gateway";
+import type { QlooLaunchGuard } from "../qloo/client";
 
 export type RouteDeps = {
   gateway: () => DataGateway;
@@ -24,6 +32,37 @@ export type RouteDeps = {
   now?: () => Date;
 };
 
+/**
+ * What a phase 3 route handler may reach.
+ *
+ * `qlooEnv` and `qloo` are factories for the same reason `gateway` is: a
+ * missing or malformed environment must become the redacted
+ * `PERSISTENCE_UNAVAILABLE` envelope the studio knows how to show, inside the
+ * handler's try block, rather than a build failure.
+ *
+ * `fetchImpl` and `launchGuard` exist so a test can drive the real handlers,
+ * the real Zod contracts, the real ownership predicates, and the real cache
+ * over a deterministic transport. Production supplies neither, so it always
+ * uses the global `fetch` and the database-backed limiter.
+ */
+export type Phase3Deps = RouteDeps & {
+  qlooEnv: () => QlooEnv;
+  qloo: () => QlooConfig;
+  fetchImpl?: typeof fetch;
+  launchGuard?: (gateway: DataGateway, config: QlooConfig) => QlooLaunchGuard;
+  /** Observes the judging-reserve signal, for the evidence record. */
+  onReserveReached?: () => void;
+};
+
 export function liveDeps(): RouteDeps {
   return { gateway: supabaseGateway, budget: budgetConfig };
+}
+
+export function livePhase3Deps(): Phase3Deps {
+  return {
+    gateway: supabaseGateway,
+    budget: budgetConfig,
+    qlooEnv,
+    qloo: qlooConfig,
+  };
 }
