@@ -260,3 +260,33 @@ describe("no external service reaches the engine or the player", () => {
     expect(declaration, "AdvanceRequestSchema must be a strict empty object").not.toBeNull();
   });
 });
+
+/**
+ * The offline gate has to test what the repository currently says.
+ *
+ * `next start` serves whatever `.next` already holds, so a browser gate that
+ * only starts the server tests the last build that happened on the machine,
+ * which can be a build of a different commit. That produces failures for code
+ * that is present in the source and absent only from the stale bundle — and,
+ * just as dangerous, a pass for code that has since been removed. The gate has
+ * to build the assets it then serves, whatever order the surrounding steps run
+ * in. This was found by running the gate, not by reading it.
+ */
+describe("the offline gate tests what the repository currently says", () => {
+  const playwrightConfig = readFileSync(
+    join(repoRoot, "playwright.config.ts"),
+    "utf8",
+  );
+
+  it("builds the application before the browser gate serves it", () => {
+    const webServer = /command:\s*`([^`]+)`/.exec(playwrightConfig);
+    expect(webServer, "the browser gate must declare a webServer command").not.toBeNull();
+    const command = webServer?.[1] ?? "";
+    expect(command).toContain("npm run build");
+    expect(command).toContain("npm run start");
+    expect(
+      command.indexOf("npm run build") < command.indexOf("npm run start"),
+      "the build has to happen before the server starts",
+    ).toBe(true);
+  });
+});
