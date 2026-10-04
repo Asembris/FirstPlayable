@@ -22,16 +22,16 @@
 
 import type { Brief } from "@/domain/brief";
 import {
-  BaseCompilationOutputSchema,
+  BaseNarrativeCopySchema,
   ModuleCompilationOutputSchema,
-  type BaseCompilationOutput,
+  type BaseNarrativeCopy,
   type ModuleCompilationOutput,
 } from "@/domain/compile";
 import type { ApprovedInfluence, ApprovedInfluencePayload, Slot } from "@/domain/influence";
 import type { CoreScene, InfluenceModule, Scene } from "@/domain/scene";
+import { baseCoreFromCopy } from "./base";
 import {
   assembleScene,
-  coreFromModelOutput,
   coreHash,
   moduleFromModelOutput,
   moduleHash,
@@ -108,15 +108,27 @@ export type BaseStageInput = {
 export type BaseStageOutcome = StageOutcome<{
   core: CoreScene;
   title: string;
-  output: BaseCompilationOutput;
+  output: BaseNarrativeCopy;
 }>;
 
 /**
- * Compiles the clean, brief-only foundation.
+ * Compiles the clean, brief-only foundation: **deterministic mechanics plus
+ * model-authored copy.**
  *
- * The candidate is assembled into a module-free scene and handed to the Phase 1
- * validator. A base that cannot stand alone is rejected here, before any
- * module is compiled against it.
+ * The one provider call asks for narrative copy alone
+ * ({@link BaseNarrativeCopySchema}). `baseCoreFromCopy` then builds the whole
+ * mechanical skeleton from the frozen brief — ids, verbs, targets,
+ * availability, branches, effects, dialogue speakers, and ending bindings — and
+ * the result is assembled into a module-free scene and handed to the Phase 1
+ * validator exactly as before.
+ *
+ * The validator is still the final authority, and nothing here special-cases
+ * it. What changed is what a rejection can now mean: with the mechanics
+ * server-owned, the only candidate-shaped failures left are copy failures —
+ * forbidden wording, a text bound, unusable or truncated structured output. A
+ * *mechanical* finding from this stage would be a defect in this application's
+ * own skeleton code, not a model that did not comply, and it is meant to read
+ * that way.
  */
 export async function runBaseStage(
   input: BaseStageInput,
@@ -127,7 +139,7 @@ export async function runBaseStage(
 
   const result = await compiler.generate({
     schemaName: BASE_SCHEMA_NAME,
-    schema: BaseCompilationOutputSchema,
+    schema: BaseNarrativeCopySchema,
     instructions: repairing
       ? `${BASE_INSTRUCTIONS}\n\n${repairNote(input.repair?.errors ?? [])}`
       : BASE_INSTRUCTIONS,
@@ -137,8 +149,9 @@ export async function runBaseStage(
     maxOutputTokens: BASE_MAX_OUTPUT_TOKENS,
   });
 
-  const world = worldFromBrief(input.brief);
-  const core = coreFromModelOutput(result.data, world);
+  // Mechanics from the brief, copy from the model. Nothing the model returned
+  // reaches an id, a condition, a branch, an effect, or an ending binding.
+  const core = baseCoreFromCopy(input.brief, result.data);
   const assembled = assembleScene({
     brief: input.brief,
     inputHash: input.inputHash,

@@ -229,7 +229,7 @@ export async function installPhase4Api(
         module_hashes: { discovery: "c".repeat(64) },
         active_slots: ["discovery"],
         model_identifier: "gpt-4o-mini-2024-07-18",
-        compiler_identifier: "fp-compiler-4.0",
+        compiler_identifier: "fp-compiler-4.1",
         validator_identifier: "fp-engine-validator-1.0",
       },
     ];

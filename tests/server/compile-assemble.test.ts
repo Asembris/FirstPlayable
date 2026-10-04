@@ -6,10 +6,10 @@ import {
   SECOND_COPY_DISCOVERY_V1,
 } from "../../fixtures/second-copy";
 import { FIXED_PORTS } from "../../src/domain/limits";
+import { baseCoreFromCopy } from "../../src/server/compile/base";
 import { ModuleCompilationOutputSchema } from "../../src/domain/compile";
 import {
   assembleScene,
-  coreFromModelOutput,
   mechanicIdsOf,
   moduleFromModelOutput,
   sceneApprovalAllowlist,
@@ -27,16 +27,13 @@ import {
 import {
   COMMITMENT_APPROVAL,
   DISCOVERY_APPROVAL,
-  badNamespaceBaseOutput,
   badNamespaceModuleOutput,
   coreWriteModuleOutput,
   crossSlotModuleOutput,
-  fourEndingBaseOutput,
-  illegalVerbBaseOutput,
   mechanicallyEmptyModuleOutput,
-  missingCoreActionBaseOutput,
+  nonPlainTextBaseCopy,
   terminalModuleOutput,
-  validBaseOutput,
+  validBaseCopy,
   validCommitmentOutput,
   validDiscoveryOutput,
   wrongPortModuleOutput,
@@ -54,7 +51,7 @@ const INPUT_HASH = "a".repeat(48);
 const APPROVALS = [DISCOVERY_APPROVAL, COMMITMENT_APPROVAL];
 
 function assemble(
-  base = validBaseOutput(),
+  copy = validBaseCopy(),
   modules: { slot: "discovery" | "commitment"; output: ReturnType<typeof validDiscoveryOutput> }[] = [],
   approvals = APPROVALS,
 ) {
@@ -62,8 +59,9 @@ function assemble(
   return assembleScene({
     brief: SECOND_COPY_BRIEF,
     inputHash: INPUT_HASH,
-    core: coreFromModelOutput(base, world),
-    generatedTitle: base.title,
+    // Deterministic mechanics, model copy. The base is no longer model output.
+    core: baseCoreFromCopy(SECOND_COPY_BRIEF, copy),
+    generatedTitle: copy.title,
     modules: modules.map((entry) =>
       moduleFromModelOutput(
         entry.output,
@@ -96,7 +94,7 @@ describe("the server assigns every authority", () => {
   });
 
   it("writes set_true itself, so no other effect operator is representable", () => {
-    const core = coreFromModelOutput(validBaseOutput(), worldFromBrief(SECOND_COPY_BRIEF));
+    const core = baseCoreFromCopy(SECOND_COPY_BRIEF, validBaseCopy());
     const effects = core.actions.flatMap((action) =>
       action.branches.flatMap((branch) => branch.effects),
     );
@@ -105,7 +103,7 @@ describe("the server assigns every authority", () => {
   });
 
   it("derives every action target from the verb and the frozen world", () => {
-    const core = coreFromModelOutput(validBaseOutput(), worldFromBrief(SECOND_COPY_BRIEF));
+    const core = baseCoreFromCopy(SECOND_COPY_BRIEF, validBaseCopy());
     for (const action of core.actions) {
       const expected =
         action.verb === "ask"
@@ -131,7 +129,7 @@ describe("the server assigns every authority", () => {
 
   it("binds the slot, the approval, the source kind, and the provenance itself", () => {
     const scene = sceneOf(
-      assemble(validBaseOutput(), [{ slot: "discovery", output: validDiscoveryOutput() }]),
+      assemble(validBaseCopy(), [{ slot: "discovery", output: validDiscoveryOutput() }]),
     );
     const module = scene.modules[0]!;
     expect(module.slot).toBe("discovery");
@@ -157,7 +155,7 @@ describe("the server assigns every authority", () => {
 
   it("drops a module whose approval is not in the frozen set", () => {
     const result = assemble(
-      validBaseOutput(),
+      validBaseCopy(),
       [{ slot: "commitment", output: validCommitmentOutput() }],
       [DISCOVERY_APPROVAL],
     );
@@ -174,19 +172,19 @@ describe("the server assigns every authority", () => {
   });
 
   it("prefers the brief's title over the one the model wrote", () => {
-    const base = { ...validBaseOutput(), title: "A title the model chose" };
+    const base = { ...validBaseCopy(), title: "A title the model chose" };
     expect(sceneOf(assemble(base)).title).toBe(SECOND_COPY_BRIEF.title);
   });
 
   it("composes modules in the fixed slot order whatever order they arrive in", () => {
     const forwards = sceneOf(
-      assemble(validBaseOutput(), [
+      assemble(validBaseCopy(), [
         { slot: "discovery", output: validDiscoveryOutput() },
         { slot: "commitment", output: validCommitmentOutput() },
       ]),
     );
     const backwards = sceneOf(
-      assemble(validBaseOutput(), [
+      assemble(validBaseCopy(), [
         { slot: "commitment", output: validCommitmentOutput() },
         { slot: "discovery", output: validDiscoveryOutput() },
       ]),
@@ -218,40 +216,37 @@ describe("base generation", () => {
     expect(scene.world.object).toEqual(SECOND_COPY_BRIEF.object);
   });
 
-  it("rejects an identifier outside the core namespace", () => {
-    const verdict = verifyBase(sceneOf(assemble(badNamespaceBaseOutput())), SECOND_COPY_BRIEF);
-    expect(verdict.ok).toBe(false);
-    expect(verdict.errors.map((error) => error.code)).toContain("NAMESPACE_INVALID");
-  });
-
-  it("rejects a base missing a required core action", () => {
-    const verdict = verifyBase(
-      sceneOf(assemble(missingCoreActionBaseOutput())),
-      SECOND_COPY_BRIEF,
-    );
-    expect(verdict.ok).toBe(false);
-    expect(verdict.errors.map((error) => error.code)).toContain("CORE_ACTION_MISSING");
-  });
-
-  it("rejects a fourth ending", () => {
-    const result = assemble(fourEndingBaseOutput());
-    // The strict contract rejects it during assembly: exactly three endings.
+  /*
+   * The four base rejections this suite used to assert — an identifier outside
+   * the core namespace, a missing required core action, a fourth ending, and an
+   * illegal verb — are no longer representable, because no model output reaches
+   * any of those fields. `compile-base.test.ts` asserts that unrepresentability
+   * directly, which is a stronger statement than a rejection test.
+   *
+   * What a base candidate can still fail on is its copy, so that is what is
+   * asserted here: the validator remains the final authority over the
+   * assembled structure, and nothing special-cases a server-authored core.
+   */
+  it("still rejects copy the authoritative scene contract refuses", () => {
+    const result = assemble(nonPlainTextBaseCopy());
     expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.findings[0]!.code).toBe("SCHEMA_INVALID");
+    if (!result.ok) {
+      expect(result.findings[0]!.code).toBe("SCHEMA_INVALID");
+      expect(result.findings[0]!.detail).toContain("plain text");
+    }
   });
 
-  it("rejects an illegal verb for a required core action", () => {
-    const verdict = verifyBase(sceneOf(assemble(illegalVerbBaseOutput())), SECOND_COPY_BRIEF);
-    expect(verdict.ok).toBe(false);
-    expect(verdict.errors.map((error) => error.code)).toContain("CORE_VERB_MISMATCH");
-  });
-
-  it("produces a base whose hash does not depend on any approval", () => {
-    // Two assemblies of the same base output, with different frozen approval
+  it("produces a base whose core does not depend on any approval", () => {
+    // Two assemblies of the same brief and copy, with different frozen approval
     // sets, produce the identical clean core.
-    const withBoth = coreFromModelOutput(validBaseOutput(), worldFromBrief(SECOND_COPY_BRIEF));
-    const withNone = coreFromModelOutput(validBaseOutput(), worldFromBrief(SECOND_COPY_BRIEF));
-    expect(JSON.stringify(withBoth)).toBe(JSON.stringify(withNone));
+    const withBoth = sceneOf(
+      assemble(validBaseCopy(), [
+        { slot: "discovery", output: validDiscoveryOutput() },
+        { slot: "commitment", output: validCommitmentOutput() },
+      ]),
+    );
+    const withNone = sceneOf(assemble());
+    expect(JSON.stringify(withBoth.core)).toBe(JSON.stringify(withNone.core));
   });
 });
 
@@ -260,7 +255,7 @@ describe("module generation", () => {
     slot: "discovery" | "commitment",
     output: ReturnType<typeof validDiscoveryOutput>,
   ) {
-    const scene = sceneOf(assemble(validBaseOutput(), [{ slot, output }]));
+    const scene = sceneOf(assemble(validBaseCopy(), [{ slot, output }]));
     return verifyModule(scene, SECOND_COPY_BRIEF, slot, sceneApprovalAllowlist(APPROVALS));
   }
 
@@ -316,7 +311,7 @@ describe("module generation", () => {
 
   it("validates one module against the clean base alone, so no finding can name the other slot", () => {
     const both = sceneOf(
-      assemble(validBaseOutput(), [
+      assemble(validBaseCopy(), [
         { slot: "discovery", output: validDiscoveryOutput() },
         { slot: "commitment", output: crossSlotModuleOutput() },
       ]),
@@ -340,7 +335,7 @@ describe("module generation", () => {
 describe("subset validation", () => {
   it("validates the base, each module alone, and both together", () => {
     const scene = sceneOf(
-      assemble(validBaseOutput(), [
+      assemble(validBaseCopy(), [
         { slot: "discovery", output: validDiscoveryOutput() },
         { slot: "commitment", output: validCommitmentOutput() },
       ]),
@@ -370,7 +365,7 @@ describe("subset validation", () => {
 
   it("requires a witness for every active module", () => {
     const scene = sceneOf(
-      assemble(validBaseOutput(), [
+      assemble(validBaseCopy(), [
         { slot: "discovery", output: validDiscoveryOutput() },
         { slot: "commitment", output: mechanicallyEmptyModuleOutput() },
       ]),
@@ -386,7 +381,7 @@ describe("subset validation", () => {
 
   it("reports a single-module candidate's subsets as base and that module", () => {
     const scene = sceneOf(
-      assemble(validBaseOutput(), [{ slot: "discovery", output: validDiscoveryOutput() }]),
+      assemble(validBaseCopy(), [{ slot: "discovery", output: validDiscoveryOutput() }]),
     );
     const verdict = verifyCandidate(
       scene,

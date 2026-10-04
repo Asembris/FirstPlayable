@@ -2,11 +2,18 @@
  * Assembly: turning constrained model output into an authoritative candidate
  * scene (specification sections 4 and 9).
  *
- * The server assigns every authority. A model proposes variables, actions,
- * dialogue, endings, gates, and hooks; this module supplies the schema
- * version, the scene id, the whole world, the fixed port table, the effect
- * operator, each action's target, each module's slot and approval binding, the
- * influence references with their source kinds, and the provenance bindings.
+ * The server assigns every authority. A module proposes variables, actions,
+ * dialogue, gates, and hooks; this module supplies the schema version, the
+ * scene id, the whole world, the fixed port table, the effect operator, each
+ * action's target, each module's slot and approval binding, the influence
+ * references with their source kinds, and the provenance bindings.
+ *
+ * The clean base is no longer in that list at all. Since the Phase 4 recovery
+ * amendment its every mechanical element is constructed by
+ * `src/server/compile/base.ts` from the frozen brief, and the model contributes
+ * only the writing. Assembly therefore receives a `CoreScene` it can trust to
+ * be structurally fixed, and still submits it to the Phase 1 validator
+ * unchanged — see the note on totality below.
  *
  * Two of those are worth naming explicitly, because they remove a class of
  * forgery rather than rejecting it:
@@ -27,7 +34,7 @@
  */
 
 import type { Brief } from "@/domain/brief";
-import type { BaseCompilationOutput, ModuleCompilationOutput } from "@/domain/compile";
+import type { ModuleCompilationOutput } from "@/domain/compile";
 import type { ApprovedInfluence, Slot } from "@/domain/influence";
 import { FIXED_PORTS, SLOTS, VERB_TARGET_KIND } from "@/domain/limits";
 import type {
@@ -74,7 +81,14 @@ export function worldFromBrief(brief: Brief): World {
   };
 }
 
-function targetFor(verb: string, world: World): Target {
+/**
+ * The target an action addresses, derived from the verb and the frozen world.
+ *
+ * Exported because the deterministic base skeleton needs the same derivation,
+ * and a second copy of the verb-to-entity table is exactly the kind of drift
+ * that `CORE_VERB_MISMATCH` would then have to catch at runtime.
+ */
+export function targetFor(verb: string, world: World): Target {
   const kind = VERB_TARGET_KIND[verb as keyof typeof VERB_TARGET_KIND];
   switch (kind) {
     case "room":
@@ -117,8 +131,8 @@ function toDialogue(
   }));
 }
 
-type ModelBranch = BaseCompilationOutput["actions"][number]["branches"][number];
-type ModelAction = BaseCompilationOutput["actions"][number];
+type ModelBranch = ModuleCompilationOutput["actions"][number]["branches"][number];
+type ModelAction = ModuleCompilationOutput["actions"][number];
 
 function toBranch(branch: ModelBranch): ActionBranch {
   return {
@@ -137,24 +151,6 @@ function toAction(action: ModelAction, world: World): Action {
     target: targetFor(action.verb, world),
     when: action.when,
     branches: action.branches.map(toBranch),
-  };
-}
-
-/* -------------------------------------------------------------- the core */
-
-export function coreFromModelOutput(
-  output: BaseCompilationOutput,
-  world: World,
-): CoreScene {
-  return {
-    variables: toVariables(output.variables),
-    actions: output.actions.map((action) => toAction(action, world)),
-    dialogue: toDialogue(output.dialogue),
-    endings: output.endings.map((ending) => ({
-      id: ending.id,
-      title: ending.title,
-      text: ending.text,
-    })),
   };
 }
 

@@ -18,7 +18,7 @@ import { body, envelope, mutation } from "./support/phase3-harness";
 import { approvedProject, type ApprovedProject } from "./support/phase4-harness";
 import { fakeCompiler } from "./support/fake-compiler";
 import {
-  validBaseOutput,
+  validBaseCopy,
   validCommitmentOutput,
   validDiscoveryOutput,
 } from "./support/compile-fixtures";
@@ -30,7 +30,7 @@ import {
 
 function happyCompiler() {
   return fakeCompiler({
-    base: [{ output: validBaseOutput() }],
+    base: [{ output: validBaseCopy() }],
     module: [{ output: validDiscoveryOutput() }, { output: validCommitmentOutput() }],
   });
 }

@@ -18,8 +18,8 @@ import {
 import {
   SENTINELS,
   mechanicallyEmptyModuleOutput,
-  missingCoreActionBaseOutput,
-  validBaseOutput,
+  nonPlainTextBaseCopy,
+  validBaseCopy,
   validCommitmentOutput,
   validDiscoveryOutput,
 } from "./support/compile-fixtures";
@@ -35,7 +35,7 @@ import {
 /** The default happy script: a valid base, then one valid module per slot. */
 function happyCompiler(slots: readonly ("discovery" | "commitment")[]): FakeCompiler {
   return fakeCompiler({
-    base: [{ output: validBaseOutput() }],
+    base: [{ output: validBaseCopy() }],
     module: slots.map((slot) => ({
       output: slot === "discovery" ? validDiscoveryOutput() : validCommitmentOutput(),
     })),
@@ -268,7 +268,7 @@ describe("POST /api/operations/:id/advance", () => {
   });
 
   it("cannot duplicate a provider attempt when the same advance is replayed", async () => {
-    const compiler = fakeCompiler({ base: [{ output: validBaseOutput() }] });
+    const compiler = fakeCompiler({ base: [{ output: validBaseCopy() }] });
     const state = await approvedProject(["discovery"], compiler);
     const created = await body<CompileResponse>(await compile(state));
     const operationId = created.status.operation_id;
@@ -290,7 +290,7 @@ describe("POST /api/operations/:id/advance", () => {
 
   it("reuses an already compiled base rather than regenerating it", async () => {
     const compiler = fakeCompiler({
-      base: [{ output: validBaseOutput() }],
+      base: [{ output: validBaseCopy() }],
       module: [{ output: validDiscoveryOutput() }, { output: validCommitmentOutput() }],
     });
     const state = await approvedProject(["discovery"], compiler);
@@ -409,7 +409,7 @@ describe("GET /api/operations/:id", () => {
 describe("the repair ceiling", () => {
   it("accepts one invalid base, one repair, and then a valid base", async () => {
     const compiler = fakeCompiler({
-      base: [{ output: missingCoreActionBaseOutput() }, { output: validBaseOutput() }],
+      base: [{ output: nonPlainTextBaseCopy() }, { output: validBaseCopy() }],
       module: [{ output: validDiscoveryOutput() }],
     });
     const state = await approvedProject(["discovery"], compiler);
@@ -435,7 +435,7 @@ describe("the repair ceiling", () => {
 
   it("shows the repair its own rejected candidate and the findings", async () => {
     const compiler = fakeCompiler({
-      base: [{ output: missingCoreActionBaseOutput() }, { output: validBaseOutput() }],
+      base: [{ output: nonPlainTextBaseCopy() }, { output: validBaseCopy() }],
     });
     const state = await approvedProject(["discovery"], compiler);
     const created = await body<CompileResponse>(await compile(state));
@@ -451,15 +451,15 @@ describe("the repair ceiling", () => {
     };
     expect(payload.stage).toBe("repair");
     expect(payload.context.stage).toBe("base");
-    expect(payload.rejected_output).toEqual(missingCoreActionBaseOutput());
-    expect(payload.findings.map((finding) => finding.code)).toContain("CORE_ACTION_MISSING");
+    expect(payload.rejected_output).toEqual(nonPlainTextBaseCopy());
+    expect(payload.findings.map((finding) => finding.code)).toContain("SCHEMA_INVALID");
   });
 
   it("stops after the one permitted repair, with no third attempt", async () => {
     const compiler = fakeCompiler({
       base: [
-        { output: missingCoreActionBaseOutput() },
-        { output: missingCoreActionBaseOutput() },
+        { output: nonPlainTextBaseCopy() },
+        { output: nonPlainTextBaseCopy() },
       ],
     });
     const state = await approvedProject(["discovery"], compiler);
@@ -482,7 +482,7 @@ describe("the repair ceiling", () => {
 
   it("counts a provider failure against the same two-attempt ceiling", async () => {
     const compiler = fakeCompiler({
-      base: [providerRefusal(), { output: validBaseOutput() }],
+      base: [providerRefusal(), { output: validBaseCopy() }],
       module: [{ output: validDiscoveryOutput() }],
     });
     const state = await approvedProject(["discovery"], compiler);
@@ -514,7 +514,7 @@ describe("the repair ceiling", () => {
 
   it("repairs a mechanically empty module rather than accepting it", async () => {
     const compiler = fakeCompiler({
-      base: [{ output: validBaseOutput() }],
+      base: [{ output: validBaseCopy() }],
       module: [
         { output: mechanicallyEmptyModuleOutput() },
         { output: validCommitmentOutput() },
@@ -535,8 +535,8 @@ describe("the repair ceiling", () => {
   it("never records more than two attempts on a stage row", async () => {
     const compiler = fakeCompiler({
       base: [
-        { output: missingCoreActionBaseOutput() },
-        { output: missingCoreActionBaseOutput() },
+        { output: nonPlainTextBaseCopy() },
+        { output: nonPlainTextBaseCopy() },
       ],
     });
     const state = await approvedProject(["discovery"], compiler);
@@ -557,7 +557,7 @@ describe("the error envelope", () => {
     const state = await approvedProject(
       ["discovery"],
       fakeCompiler({
-        base: [{ output: validBaseOutput() }],
+        base: [{ output: validBaseCopy() }],
         module: [{ output: validDiscoveryOutput() }],
       }),
     );

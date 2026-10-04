@@ -3,9 +3,9 @@
  *
  * Two kinds of contract live here, and the split is the whole point.
  *
- * **What a model may propose.** `BaseCompilationOutputSchema` and
- * `ModuleCompilationOutputSchema` describe the constrained game data a model
- * is allowed to control, and nothing else. There is no field for a scene id,
+ * **What a model may propose.** `BaseNarrativeCopySchema` and
+ * `ModuleCompilationOutputSchema` describe the constrained material a model is
+ * allowed to control, and nothing else. There is no field for a scene id,
  * an approval id, a source kind, a provenance binding, a schema version, a
  * port map, a world entity, a hash, a validation verdict, or a publication
  * state: the server assigns every one of those, so a returned object has
@@ -84,28 +84,65 @@ const ModelActionSchema = z.strictObject({
   branches: z.array(ModelBranchSchema),
 });
 
-const ModelEndingSchema = z.strictObject({
-  id: ModelIdSchema,
-  title: z.string().min(1).max(TEXT.ending_title),
-  text: z.string().min(1).max(TEXT.ending_text),
-});
-
 /**
- * The brief-only base call's whole output.
+ * The brief-only base call's whole output: **narrative copy, and nothing else.**
  *
- * `title` is honoured only when the creator left the brief title empty; a
- * brief that names its title wins, because the world and the title are frozen
- * creator input rather than generated content.
+ * This is the Phase 4 recovery amendment, and it is deliberately the narrowest
+ * schema in the application. The clean base's mechanics — its variable ids and
+ * definitions, its six action ids, verbs, targets and availability conditions,
+ * its one branch per action with that branch's effects and ending binding, its
+ * three dialogue node ids and speakers, its three ending ids, and the port
+ * table — are all fixed by the product contract, which means the model was
+ * being asked to reproduce values that had exactly one legal answer. It did
+ * not reliably reproduce them; `docs/PHASE4_EVIDENCE.md` records seven live
+ * base failures across six distinct deterministic finding codes. The server
+ * now constructs every one of those itself (`src/server/compile/base.ts`), and
+ * this call asks only for the writing.
+ *
+ * Every field is a plain bounded string, keyed semantically rather than by an
+ * executable identifier. There is therefore no field in which to put an id, a
+ * namespace, a condition, a clause, an atom, a branch, an effect, a variable,
+ * an extra action, or a fourth ending: those are not rejected values here, they
+ * are unrepresentable ones, which is why the whole class of live base failure
+ * cannot recur. The one exception by design is `title`, which is honoured only
+ * when the creator left the brief title empty.
+ *
+ * The labels *are* purely presentational. Nothing reads an action label
+ * programmatically: the engine, the validator, the port table, the witness
+ * search, and the provenance binding all address an action by its
+ * server-assigned id.
  */
-export const BaseCompilationOutputSchema = z.strictObject({
+export const BaseNarrativeCopySchema = z.strictObject({
   title: z.string().min(1).max(TEXT.scene_title),
-  variables: z.array(ModelVariableSchema),
-  actions: z.array(ModelActionSchema),
-  dialogue: z.array(ModelDialogueSchema),
-  endings: z.array(ModelEndingSchema),
+
+  /** The six core actions' visible labels, in the fixed skeleton's order. */
+  inspect_label: z.string().min(1).max(TEXT.action_label),
+  ask_context_label: z.string().min(1).max(TEXT.action_label),
+  ask_terms_label: z.string().min(1).max(TEXT.action_label),
+  give_label: z.string().min(1).max(TEXT.action_label),
+  withhold_label: z.string().min(1).max(TEXT.action_label),
+  leave_label: z.string().min(1).max(TEXT.action_label),
+
+  /** The three dialogue nodes' text. The server owns each node's id and speaker. */
+  inspect_dialogue: z.string().min(1).max(TEXT.dialogue),
+  context_dialogue: z.string().min(1).max(TEXT.dialogue),
+  commitment_dialogue: z.string().min(1).max(TEXT.dialogue),
+
+  /** The three endings' copy. The server owns the ending ids and the bindings. */
+  give_ending_title: z.string().min(1).max(TEXT.ending_title),
+  give_ending_text: z.string().min(1).max(TEXT.ending_text),
+  keep_ending_title: z.string().min(1).max(TEXT.ending_title),
+  keep_ending_text: z.string().min(1).max(TEXT.ending_text),
+  leave_ending_title: z.string().min(1).max(TEXT.ending_title),
+  leave_ending_text: z.string().min(1).max(TEXT.ending_text),
 });
 
-export type BaseCompilationOutput = z.infer<typeof BaseCompilationOutputSchema>;
+export type BaseNarrativeCopy = z.infer<typeof BaseNarrativeCopySchema>;
+
+/** Every field of the base copy contract, for the tests that enumerate them. */
+export const BASE_NARRATIVE_COPY_FIELDS = Object.keys(
+  BaseNarrativeCopySchema.shape,
+) as readonly (keyof BaseNarrativeCopy)[];
 
 const ModelGateSchema = z.strictObject({
   id: ModelIdSchema,

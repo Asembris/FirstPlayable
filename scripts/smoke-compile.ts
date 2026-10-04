@@ -1009,7 +1009,7 @@ async function main(): Promise<number> {
   check(
     "the version records the pinned model and the phase 4 identifiers",
     reloadedOne.versions[0]?.model_identifier === PINNED_CHAT_MODEL &&
-      reloadedOne.versions[0]?.compiler_identifier === "fp-compiler-4.0" &&
+      reloadedOne.versions[0]?.compiler_identifier === "fp-compiler-4.1" &&
       reloadedOne.versions[0]?.validator_identifier === "fp-engine-validator-1.0",
     `${reloadedOne.versions[0]?.model_identifier} / ${reloadedOne.versions[0]?.compiler_identifier} / ${reloadedOne.versions[0]?.validator_identifier}`,
   );

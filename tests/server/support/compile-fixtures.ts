@@ -9,22 +9,21 @@
  *     proposal, the other slot's approval, and the private affinity and
  *     capture diagnostics. A payload test fails if any of them appears in the
  *     bytes actually sent.
- *   * **Model candidates.** Base and module outputs in the exact shape the
- *     model-facing contracts accept, built from the hand-authored Phase 1
- *     fixture so a "valid" candidate really is valid. The fake provider
+ *   * **Model candidates.** Base narrative copy and module outputs in the
+ *     exact shape the model-facing contracts accept, the copy lifted from the
+ *     hand-authored Phase 1 fixture so a "valid" candidate really is valid. The fake provider
  *     returns these; the **real** engine decides whether they are acceptable.
  *     Nothing here mocks the validator.
  */
 
 import type {
-  BaseCompilationOutput,
+  BaseNarrativeCopy,
   ModuleCompilationOutput,
 } from "../../../src/domain/compile";
 import type { ApprovedInfluence, ApprovedInfluencePayload } from "../../../src/domain/influence";
-import type { Action, CoreScene, InfluenceModule } from "../../../src/domain/scene";
+import type { Action, InfluenceModule } from "../../../src/domain/scene";
 import {
   SECOND_COPY_BASE,
-  SECOND_COPY_BRIEF,
   SECOND_COPY_DISCOVERY_V1,
 } from "../../../fixtures/second-copy";
 
@@ -155,7 +154,7 @@ export const COMMITMENT_APPROVAL = approvalRecord(COMMITMENT_APPROVAL_PAYLOAD);
 /* ------------------------------------------------------- model candidates */
 
 /** Strips the server-assigned fields back out of a hand-authored action. */
-function toModelAction(action: Action): BaseCompilationOutput["actions"][number] {
+function toModelAction(action: Action): ModuleCompilationOutput["actions"][number] {
   return {
     id: action.id,
     verb: action.verb,
@@ -170,75 +169,71 @@ function toModelAction(action: Action): BaseCompilationOutput["actions"][number]
   };
 }
 
-function coreToModelOutput(core: CoreScene, title: string): BaseCompilationOutput {
+/* ------------------------------------------------ base narrative copy */
+
+/**
+ * The base copy the Phase 1 fixture's own writing supplies.
+ *
+ * Every string here is lifted verbatim from `fixtures/second_copy.base.json`,
+ * so `baseCoreFromCopy(SECOND_COPY_BRIEF, validBaseCopy())` reproduces that
+ * fixture's core — the deterministic skeleton and the authoritative fixture are
+ * the same state machine, and `compile-base.test.ts` asserts exactly that.
+ */
+export function validBaseCopy(): BaseNarrativeCopy {
+  const label = (id: string): string =>
+    SECOND_COPY_BASE.core.actions.find((action) => action.id === id)!.label;
+  const line = (id: string): string =>
+    SECOND_COPY_BASE.core.dialogue.find((node) => node.id === id)!.text;
+  const ending = (id: string) =>
+    SECOND_COPY_BASE.core.endings.find((entry) => entry.id === id)!;
   return {
-    title,
-    variables: core.variables.map((variable) => ({
-      id: variable.id,
-      label: variable.label,
-      visible: variable.visible,
-    })),
-    actions: core.actions.map(toModelAction),
-    dialogue: core.dialogue.map((node) => ({
-      id: node.id,
-      speaker_id: node.speaker_id,
-      text: node.text,
-    })),
-    endings: core.endings.map((ending) => ({
-      id: ending.id,
-      title: ending.title,
-      text: ending.text,
-    })),
+    title: SECOND_COPY_BASE.title,
+    inspect_label: label("core.inspect"),
+    ask_context_label: label("core.ask_context"),
+    ask_terms_label: label("core.ask_terms"),
+    give_label: label("core.give"),
+    withhold_label: label("core.withhold"),
+    leave_label: label("core.leave"),
+    inspect_dialogue: line("core.inspect_text"),
+    context_dialogue: line("core.context_text"),
+    commitment_dialogue: line("core.promise_text"),
+    give_ending_title: ending("end.give").title,
+    give_ending_text: ending("end.give").text,
+    keep_ending_title: ending("end.keep").title,
+    keep_ending_text: ending("end.keep").text,
+    leave_ending_title: ending("end.leave").title,
+    leave_ending_text: ending("end.leave").text,
   };
 }
 
-/** A base candidate the real validator accepts. */
-export function validBaseOutput(): BaseCompilationOutput {
-  return coreToModelOutput(SECOND_COPY_BASE.core, SECOND_COPY_BRIEF.title ?? "Untitled");
+/**
+ * Copy the *scene contract* refuses: a control character in a dialogue line.
+ *
+ * It satisfies the narrative-copy schema, which bounds length only, and is
+ * rejected by `boundedText`'s plain-text refinement during assembly. This is
+ * the rejectable base candidate the offline suite uses now that no mechanical
+ * one is representable.
+ */
+export function nonPlainTextBaseCopy(): BaseNarrativeCopy {
+  return { ...validBaseCopy(), inspect_dialogue: "The envelope is still sealed." };
 }
 
-/** A base candidate whose ids are outside the core namespace. */
-export function badNamespaceBaseOutput(): BaseCompilationOutput {
-  const output = validBaseOutput();
+/**
+ * Copy that uses {@link FORBIDDEN_PHRASE}.
+ *
+ * Pair it with a brief whose `forbidden_wording` lists that phrase: the
+ * validator then reports `FORBIDDEN_WORDING`, which is a real copy failure the
+ * one permitted repair can fix without touching a mechanic.
+ */
+export function forbiddenWordingBaseCopy(): BaseNarrativeCopy {
   return {
-    ...output,
-    variables: output.variables.map((variable, index) =>
-      index === 0 ? { ...variable, id: "rogue.inspected" } : variable,
-    ),
+    ...validBaseCopy(),
+    keep_ending_text: "You keep it. The whole affair is a moral quandary you cannot settle.",
   };
 }
 
-/** A base candidate missing a required core action. */
-export function missingCoreActionBaseOutput(): BaseCompilationOutput {
-  const output = validBaseOutput();
-  return {
-    ...output,
-    actions: output.actions.filter((action) => action.id !== "core.ask_terms"),
-  };
-}
-
-/** A base candidate with a fourth ending. */
-export function fourEndingBaseOutput(): BaseCompilationOutput {
-  const output = validBaseOutput();
-  return {
-    ...output,
-    endings: [
-      ...output.endings,
-      { id: "end.extra", title: "Extra", text: "An ending the brief does not allow." },
-    ],
-  };
-}
-
-/** A base candidate that uses an illegal verb. */
-export function illegalVerbBaseOutput(): BaseCompilationOutput {
-  const output = validBaseOutput();
-  return {
-    ...output,
-    actions: output.actions.map((action) =>
-      action.id === "core.ask_context" ? { ...action, verb: "leave" as const } : action,
-    ),
-  };
-}
+/** The phrase {@link forbiddenWordingBaseCopy} uses, as a brief forbids it. */
+export const FORBIDDEN_PHRASE = "moral quandary";
 
 function moduleToModelOutput(module: InfluenceModule): ModuleCompilationOutput {
   return {

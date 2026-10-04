@@ -24,10 +24,10 @@ import { body, envelope, mutation, owner } from "./support/phase3-harness";
 import { approvedProject, readProject, type ApprovedProject } from "./support/phase4-harness";
 import { fakeCompiler, type FakeCompiler } from "./support/fake-compiler";
 import {
-  validBaseOutput,
+  validBaseCopy,
   validCommitmentOutput,
   validDiscoveryOutput,
-  missingCoreActionBaseOutput,
+  nonPlainTextBaseCopy,
 } from "./support/compile-fixtures";
 
 /**
@@ -37,7 +37,7 @@ import {
 
 function happyCompiler(slots: readonly ("discovery" | "commitment")[]): FakeCompiler {
   return fakeCompiler({
-    base: [{ output: validBaseOutput() }],
+    base: [{ output: validBaseCopy() }],
     module: slots.map((slot) => ({
       output: slot === "discovery" ? validDiscoveryOutput() : validCommitmentOutput(),
     })),
@@ -111,9 +111,9 @@ describe("the immutable scene version", () => {
     expect(row.base_hash).toHaveLength(64);
     expect(row.module_hashes).toHaveProperty("discovery");
     expect(row.model_identifier).toBe("gpt-4o-mini-2024-07-18");
-    expect(row.compiler_identifier).toBe("fp-compiler-4.0");
-    expect(row.prompt_identifier).toBe("fp-prompts-4.0");
-    expect(row.schema_identifier).toBe("fp-model-schema-4.0");
+    expect(row.compiler_identifier).toBe("fp-compiler-4.1");
+    expect(row.prompt_identifier).toBe("fp-prompts-4.1");
+    expect(row.schema_identifier).toBe("fp-model-schema-4.1");
     expect(row.validator_identifier).toBe("fp-engine-validator-1.0");
     expect(row.operation_id).toBe(status.operation_id);
 
@@ -163,9 +163,9 @@ describe("the immutable scene version", () => {
         inputSnapshot: {},
         approvalSnapshot: [],
         modelIdentifier: "gpt-4o-mini-2024-07-18",
-        promptIdentifier: "fp-prompts-4.0",
-        schemaIdentifier: "fp-model-schema-4.0",
-        compilerIdentifier: "fp-compiler-4.0",
+        promptIdentifier: "fp-prompts-4.1",
+        schemaIdentifier: "fp-model-schema-4.1",
+        compilerIdentifier: "fp-compiler-4.1",
         validatorIdentifier: "fp-engine-validator-1.0",
       }),
     ).rejects.toSatisfy(
@@ -311,7 +311,7 @@ describe("the stale-result compare-and-swap", () => {
             state.projectId,
           );
         }
-        const parsed = request.schema.safeParse(validBaseOutput());
+        const parsed = request.schema.safeParse(validBaseCopy());
         if (!parsed.success) throw new Error("fixture rejected by the contract");
         return { data: parsed.data, model: "gpt-4o-mini-2024-07-18", usage: null };
       },
@@ -436,8 +436,8 @@ describe("review before activation", () => {
   it("cannot activate anything after a failed compilation", async () => {
     const compiler = fakeCompiler({
       base: [
-        { output: missingCoreActionBaseOutput() },
-        { output: missingCoreActionBaseOutput() },
+        { output: nonPlainTextBaseCopy() },
+        { output: nonPlainTextBaseCopy() },
       ],
     });
     const state = await approvedProject(["discovery"], compiler);
@@ -455,7 +455,7 @@ describe("review before activation", () => {
 describe("the last good version", () => {
   it("stays active and playable when a later build fails", async () => {
     const compiler = fakeCompiler({
-      base: [{ output: validBaseOutput() }],
+      base: [{ output: validBaseCopy() }],
       module: [
         { output: validDiscoveryOutput() },
         // The commitment module fails twice in the second compilation.
