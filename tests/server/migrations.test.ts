@@ -266,8 +266,10 @@ describe("committed migrations", () => {
     expect(defined).toEqual([
       "activate_scene_version",
       "append_influence_decision",
-      // Defined twice: phase 4 wrote it, phase 5 replaces it with the
-      // revision-diff parameter. Both definitions are history.
+      // Defined three times: phase 4 wrote it, phase 5 adds the signature that
+      // also stores a revision diff and rewrites the older one as a one-line
+      // delegation to it. All three definitions are history.
+      "commit_scene_version",
       "commit_scene_version",
       "commit_scene_version",
       "complete_operation",
@@ -383,13 +385,11 @@ describe("committed migrations", () => {
   });
 
   /**
-   * Phase 5's own primitives, and the shape of its one deliberate replacement.
+   * Phase 5's own primitives.
    *
-   * `commit_scene_version` is dropped and recreated with a `p_revision_diff`
-   * parameter, because `scene_versions` refuses `UPDATE` and a diff can
-   * therefore only be written by the insert that creates the row. Leaving the
-   * nineteen-argument form in place would leave an overload that silently
-   * stores no diff, so the old signature goes.
+   * `commit_scene_version` gains a `p_revision_diff` parameter, because
+   * `scene_versions` refuses `UPDATE` and a diff can therefore only be written
+   * by the insert that creates the row.
    */
   it("defines the phase 5 revision and publication primitives", () => {
     for (const fn of [
@@ -410,7 +410,10 @@ describe("committed migrations", () => {
     );
     expect(/create\s+table/i.test(phase5)).toBe(false);
     expect(/alter\s+column/i.test(phase5)).toBe(false);
-    expect(/drop\s+(table|column|trigger|index|policy)/i.test(phase5)).toBe(false);
+    // It drops nothing at all, including no function: a migration is applied
+    // while the previous build is still serving, and dropping the signature
+    // that build calls would break every commit until the next deployment.
+    expect(/drop\s+(table|column|trigger|index|policy|function)/i.test(phase5)).toBe(false);
     expect(/create\s+policy/i.test(phase5)).toBe(false);
 
     // Only additive column work, and only on the two tables phase 5 extends.
@@ -420,15 +423,40 @@ describe("committed migrations", () => {
       expect(statement[0]).toContain("if not exists");
     }
 
-    // Exactly two deliberate removals: the stage check constraint, swapped to
-    // admit `revision`, and the superseded commit signature.
+    // One deliberate removal in the whole migration: the stage check
+    // constraint, swapped to admit `revision`.
     expect(
       [...phase5.matchAll(/drop constraint ([a-z_]+)/g)].map((m) => m[1]),
     ).toEqual(["operations_stage_known"]);
     expect(phase5).toContain("'revision'");
-    expect(
-      [...phase5.matchAll(/drop function public\.([a-z_0-9]+)\(/g)].map((m) => m[1]),
-    ).toEqual(["commit_scene_version"]);
+  });
+
+  /**
+   * The superseded commit signature stays callable, and delegates.
+   *
+   * A delegation rather than a copy is what keeps the compare-and-swap, the
+   * validation guard, and the pending-not-active pointer in exactly one place:
+   * there is no second body that could drift from the first.
+   */
+  it("keeps the previous commit signature callable as a delegation", () => {
+    const phase5 = readFileSync(
+      join(migrationsDir, "20261004190000_phase5_revision_share.sql"),
+      "utf8",
+    );
+    const compat = phase5.slice(phase5.indexOf("as $compat$"));
+    const body = compat.slice(0, compat.indexOf("$compat$;"));
+    expect(body).toContain("select public.commit_scene_version(");
+    expect(body).toContain("null::jsonb");
+    // No second copy of the decision: no insert, no update, no comparison.
+    expect(/insert\s+into/i.test(body)).toBe(false);
+    expect(/update\s+public/i.test(body)).toBe(false);
+    expect(body.includes("stale_input")).toBe(false);
+    // And nothing in the application calls it any more.
+    const gateway = readFileSync(
+      fileURLToPath(new URL("../../src/server/db/supabase-gateway.ts", import.meta.url)),
+      "utf8",
+    );
+    expect(gateway).toContain("p_revision_diff");
   });
 
   /**

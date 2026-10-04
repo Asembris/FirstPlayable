@@ -19,9 +19,10 @@
 --   * `commit_scene_version` gains `p_revision_diff`. `scene_versions` has
 --     carried a `revision_diff` column since phase 2 and the table's trigger
 --     refuses `UPDATE`, so the only moment a diff can be stored is the insert.
---     Changing the parameter list means dropping the old signature; that is
---     the one deliberate, documented replacement in this migration, and the
---     function's behaviour is otherwise unchanged.
+--     That means a new signature; the old one is kept, as a one-line
+--     delegation, so the build deployed when this migration is applied keeps
+--     committing versions until the build that goes with it is deployed. This
+--     migration therefore drops no function at all.
 --   * Five publication functions. A publication is a cross-table decision —
 --     owner, project, version state, token uniqueness — and the public read is
 --     the one query in the application with *no* owner predicate, so both
@@ -136,21 +137,25 @@ comment on function public.set_project_ending_copy_overrides(uuid, uuid, integer
 -- ---------------------------------------------------------------------------
 
 /*
- * The one deliberate replacement in this migration.
+ * Committing a version with its diff, added as a new signature.
  *
  * `scene_versions.revision_diff` has existed since the phase 2 migration and
  * `scene_versions_immutable` refuses every `UPDATE`, so a diff can only be
  * written by the insert that creates the row. Adding the parameter therefore
- * requires a new signature, and leaving the nineteen-argument form in place
- * would leave an overload that silently stores no diff. The body below is the
- * phase 4 body with one column added: the compare-and-swap triple, the
- * pending-not-active pointer, and the preserved module artifacts are unchanged.
+ * means a new signature, and the body below is the phase 4 body with one column
+ * added: the compare-and-swap triple, the pending-not-active pointer, and the
+ * preserved module artifacts are unchanged.
+ *
+ * The nineteen-argument form is deliberately **not** dropped, and this is an
+ * operational decision rather than tidiness. A migration is applied to the live
+ * database while the previously deployed build is still serving: dropping the
+ * signature that build calls would break every compilation in the window
+ * between applying this file and deploying the code that goes with it. So the
+ * old signature stays, rewritten below as a one-line delegation to this one with
+ * no diff — which is exactly what it did before — and nothing in this repository
+ * calls it any more. There is no duplicated body to drift, and no moment at
+ * which committing a version fails.
  */
-drop function public.commit_scene_version(
-  uuid, uuid, integer, text, jsonb, uuid, uuid, text, text, jsonb, jsonb, jsonb,
-  jsonb, jsonb, text, text, text, text, text
-);
-
 create or replace function public.commit_scene_version(
   p_project_id uuid,
   p_owner_session_id uuid,
@@ -238,6 +243,55 @@ $func$;
 
 comment on function public.commit_scene_version(uuid, uuid, integer, text, jsonb, uuid, uuid, text, text, jsonb, jsonb, jsonb, jsonb, jsonb, text, text, text, text, text, jsonb) is
   'Inserts one validated immutable version, with its deterministic revision diff, and makes it the pending review, under a compare-and-swap on revision, base hash, and approval pointers. A stale result inserts nothing.';
+
+/*
+ * The superseded nineteen-argument signature, kept callable for one deployment.
+ *
+ * It delegates, so the compare-and-swap, the validation guard, and the
+ * pending-not-active pointer are the ones above and cannot drift from them. It
+ * stores no revision diff, which is precisely what it did before this phase.
+ * Nothing in this repository calls it; it exists so that the build deployed
+ * when this migration is applied keeps working until the build that goes with
+ * this migration replaces it.
+ */
+create or replace function public.commit_scene_version(
+  p_project_id uuid,
+  p_owner_session_id uuid,
+  p_expected_revision integer,
+  p_expected_base_hash text,
+  p_expected_approvals jsonb,
+  p_operation_id uuid,
+  p_parent_version_id uuid,
+  p_input_hash text,
+  p_base_hash text,
+  p_module_hashes jsonb,
+  p_scene jsonb,
+  p_validation_summary jsonb,
+  p_input_snapshot jsonb,
+  p_approval_snapshot jsonb,
+  p_model_identifier text,
+  p_prompt_identifier text,
+  p_schema_identifier text,
+  p_compiler_identifier text,
+  p_validator_identifier text
+)
+returns jsonb
+language sql
+security invoker
+set search_path = ''
+as $compat$
+  select public.commit_scene_version(
+    p_project_id, p_owner_session_id, p_expected_revision, p_expected_base_hash,
+    p_expected_approvals, p_operation_id, p_parent_version_id, p_input_hash,
+    p_base_hash, p_module_hashes, p_scene, p_validation_summary,
+    p_input_snapshot, p_approval_snapshot, p_model_identifier,
+    p_prompt_identifier, p_schema_identifier, p_compiler_identifier,
+    p_validator_identifier, null::jsonb
+  );
+$compat$;
+
+comment on function public.commit_scene_version(uuid, uuid, integer, text, jsonb, uuid, uuid, text, text, jsonb, jsonb, jsonb, jsonb, jsonb, text, text, text, text, text) is
+  'Superseded signature, kept callable for one deployment window. Delegates to the form that also stores a revision diff, and stores none itself.';
 
 /*
  * The version read, replaced so a summary carries its stored revision diff.
@@ -571,6 +625,7 @@ comment on function public.read_publications_for_owner(uuid, uuid, integer) is
 revoke execute on function
   public.set_project_ending_copy_overrides(uuid, uuid, integer, jsonb),
   public.commit_scene_version(uuid, uuid, integer, text, jsonb, uuid, uuid, text, text, jsonb, jsonb, jsonb, jsonb, jsonb, text, text, text, text, text, jsonb),
+  public.commit_scene_version(uuid, uuid, integer, text, jsonb, uuid, uuid, text, text, jsonb, jsonb, jsonb, jsonb, jsonb, text, text, text, text, text),
   public.publish_scene_version(uuid, uuid, integer, uuid, text, jsonb),
   public.revoke_publication(uuid, uuid),
   public.read_publication_by_token(text),
@@ -581,6 +636,7 @@ from public, anon, authenticated;
 grant execute on function
   public.set_project_ending_copy_overrides(uuid, uuid, integer, jsonb),
   public.commit_scene_version(uuid, uuid, integer, text, jsonb, uuid, uuid, text, text, jsonb, jsonb, jsonb, jsonb, jsonb, text, text, text, text, text, jsonb),
+  public.commit_scene_version(uuid, uuid, integer, text, jsonb, uuid, uuid, text, text, jsonb, jsonb, jsonb, jsonb, jsonb, text, text, text, text, text),
   public.publish_scene_version(uuid, uuid, integer, uuid, text, jsonb),
   public.revoke_publication(uuid, uuid),
   public.read_publication_by_token(text),
