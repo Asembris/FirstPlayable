@@ -450,6 +450,42 @@ describe("the fixed instruction blocks state the id rules with worked examples",
     expect(BASE_INSTRUCTIONS).toMatch(/Never make a required action unavailable/);
   });
 
+  /**
+   * One branch per action, as the fixture has it.
+   *
+   * A live base attempt gave `core.inspect` two branches that both applied,
+   * which the graph layer rejected as `AMBIGUOUS_BRANCH` and which cascaded
+   * into every ending being unreachable. The block prescribed the availability
+   * conditions but said nothing about how many branches an action should have,
+   * so this states the fixture's answer and checks the two agree.
+   */
+  it("prescribes the single-branch shape the valid fixture uses", () => {
+    expect(BASE_INSTRUCTIONS).toMatch(/Give every action exactly one branch/);
+    expect(BASE_INSTRUCTIONS).toMatch(/\{kind: always\}/);
+
+    for (const action of SECOND_COPY_BASE.core.actions) {
+      expect(action.branches.length, `${action.id} branch count`).toBe(1);
+      expect(action.branches[0]?.when.kind, `${action.id} branch condition`).toBe("always");
+    }
+
+    // The three ending actions, each naming its own ending on that one branch.
+    const endings: Readonly<Record<string, string>> = {
+      "core.give": "end.give",
+      "core.withhold": "end.keep",
+      "core.leave": "end.leave",
+    };
+    for (const [actionId, endingId] of Object.entries(endings)) {
+      const action = SECOND_COPY_BASE.core.actions.find((entry) => entry.id === actionId);
+      expect(action?.branches[0]?.ending_id, actionId).toBe(endingId);
+      expect(BASE_INSTRUCTIONS).toContain(endingId);
+    }
+    // And every other action's one branch names no ending.
+    for (const action of SECOND_COPY_BASE.core.actions) {
+      if (Object.hasOwn(endings, action.id)) continue;
+      expect(action.branches[0]?.ending_id, `${action.id} must end nothing`).toBeNull();
+    }
+  });
+
   it("leaves the writing to the model even though the skeleton is fixed", () => {
     expect(BASE_INSTRUCTIONS).toMatch(/Write the title, the dialogue, and the three endings/);
     // No action in the fixture has a never-available condition.
