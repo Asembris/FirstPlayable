@@ -790,8 +790,10 @@ section 17. Phase 3's exit gate passed, so Phase 4 is authorized to begin; it is
 
 **Branch of this record:** `feat/phase-4-compilation`
 **Date of this record:** 4 October 2026
-**Status:** **cloud implementation complete — OVERALL PHASE 4 IS NOT YET COMPLETE**
+**Status:** **cloud implementation complete; live acceptance FAILED — OVERALL
+PHASE 4 IS NOT COMPLETE**
 **Local handoff:** `docs/PHASE4_LOCAL_HANDOFF.md`
+**Live acceptance record:** `docs/PHASE4_EVIDENCE.md` (4 October 2026)
 
 This section appends to the record. The Phase 1, Phase 2, continuous
 integration, and Phase 3 sections above are unchanged, and nothing here revises
@@ -947,27 +949,82 @@ validated versions are inserted" is a database guarantee.
 
 ## OVERALL PHASE 4 IS NOT YET COMPLETE
 
-The following gates can only be satisfied by a local session with real
-credentials, and **none** of them has been satisfied:
+The local live-acceptance half ran on 4 October 2026 on the same branch. Its
+full record, including every failure, is `docs/PHASE4_EVIDENCE.md`. **Phase 4
+fails.** The remaining-gate list below is now a result, not a to-do list.
 
-1. **Real database migration application.** `20261004160000` is committed and
-   statically tested, and has not been applied to the live project.
-2. **Real provider generation.** No real OpenAI call has produced a base or a
-   module. The compilation schemas have never been sent to the provider.
-3. **Live SceneVersion persistence.** `scene_versions` has never been written
-   against real Postgres; the compare-and-swap is proven only against the
-   in-memory gateway that re-implements the committed SQL.
-4. **Live one-influence compilation** on a fresh brief, end to end.
-5. **Live two-influence compilation** on a fresh brief, end to end.
-6. **Vercel deployment**, including deploying `OPENAI_API_KEY`, which Phase 2
-   deliberately withheld because no deployed route then made a model call.
-7. **Deployed Phase 4 verification**, against the production URL with real
-   services.
-8. **Final Phase 4 evidence** in `docs/PHASE4_EVIDENCE.md`, with the real
-   stage-by-stage call counts, token usage, verbatim witness sentences, and
-   every failure encountered.
+| Gate | Result |
+|---|---|
+| 1. Migration `20261004160000` applied and verified live | **PASS** |
+| 2. Real provider generation of a base and a module | **PARTIAL** — one base committed; no module ever did |
+| 3. Live `scene_versions` persistence | **FAIL** — `scene_versions` has 0 rows |
+| 4. Live one-influence compilation on a fresh brief | **FAIL** |
+| 5. Live two-influence compilation on a fresh brief | **NOT REACHED** |
+| 6. Vercel deployment of the Phase 4 build | **NOT RUN** |
+| 7. Deployed Phase 4 verification | **NOT RUN** |
+| 8. Final Phase 4 evidence with real numbers and every failure | **PASS** — `docs/PHASE4_EVIDENCE.md` |
 
-`docs/PHASE4_LOCAL_HANDOFF.md` states each of these as an exact task, with the
+### What the live runs did establish
+
+The migration is applied and verified against the live catalog: the seven
+columns with their intended defaults, the `compile` stage value, the
+`scene_versions_validation_passed` guard, and seven functions that are all
+`SECURITY INVOKER` with `search_path=""` and executable by `service_role`
+only. Still eight tables, still RLS on all eight, still **zero** rows in
+`pg_policies`, and every Phase 1–3 row intact.
+
+Eight real compilations were attempted against the real provider through the
+real controller. Every Phase 4 mechanism behaved exactly as specified, and
+this was observed rather than assumed:
+
+- no stage row anywhere shows `attempts > 2`, and the one permitted repair ran
+  on every failing stage;
+- one advance performed at most one provider attempt, and the controller's own
+  count always matched the counted requests;
+- creating a compilation performed no provider call;
+- **zero** Qloo calls occurred during any compilation — `qloo_calls.used_calls`
+  did not move;
+- every failure settled as a finished `FAILED` state naming its stage, left
+  `active_version_id` and `pending_version_id` untouched, and persisted no
+  version row;
+- no invalid candidate reached `scene_versions`, which still has 0 rows.
+
+### Why it fails
+
+The pinned model did not produce a base and a module that the Phase 1
+validator accepts within the two attempts the specification allows. Five real
+defects were found and fixed along the way, each with regression coverage and
+none of them weakening a validator invariant, widening an attempt budget,
+adding a model or provider fallback, or bypassing the compare-and-swap, the
+version constraint, or creator activation:
+
+| Commit | Defect |
+|---|---|
+| `eed650a` | the browser gate served whatever `.next` already held, so it tested a stale build |
+| `c7925ee` | the `core.` namespace rule had a worked example for actions only |
+| `ad13a2c` | the base block never said where a declared variable is read |
+| `d0d079f` | the base's availability conditions were left to the model |
+| `114821a` | a module could name a hook port that had exactly one legal value |
+| `8e56150`, `67a565a` | the base's branch structure, and which field an ending id belongs in |
+
+After those fixes one base committed on its repair; the module stage then
+failed, and later runs failed at a different part of the prescribed skeleton
+each time.
+
+Two facts constrain what can be done about it, and both are recorded in
+`docs/PHASE4_EVIDENCE.md` §11 rather than worked around: `validateScene` skips
+graph analysis when layer A fails, so a candidate faulty in both layers cannot
+pass within a two-attempt ceiling; and the base's mechanical skeleton is now
+fully determined by the brief, which raises a design question — whether the
+server should construct it deterministically and ask the model only for prose
+— that is an architectural change to the Phase 4 contract and was deliberately
+**not** made by an acceptance session.
+
+The configured model-call budget for the window reached 31 of 40, so no
+further live run was started. The cap may be lowered but never raised, and it
+was left alone.
+
+`docs/PHASE4_LOCAL_HANDOFF.md` remains the statement of each task, with the
 verification queries, the expected provider-call counts, and the binary gate.
 
 ## What Phase 4 did not build
@@ -990,8 +1047,27 @@ absence of any publication, share, token, or export function in SQL.
 
 ## Next authorized phase
 
-**None.** Phase 4's own gate has not passed. The next authorized work is the
-local live-acceptance half of Phase 4, as specified in
-`docs/PHASE4_LOCAL_HANDOFF.md`. **Phase 5 is not authorized** and must not be
+**None.** Phase 4's own gate has not passed: see the result table above and
+`docs/PHASE4_EVIDENCE.md`. **Phase 5 is not authorized** and must not be
 started, not even partially, until Phase 4's binary gate passes and this
 document records it.
+
+The next authorized work is finishing Phase 4, in this order:
+
+1. **Decide the base-stage design question** in `docs/PHASE4_EVIDENCE.md` §11.3
+   — whether the server constructs the base's mechanical skeleton
+   deterministically and the model supplies only the title, labels, dialogue,
+   and ending text. Every mechanical element is already prescribed and
+   identical for every brief, so this is the one change that would remove the
+   whole observed failure class without touching the validator, the attempt
+   ceiling, the model, or the isolation guarantees. It changes the Phase 4
+   contract, so it is a decision for the specification and not for an
+   acceptance run.
+2. **Re-run `RUN_PHASE4_SMOKE=1 npm run smoke:compile`** in a fresh budget
+   window, for the one-influence and two-influence gates, the subset reports,
+   the witnesses, base reuse, and the live stale-result compare-and-swap.
+3. **Exercise the two live probes that need a version row**: the immutability
+   trigger and the `scene_versions_validation_passed` constraint
+   (`docs/PHASE4_LOCAL_HANDOFF.md` §K).
+4. **Deploy and run `RUN_DEPLOY_VERIFY=1 npm run verify:deployment`**, whose
+   Phase 4 sections are already written and committed.

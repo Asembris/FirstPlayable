@@ -19,14 +19,22 @@ retrieves real Qloo movie and videogame references, reads bounded
 model-proposed interactions, and approves, edits, dismisses, or replaces them.
 
 The chain a creator can inspect is **Qloo retrieved → FirstPlayable proposed →
-Creator approved**. The fourth step, *Scene changed*, belongs to Phase 4; the
-provenance type has no field for it, so nothing can claim a mechanical
-consequence that no compiler produced.
+Creator approved**. The fourth step, *Scene changed*, is rendered only from a
+computed mechanical witness on a stored version, so nothing can claim a
+mechanical consequence that no compiler produced.
 
-**Not built yet, and not claimed:** scene compilation, module generation, scene
-activation, revision, publication, offline HTML export, and the model-selected
-comparator. There are no compiled scene versions and no publications in the
-database.
+**Implemented, and not yet proven end to end:** Phase 4's bounded compilation
+of approved influences into a validated playable scene — the persisted
+controller, the base and module stages with their one permitted repair, the
+deterministic validation of every removal subset, immutable scene versions, and
+review before activation. The mechanism is covered by the offline suite and the
+browser gate, and the migration is applied to the live database, but **no fresh
+scene has yet been compiled against the real provider**: the live acceptance run
+failed and is recorded in `docs/PHASE4_EVIDENCE.md`. There are still no
+compiled scene versions in the database.
+
+**Not built, and not claimed:** revision, publication, offline HTML export, and
+the model-selected comparator.
 
 **Not claimed about Qloo:** that it recommended a mechanic, rated a reference,
 or knows a creator's taste. Returned affinity is kept private and is never
