@@ -82,6 +82,16 @@ const CANONICAL_ARTIST = "Radiohead";
 const ADVANCE_CEILING = 12;
 
 /**
+ * How many times the smoke will ask the phase 3 interpretation stage for a
+ * draft when the request itself fails.
+ *
+ * This is the creator pressing the button again after a lost connection, not
+ * an extra model attempt inside a stage: the stage's own `max_attempts = 2`
+ * ceiling is the database's and is untouched by this.
+ */
+const PROPOSAL_REQUEST_ATTEMPTS = 3;
+
+/**
  * Two briefs that are not the saved example's, so each compilation is a
  * genuinely fresh one rather than a replay of fixture content.
  */
@@ -328,16 +338,48 @@ async function prepareProject(
   );
   check("at least one reference domain is usable", retrieved.references.any_usable);
 
-  const proposed = await json<ProposalsResponse>(
-    await handleProposals(
+  // The phase 3 interpretation stage occasionally loses its connection to the
+  // provider, which the route reports as a retryable 429 with the references
+  // and approvals unchanged. Asking again is exactly what the creator's button
+  // does, and it is not the same thing as re-rolling a result that came back:
+  // a transport failure returned nothing to judge. It is bounded, and every
+  // attempt is recorded.
+  let proposed: ProposalsResponse | null = null;
+  let proposalAttempts = 0;
+  for (let attempt = 1; attempt <= PROPOSAL_REQUEST_ATTEMPTS; attempt += 1) {
+    proposalAttempts = attempt;
+    const response = await handleProposals(
       mutation(`/api/projects/${projectId}/proposals`, cookie, {
         expected_revision: retrieved.project.revision,
       }),
       harness.phase3,
       projectId,
-    ),
-    "POST proposals",
-  );
+    );
+    if (response.ok) {
+      proposed = (await response.json()) as ProposalsResponse;
+      break;
+    }
+    const body = (await response.json()) as {
+      code?: string;
+      message?: string;
+      retryable?: boolean;
+    };
+    note(
+      `proposal request ${attempt} of ${PROPOSAL_REQUEST_ATTEMPTS} failed: ${response.status} ${body.code ?? "?"}`,
+    );
+    if (attempt === PROPOSAL_REQUEST_ATTEMPTS || body.retryable === false) {
+      check(
+        "the phase 3 interpretation stage returned a draft",
+        false,
+        `${response.status} ${body.code ?? "?"} after ${attempt} request(s)`,
+      );
+      return null;
+    }
+  }
+  if (proposed === null) return null;
+  if (proposalAttempts > 1) {
+    note(`the interpretation stage needed ${proposalAttempts} requests, the earlier one lost its connection`);
+  }
   check(
     "the proposal stage returned a draft within its call ceiling",
     proposed.project.proposals.length > 0 &&
