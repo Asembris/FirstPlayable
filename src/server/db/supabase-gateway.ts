@@ -19,30 +19,51 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { ConfigError, supabaseEnv } from "../config";
 import { appErrors } from "../security/errors";
 import {
+  type AnchorConfirmation,
+  AnchorConfirmationSchema,
   type AppendDecisionInput,
   type BudgetReconciliation,
   BudgetReconciliationSchema,
   type BudgetReservation,
   BudgetReservationSchema,
   type CompleteOperationInput,
+  type ConfirmAnchorInput,
   type DataGateway,
   type DecisionAppend,
   DecisionAppendSchema,
+  INFLUENCE_DECISION_COLUMNS,
+  type InfluenceDecisionRow,
+  InfluenceDecisionRowSchema,
   type InsertProjectInput,
+  type InsertQlooCaptureInput,
   type InsertSessionInput,
   type OperationCompletion,
   OperationCompletionSchema,
   type OperationReservation,
   OperationReservationSchema,
   PROJECT_COLUMNS,
+  type ProjectReferencesUpdate,
+  ProjectReferencesUpdateSchema,
   type ProjectRow,
   ProjectRowSchema,
+  type ProposalDraftUpdate,
+  ProposalDraftUpdateSchema,
+  QLOO_CAPTURE_COLUMNS,
+  type QlooCaptureRow,
+  QlooCaptureRowSchema,
+  type QlooLaunchRelease,
+  QlooLaunchReleaseSchema,
+  type QlooLaunchReservation,
+  QlooLaunchReservationSchema,
   type ReconcileBudgetInput,
   type ReserveBudgetInput,
   type ReserveOperationInput,
+  type ReserveQlooLaunchInput,
   SESSION_COLUMNS,
   type SessionRow,
   SessionRowSchema,
+  type SetProjectReferencesInput,
+  type SetProposalDraftInput,
 } from "./gateway";
 
 function createServerClient(): SupabaseClient {
@@ -227,6 +248,188 @@ class SupabaseGateway implements DataGateway {
     });
     if (error !== null) persistenceFailure("appendInfluenceDecision", error.message);
     return parseRpc("appendInfluenceDecision", DecisionAppendSchema, data);
+  }
+
+  async listInfluenceDecisions(
+    projectId: string,
+    ownerSessionId: string,
+  ): Promise<InfluenceDecisionRow[]> {
+    // The ownership predicate is a join through the project, because
+    // influence_decisions carries no owner column of its own.
+    const { data: project, error: projectError } = await this.#client
+      .from("projects")
+      .select("id")
+      .eq("id", projectId)
+      .eq("owner_session_id", ownerSessionId)
+      .maybeSingle();
+    if (projectError !== null) persistenceFailure("listInfluenceDecisions", projectError.message);
+    if (project === null) return [];
+
+    const { data, error } = await this.#client
+      .from("influence_decisions")
+      .select(INFLUENCE_DECISION_COLUMNS)
+      .eq("project_id", projectId)
+      .order("created_at", { ascending: true });
+    if (error !== null) persistenceFailure("listInfluenceDecisions", error.message);
+    return (data ?? []).map((row) =>
+      parseRpc("listInfluenceDecisions", InfluenceDecisionRowSchema, row),
+    );
+  }
+
+  // -------------------------------------------------------------------------
+  // Qloo captures
+  // -------------------------------------------------------------------------
+
+  async findQlooCaptureByFingerprint(fingerprint: string): Promise<QlooCaptureRow | null> {
+    const { data, error } = await this.#client
+      .from("qloo_captures")
+      .select(QLOO_CAPTURE_COLUMNS)
+      .eq("request_fingerprint", fingerprint)
+      .maybeSingle();
+    if (error !== null) persistenceFailure("findQlooCaptureByFingerprint", error.message);
+    if (data === null) return null;
+    return parseRpc("findQlooCaptureByFingerprint", QlooCaptureRowSchema, data);
+  }
+
+  async findQlooCapturesByFingerprints(
+    fingerprints: readonly string[],
+  ): Promise<QlooCaptureRow[]> {
+    if (fingerprints.length === 0) return [];
+    const { data, error } = await this.#client
+      .from("qloo_captures")
+      .select(QLOO_CAPTURE_COLUMNS)
+      .in("request_fingerprint", [...fingerprints]);
+    if (error !== null) persistenceFailure("findQlooCapturesByFingerprints", error.message);
+    return (data ?? []).map((row) =>
+      parseRpc("findQlooCapturesByFingerprints", QlooCaptureRowSchema, row),
+    );
+  }
+
+  async findLatestQlooCapture(
+    artistEntityId: string,
+    domain: "movie" | "videogame",
+  ): Promise<QlooCaptureRow | null> {
+    const { data, error } = await this.#client
+      .from("qloo_captures")
+      .select(QLOO_CAPTURE_COLUMNS)
+      .eq("artist_entity_id", artistEntityId)
+      .eq("domain", domain)
+      .order("captured_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error !== null) persistenceFailure("findLatestQlooCapture", error.message);
+    if (data === null) return null;
+    return parseRpc("findLatestQlooCapture", QlooCaptureRowSchema, data);
+  }
+
+  async findQlooCapturesByIds(ids: readonly string[]): Promise<QlooCaptureRow[]> {
+    if (ids.length === 0) return [];
+    const { data, error } = await this.#client
+      .from("qloo_captures")
+      .select(QLOO_CAPTURE_COLUMNS)
+      .in("id", [...ids]);
+    if (error !== null) persistenceFailure("findQlooCapturesByIds", error.message);
+    return (data ?? []).map((row) =>
+      parseRpc("findQlooCapturesByIds", QlooCaptureRowSchema, row),
+    );
+  }
+
+  /**
+   * Immutable insert.
+   *
+   * `ignoreDuplicates` matters here: the table's own trigger rejects `UPDATE`,
+   * so a merging upsert would fail. Two instances that retrieved the same
+   * artist concurrently both end up reading the one row that won.
+   */
+  async insertQlooCapture(input: InsertQlooCaptureInput): Promise<QlooCaptureRow> {
+    const { error } = await this.#client.from("qloo_captures").upsert(
+      {
+        kind: input.kind,
+        request_fingerprint: input.requestFingerprint,
+        normalized_query: input.normalizedQuery,
+        artist_entity_id: input.artistEntityId,
+        domain: input.domain,
+        results: input.results,
+        quota_diagnostics: input.quotaDiagnostics ?? null,
+        normalizer_version: input.normalizerVersion,
+        cache_expires_at: input.cacheExpiresAt,
+      },
+      { onConflict: "request_fingerprint", ignoreDuplicates: true },
+    );
+    if (error !== null) persistenceFailure("insertQlooCapture", error.message);
+
+    const row = await this.findQlooCaptureByFingerprint(input.requestFingerprint);
+    if (row === null) persistenceFailure("insertQlooCapture", "the inserted capture was not readable");
+    return row;
+  }
+
+  // -------------------------------------------------------------------------
+  // Qloo launch policy
+  // -------------------------------------------------------------------------
+
+  async reserveQlooLaunch(input: ReserveQlooLaunchInput): Promise<QlooLaunchReservation> {
+    const { data, error } = await this.#client.rpc("reserve_qloo_launch", {
+      p_scope: input.scope,
+      p_bucket_key: input.bucketKey,
+      p_window_start: input.windowStart,
+      p_window_end: input.windowEnd,
+      p_max_leases: input.maxLeases,
+      p_min_spacing_ms: input.minSpacingMs,
+      p_lease_seconds: input.leaseSeconds,
+    });
+    if (error !== null) persistenceFailure("reserveQlooLaunch", error.message);
+    return parseRpc("reserveQlooLaunch", QlooLaunchReservationSchema, data);
+  }
+
+  async releaseQlooLaunch(scope: string, leaseId: string): Promise<QlooLaunchRelease> {
+    const { data, error } = await this.#client.rpc("release_qloo_launch", {
+      p_scope: scope,
+      p_lease_id: leaseId,
+    });
+    if (error !== null) persistenceFailure("releaseQlooLaunch", error.message);
+    return parseRpc("releaseQlooLaunch", QlooLaunchReleaseSchema, data);
+  }
+
+  // -------------------------------------------------------------------------
+  // Project state writes
+  // -------------------------------------------------------------------------
+
+  async confirmProjectAnchor(input: ConfirmAnchorInput): Promise<AnchorConfirmation> {
+    const { data, error } = await this.#client.rpc("confirm_project_anchor", {
+      p_project_id: input.projectId,
+      p_owner_session_id: input.ownerSessionId,
+      p_expected_revision: input.expectedRevision,
+      p_anchor: input.anchor,
+      p_rebranch: input.rebranch,
+    });
+    if (error !== null) persistenceFailure("confirmProjectAnchor", error.message);
+    return parseRpc("confirmProjectAnchor", AnchorConfirmationSchema, data);
+  }
+
+  async setProjectReferences(
+    input: SetProjectReferencesInput,
+  ): Promise<ProjectReferencesUpdate> {
+    const { data, error } = await this.#client.rpc("set_project_references", {
+      p_project_id: input.projectId,
+      p_owner_session_id: input.ownerSessionId,
+      p_expected_revision: input.expectedRevision,
+      p_anchor_entity_id: input.anchorEntityId,
+      p_capture_ids: [...input.captureIds],
+    });
+    if (error !== null) persistenceFailure("setProjectReferences", error.message);
+    return parseRpc("setProjectReferences", ProjectReferencesUpdateSchema, data);
+  }
+
+  async setProjectProposalDraft(input: SetProposalDraftInput): Promise<ProposalDraftUpdate> {
+    const { data, error } = await this.#client.rpc("set_project_proposal_draft", {
+      p_project_id: input.projectId,
+      p_owner_session_id: input.ownerSessionId,
+      p_expected_revision: input.expectedRevision,
+      p_anchor_entity_id: input.anchorEntityId,
+      p_draft: input.draft ?? null,
+    });
+    if (error !== null) persistenceFailure("setProjectProposalDraft", error.message);
+    return parseRpc("setProjectProposalDraft", ProposalDraftUpdateSchema, data);
   }
 }
 
