@@ -555,7 +555,7 @@ number below comes from a command that was actually run in this repository.
 | `npm test` | passed, exit 0 — 23 files, 425 tests, 0 failures |
 | `npm run check:fixtures` | passed, exit 0 |
 | `npm run build` | passed, exit 0 — 13 routes, 4 static and 9 server-rendered on demand |
-| `npm run check:secrets` | passed, exit 0 — 129 tracked and 277 built files scanned |
+| `npm run check:secrets` | passed, exit 0 — 130 tracked and 277 built files scanned |
 | `npm run test:e2e` | passed, exit 0 — 33 Playwright tests, 0 failures |
 | `RUN_QLOO_SMOKE=1 npm run smoke:qloo` | passed, exit 0 |
 | `QLOO_SMOKE_ARTIST="Taylor Swift" RUN_QLOO_SMOKE=1 npm run smoke:qloo` | passed, exit 0 |
@@ -622,7 +622,8 @@ row lock, which commits before the socket opens — no database transaction is
 held across network I/O.
 
 Three separate `budget_buckets` rows keep Qloo pacing away from model
-budgeting: `model_calls` (limit 40, 4 used, 19,980 tokens), `qloo_calls`
+budgeting: `model_calls` (limit 40, 7 used, 35,084 tokens across all of this phase's real
+calls), `qloo_calls`
 (limit 9,500 after the 500-call judging reserve, 5 used), and `qloo_launch`
 (limit 2, the only scope that writes `last_launch_at`).
 
@@ -635,9 +636,9 @@ repair and no fallback model or provider.
 | Observation | Value |
 |---|---|
 | Model calls, live local run | 1, `repaired: false` |
-| Token usage | 4,247 in · 945 out · 5,192 total |
-| List-price cost estimate | ~$0.00120 — arithmetic, not a billed amount |
-| Proposals returned | 6 locally, 5 on the deployment; both inside the 1–6 contract |
+| Token usage | 4,247 in · 945 out · 5,192 total; a re-run at HEAD reported 5,230 |
+| List-price cost estimate | ~$0.0012 per call — arithmetic, not a billed amount |
+| Proposals returned | 6 locally; 3 to 5 on the deployment across runs; all inside the 1–6 contract |
 | Idempotent replay | `model_calls: 0`, committed draft returned, one provider request total |
 
 The route accepts one field, `expected_revision`. A body carrying
@@ -739,9 +740,10 @@ should be read:
 4. Only Chromium is installed for Playwright — inherited from Phases 1 and 2.
 5. The forbidden-attribution guard is **literal**, over an enumerated set of
    sixteen phrases, and is deliberately not applied to creator-authored text.
-6. **One** proposal call was observed, not a distribution. No claim about
-   typical proposal quality, repair frequency, or token variance follows from
-   one sample.
+6. **Seven** real proposal calls were observed — two local, five deployed —
+   which is not a distribution. None was re-rolled and none needed the repair.
+   No claim about typical proposal quality, repair frequency, or token variance
+   follows from seven samples.
 7. The three-artist release smoke of specification section 16 has not been run;
    two artists were verified. That smoke belongs to Phase 7.
 

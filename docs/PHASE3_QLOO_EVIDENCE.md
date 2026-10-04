@@ -340,7 +340,7 @@ work:
 
 | scope | key | call_limit | used_calls | used_tokens | last_launch_at | window |
 |---|---|---|---|---|---|---|
-| `model_calls` | global | 40 | 4 | 19,980 | null | 1 day |
+| `model_calls` | global | 40 | 7 | 35,084 | null | 1 day |
 | `qloo_calls` | global | 9,500 | 5 | 0 | null | 30 days (4 Oct → 3 Nov) |
 | `qloo_launch` | global | 2 | 0 | 0 | set | fixed |
 
@@ -399,10 +399,11 @@ retry budget.
 |---|---|
 | Model | `gpt-4o-mini-2024-07-18`, pinned; no fallback model, no fallback provider |
 | Calls, live local run | **1** (`repaired: false`) |
-| Token usage reported | 4,247 input · 945 output · **5,192 total** |
-| List-price cost estimate | ~$0.00120 — arithmetic on those tokens, not a billed amount |
-| Proposals returned, local | 6 of 6 eligible references |
-| Proposals returned, deployed | 5 of 6 — within the 1–6 contract |
+| Token usage, first local run | 4,247 input · 945 output · **5,192 total** |
+| Token usage, second local run | 4,247 input · 983 output · **5,230 total** |
+| List-price cost estimate | ~$0.0012 per call — arithmetic on those tokens, not a billed amount |
+| Proposals returned, local | 6 of 6 eligible references, both runs |
+| Proposals returned, deployed | 5 and 3 across runs — both inside the 1–6 contract |
 | Output cap | 2,400 tokens |
 | Budget primitive | the phase 2 `reserve_model_budget` / `reconcile_model_budget` RPCs, unchanged |
 
@@ -783,7 +784,7 @@ first hops → one bounded proposal call → one explicit approval
 | Qloo upstream calls | **0** — answered from the shared captures |
 | Model calls | **1** |
 | Model | `gpt-4o-mini-2024-07-18` |
-| Token usage | 4,247 in · 945 out · 5,192 total |
+| Token usage | 4,247 in · 945 out · 5,192 total (first run); 4,247 · 983 · 5,230 (re-run at HEAD) |
 | Proposals returned | 6 |
 | Approval created | **Moon → Discovery**, unedited |
 | Project revision at the end | 3 |
@@ -909,8 +910,8 @@ assets too.
 | `npm run typecheck` | passed, exit 0 |
 | `npm test` | passed, exit 0 — 23 files, **425 tests**, 0 failures |
 | `npm run check:fixtures` | passed, exit 0 — all fixture checks passed |
-| `npm run build` | passed, exit 0 — 13 routes, 4 static and 9 server-rendered on demand |
-| `npm run check:secrets` | passed, exit 0 — 129 tracked and 277 built files scanned |
+| `npm run build` | passed, exit 0 from a tree with `.next` deleted — 13 routes, 4 static and 9 server-rendered on demand |
+| `npm run check:secrets` | passed, exit 0 — 130 tracked and 277 built files scanned |
 | `npm run test:e2e` | passed, exit 0 — **33 Playwright tests**, 0 failures |
 
 Live, opt-in, never in CI:
@@ -980,9 +981,12 @@ Claims this phase does **not** make:
    the absence of the underlying claim, and it is deliberately **not** applied
    to creator-authored text, which is rendered under "Creator approved" and
    attributed to the creator.
-7. **One proposal call was observed, not a distribution.** The live smoke made
-   one call and was not re-rolled. No statement about typical proposal quality,
-   repair frequency, or token usage variance is supported by one sample.
+7. **Seven real proposal calls were observed in total, which is not a
+   distribution.** Two locally (5,192 and 5,230 tokens; 6 proposals each) and
+   five on the deployment (3 to 5 proposals). None was re-rolled for aesthetic
+   reasons. No repair was triggered in any of them. No statement about typical
+   proposal quality, repair frequency, or token variance is supported by seven
+   samples.
 8. **The canonical Radiohead neighbourhood was present on 4 October 2026.** All
    three historically observed titles per domain still appeared. Nothing in the
    application injects them; a future run that returns different titles is a
