@@ -30,3 +30,8 @@ blob-report/
 .playwright/
 
 probes/out/
+
+# supabase/.gitignore: local CLI link state. `.env` rules above already match
+# its env files at any depth.
+supabase/.branches/
+supabase/.temp/

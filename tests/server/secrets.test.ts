@@ -81,6 +81,16 @@ describe("nothing secret is tracked", () => {
     for (const rule of rules(".gitignore")) {
       expect(upload, `.vercelignore must repeat the .gitignore rule ${rule}`).toContain(rule);
     }
+
+    // Whatever is on this disk right now: an untracked file git ignores must
+    // not be one the upload would still include. Nested .gitignore files count.
+    const untracked = (...args: string[]): string[] =>
+      execFileSync("git", ["ls-files", "--others", ...args], { cwd: repoRoot, encoding: "utf8" })
+        .split(/\r?\n/)
+        .filter((entry) => entry.length > 0);
+    const kept = new Set(untracked("--exclude-standard"));
+    const uploaded = untracked("--exclude-from=.vercelignore");
+    expect(uploaded.filter((file) => !kept.has(file))).toEqual([]);
   });
 
   it("contains no credential shape in any tracked file", () => {
