@@ -67,6 +67,22 @@ describe("nothing secret is tracked", () => {
     }
   });
 
+  it("keeps .env out of a CLI deployment upload, which does not read .gitignore", () => {
+    const rules = (file: string): string[] =>
+      readFileSync(join(repoRoot, file), "utf8")
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0 && !line.startsWith("#"));
+    const upload = rules(".vercelignore");
+
+    expect(upload).toContain(".env");
+    expect(upload).toContain(".env.*");
+    expect(upload.indexOf("!.env.example")).toBeGreaterThan(upload.indexOf(".env.*"));
+    for (const rule of rules(".gitignore")) {
+      expect(upload, `.vercelignore must repeat the .gitignore rule ${rule}`).toContain(rule);
+    }
+  });
+
   it("contains no credential shape in any tracked file", () => {
     for (const relative of trackedFiles) {
       if (!TEXT_EXTENSIONS.has(extname(relative))) continue;

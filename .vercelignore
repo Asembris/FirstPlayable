@@ -1,0 +1,32 @@
+# What `vercel deploy` must never upload.
+#
+# The CLI does not read .gitignore. Without this file it uploads every file
+# except a short built-in list, and that list excludes `.env.local` but not
+# `.env` — so the server keys, and the migration-only management token, would
+# travel with the source. Every rule in .gitignore is repeated here, so a CLI
+# deployment uploads no more than git would track. Runtime configuration comes
+# from the Vercel project's encrypted environment variables, never from a file.
+
+.env
+.env.*
+!.env.example
+
+.venv/
+__pycache__/
+*.pyc
+
+node_modules/
+.next/
+out/
+coverage/
+next-env.d.ts
+*.tsbuildinfo
+
+.vercel/
+
+test-results/
+playwright-report/
+blob-report/
+.playwright/
+
+probes/out/
