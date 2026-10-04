@@ -479,6 +479,23 @@ describe("the fixed instruction blocks state the id rules with worked examples",
       expect(action?.branches[0]?.ending_id, actionId).toBe(endingId);
       expect(BASE_INSTRUCTIONS).toContain(endingId);
     }
+
+    /*
+     * An ending id is not a dialogue id.
+     *
+     * The first wording of the single-branch rule said core.give "names"
+     * end.give, and a live attempt read that as licence to declare dialogue
+     * nodes called end.give, end.keep, and end.leave — three
+     * NAMESPACE_INVALID findings caused by this block's own ambiguity. The
+     * rule now says which field each id belongs in, and says where an ending
+     * id may not appear.
+     */
+    expect(BASE_INSTRUCTIONS).toMatch(/sets ending_id to end\.give/);
+    expect(BASE_INSTRUCTIONS).toMatch(/never a dialogue node id/);
+    expect(BASE_INSTRUCTIONS).toMatch(/dialogue_id is either null/);
+    for (const node of SECOND_COPY_BASE.core.dialogue) {
+      expect(node.id, "a fixture dialogue id is never an ending id").toMatch(/^core\./u);
+    }
     // And every other action's one branch names no ending.
     for (const action of SECOND_COPY_BASE.core.actions) {
       if (Object.hasOwn(endings, action.id)) continue;
