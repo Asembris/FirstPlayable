@@ -3,12 +3,13 @@
 **Branch:** `feat/phase-4-compilation` · **Date:** 4 October 2026 ·
 **Status:** **FAIL — Phase 4 is not complete**
 
-> **Read §12 as well.** A later session on the same day changed the base
-> compilation architecture in response to the measured failures recorded below,
-> and re-ran the whole offline gate. The live acceptance gate is still not met.
-> Sections 1–11 are the original record and are preserved unchanged; §12 and
-> §13 are the amendment, its coverage, and the budget reason the live gate is
-> still open.
+> **Read §12 and §14 as well.** A later session on the same day changed the
+> base compilation architecture in response to the measured failures recorded
+> below, and then fixed a database integrity defect that change's probing
+> uncovered. Both re-ran the whole offline gate. The live acceptance gate is
+> still not met. Sections 1–11 are the original record and are preserved
+> unchanged; §12–13 are the architectural amendment and the budget reason the
+> live gate is still open, and §14–15 are the constraint hardening.
 
 Every figure in this document was observed on this machine against the real
 Supabase project and the real OpenAI account. Nothing here is a projection.
@@ -20,7 +21,7 @@ in this file.
 
 **Cloud baseline HEAD:** `2fd70bc3dd6cc54925c34992d5dc3106b36446a0`
 **Final local HEAD of this record:** `67a565a` (see §2); after the §12
-amendment, `62aaca9`
+amendment, `62aaca9`; after the §14 hardening, `fcac34a`
 **Nothing was pushed. No pull request was opened.**
 
 ---
@@ -820,10 +821,11 @@ changes.
    (§12.1). The `validateScene`-skips-graph-analysis interaction noted
    alongside it is unchanged and still true; it simply no longer has base
    mechanics to interact with.
-4. **New: `scene_versions_validation_passed` admits a JSON string `"true"`**
-   for its `ok` field, because it casts through `->>` (§12.9). Unreachable from
-   this application, but a weaker database guarantee than intended. Not fixed
-   here: it needs a second forward migration and an explicit decision.
+4. ~~**New: `scene_versions_validation_passed` admits a JSON string
+   `"true"`**~~ — **resolved by §14.** The forward migration
+   `20261004173000_phase4_validation_boolean.sql` replaces the constraint with
+   a jsonb value comparison, and it is applied and live-proven in both
+   directions (§14.3).
 5. **The deterministic skeleton is now a single point of failure for the base,
    in exchange for removing a probabilistic one.** If it is wrong, it is wrong
    for every brief, every time, rather than occasionally. That is the trade
@@ -834,3 +836,267 @@ changes.
    echo the brief's own object the way the hand-authored fixture's did
    ("Object inspected", not "Letter inspected"). All three are
    `visible: false`, so no creator and no player ever reads one.
+
+---
+
+## 14. Database constraint hardening — the §12.9 defect, fixed and live-proven
+
+**Date:** 4 October 2026, same day, same branch, immediately after §12.
+**Status:** **fixed and verified live. Zero model calls spent.** Phase 4 is
+still incomplete.
+
+This section closes limitation §13.4. Sections 1–13 are preserved unchanged.
+
+### 14.1 The defect
+
+`20261004160000_phase4_compilation.sql` wrote the validated-version guard as:
+
+```sql
+(validation_summary ->> 'ok')::boolean is true
+```
+
+`->>` extracts the value as **text**, and `text::boolean` accepts every
+spelling PostgreSQL's boolean input function accepts. A row whose
+`validation_summary.ok` was the JSON *string* `"true"` — or `"t"`, `"yes"`,
+`"on"`, `"1"` — therefore satisfied a constraint whose whole purpose is to make
+"only validated versions are inserted" a **database** guarantee rather than a
+convention. §12.9 found it by probing the live database.
+
+Two honest qualifications, unchanged from §12.9:
+
+- **It was never reachable from this application.** Every insert goes through
+  `commit_scene_version` with a `ValidationSummaryView`, whose `ok` is a Zod
+  boolean and therefore always a JSON boolean.
+- **`scene_versions` was empty**, so no stored row ever relied on the weak
+  form, and the replacement could not fail on existing data.
+
+Why the offline suite did not catch it: `tests/server/support/memory-gateway.ts`
+— the offline stand-in for the committed SQL — used `summary.ok !== true`, a
+strict identity check, and was therefore **stricter than the database it
+re-implements**. The divergence was the defect, not the strictness. Both sides
+are now pinned to the same matrix (§14.4).
+
+### 14.2 The forward migration
+
+One new file. `20261004160000_phase4_compilation.sql` was **not** edited and
+still carries its original text, so the history says what was applied and when
+it was corrected; `tests/server/migrations.test.ts` asserts that too.
+
+**`supabase/migrations/20261004173000_phase4_validation_boolean.sql`**
+
+```sql
+alter table public.scene_versions
+  drop constraint scene_versions_validation_passed;
+
+alter table public.scene_versions
+  add constraint scene_versions_validation_passed
+  check (
+    validation_summary ? 'ok'
+    and jsonb_typeof(validation_summary -> 'ok') = 'boolean'
+    and (validation_summary -> 'ok') = 'true'::jsonb
+    and validation_summary ? 'subsets'
+    and validation_summary ? 'witnesses'
+  );
+```
+
+Three deliberate choices:
+
+1. **`validation_summary ? 'ok'` comes first, and it is load-bearing.** A check
+   constraint **accepts** a NULL expression. Without this conjunct, a summary
+   with no `ok` key would make `jsonb_typeof(...)` return NULL, the conjunction
+   would be NULL, and the row would pass. The old constraint avoided that by
+   accident, because `IS TRUE` is false for NULL rather than NULL.
+   `validation_summary` is `not null`, so with this conjunct the expression is
+   total.
+2. **`jsonb_typeof(...) = 'boolean'`** states the type requirement explicitly,
+   so a reader of the live catalog sees that it is part of the contract.
+3. **`(validation_summary -> 'ok') = 'true'::jsonb`** is the decision. It is a
+   jsonb equality against a folded literal, so **no text parsing happens at any
+   point**. `'"true"'::jsonb` is a different value and does not match. No
+   `->>` and no `::boolean` survives anywhere in the final form.
+
+It replaces one constraint and does nothing else: no column altered, no
+function created or redefined, no table created or dropped, no policy added, no
+grant moved.
+
+### 14.3 Applied live, and proven live
+
+Applied through the same already-authorised Supabase management connection that
+Phases 2, 3, and 4 used. `supabase db push` was not attempted: the documented
+`DbConfigIpv6Error` blocker (§4) still applies, and no token permission was
+broadened, no database password was used or requested.
+
+**The constraint, read back from `pg_constraint`:**
+
+```
+scene_versions_validation_passed
+  CHECK (((validation_summary ? 'ok'::text)
+     AND (jsonb_typeof((validation_summary -> 'ok'::text)) = 'boolean'::text)
+     AND ((validation_summary -> 'ok'::text) = 'true'::jsonb)
+     AND (validation_summary ? 'subsets'::text)
+     AND (validation_summary ? 'witnesses'::text)))
+```
+
+**The probe matrix, re-run against real Postgres** inside a `DO` block whose
+final `raise` aborted the whole statement, so nothing was committed:
+
+| `validation_summary.ok` | Before | After |
+|---|---|---|
+| `true` (JSON boolean) | accepted | **accepted** |
+| `"true"` (JSON string) | **ACCEPTED** | **refused**, `23514` |
+| `"t"` | — | **refused**, `23514` |
+| `"yes"` | — | **refused**, `23514` |
+| `"on"` | — | **refused**, `23514` |
+| `"1"` | — | **refused**, `23514` |
+| `1` (JSON number) | — | **refused**, `23514` |
+| `false` | refused | **refused**, `23514` |
+| key absent | refused | **refused**, `23514` |
+| `null` | — | **refused**, `23514` |
+| `true` but no `subsets` | refused | **refused**, `23514` |
+| `true` but no `witnesses` | refused | **refused**, `23514` |
+| a realistic full `ValidationSummaryView` | — | **accepted** |
+
+The one row that used to get through no longer does, and the shape this
+application really produces still does.
+
+**Catalog and data posture, after application:**
+
+| Fact | Observed |
+|---|---|
+| Tables in `public` | **8** — no ninth |
+| Tables with RLS enabled | **8** |
+| Rows in `pg_policies` | **0** — deny-by-default unchanged |
+| `public` functions | **20** — unchanged, none added or redefined |
+| Table grants to `anon`, `authenticated`, or `PUBLIC` | **0** |
+| Non-internal triggers on `scene_versions` | **1** — the immutability trigger, intact |
+| `projects` / `influence_decisions` / `qloo_captures` | 29 / 14 / 6 — intact |
+| `operations` / `sessions` / `publications` | 30 / 42 / **0** |
+| `scene_versions` | **0** rows |
+| `20261004160000` still recorded | **yes** |
+
+**`model_calls.used_calls` is still 31 of 40, and `qloo_calls.used_calls` is
+still 5** — identical to the §12.8 reading taken before this work began. That
+is the direct evidence that **no OpenAI call and no Qloo call was spent on this
+hardening.** The budget is preserved intact for the reset window, as instructed.
+
+### 14.4 Offline regression coverage
+
+`tests/server/migrations.test.ts` (static, on the committed SQL):
+
+- the migration list now expects both Phase 4 files, in order;
+- the validated-version guard test reads the **last** definition in migration
+  order — `lastIndexOf`, not `indexOf` — so it cannot pass on a superseded
+  form, and asserts all five conjuncts plus the **absence** of `->> 'ok'` and
+  `::boolean` anywhere in the final form;
+- a new test asserts the hardening migration changes nothing else: one table,
+  one constraint dropped, one re-added, no column/function/table/policy/grant
+  work, and the earlier migration still carrying its original text.
+
+`tests/server/compile-versions.test.ts` gains a focused describe driving
+`commitSceneVersion` once per shape, mirroring the live matrix exactly:
+
+- a real boolean `true` with both reports is **accepted**;
+- the JSON string `"true"` is **refused** — the exact value the live database
+  used to admit;
+- `"t"`, `"T"`, `"yes"`, `"y"`, `"on"`, `"1"`, `"TRUE"`, `"True"`, `1`, `1.0`
+  are each **refused**;
+- boolean `false`, and `"false"`, `"f"`, `"no"`, `"off"`, `"0"`, `0`, `null`
+  are each **refused**;
+- a summary with no `ok` key, and one with `ok: undefined`, are **refused** —
+  the NULL-expression case §14.2 explains;
+- `ok: true` missing either report is still **refused**;
+- a non-object summary (`null`, a string, a boolean, a number, an array) is
+  **refused**;
+- and the `validation_summary` taken off a version a **real two-module
+  compilation committed** — the genuine `ValidationSummaryView` with its subset
+  reports and mechanical witness — is **accepted**, so the hardening rejects
+  nothing this application produces.
+
+### 14.5 The offline gate at `fcac34a`
+
+Run from a clean tree with `.next` deleted first.
+
+| Command | Result |
+|---|---|
+| `npm run typecheck` | passed, exit 0 |
+| `npm test` | passed, exit 0 — **30 files, 614 tests**, 0 failures |
+| `npm run test:e2e` | passed, exit 0 — **46** Playwright tests, 0 failures |
+| `npm run check:fixtures` | passed, exit 0 |
+| `npm run build` | passed, exit 0 |
+| `npm run check:secrets` | passed, exit 0 |
+
+614 against 605 at `62aaca9`: nine new, eight in `compile-versions.test.ts` and
+one in `migrations.test.ts`.
+
+### 14.6 The commits
+
+| Commit | Message |
+|---|---|
+| `9e88b1f` | `fix: enforce boolean validation status in scene versions` |
+| `fcac34a` | `test: cover scene version validation constraint types` |
+
+### 14.7 One open bookkeeping item, not a schema issue
+
+**The remote migration history row carries the wrong version number.**
+
+The management connection records its own timestamp for an applied migration,
+and stamped this one `20261004135243`. The committed filename is
+`20261004173000_phase4_validation_boolean.sql`. Phase 4's own application had
+the same problem and resolved it by setting the history row to the version its
+filename declares (§4); here that update was **refused by this session's
+tooling as a write to a shared resource**, so it was not performed.
+
+| | Value |
+|---|---|
+| Recorded remote version | `20261004135243` |
+| Committed filename version | `20261004173000` |
+
+Why this matters, and why it was not worked around:
+
+- **The schema is correct.** The constraint is applied and live-proven (§14.3).
+  This is a bookkeeping row, not DDL.
+- **Renaming the committed file to match would be worse.** `20261004135243`
+  sorts *before* `20261004160000`, so a fresh database replaying the files in
+  order would try to drop a constraint that did not exist yet and fail. The
+  filename is correct and was left correct.
+
+**The one action required**, for the committed files and the remote history to
+agree, exactly as Phase 4 did:
+
+```sql
+update supabase_migrations.schema_migrations
+set version = '20261004173000'
+where version = '20261004135243' and name = 'phase4_validation_boolean';
+```
+
+Recorded as limitation §15.1 until it is run.
+
+### 14.8 Phase 4 is still incomplete
+
+Nothing in this section moves the live acceptance gate. It closes a database
+integrity gap that §12.9 discovered; it compiles nothing.
+
+The gate table of §12.10 stands unchanged: gates 3, 4, 6, 7, and 10 are **NOT
+RUN**, blocked on the model-call budget window, which resets at **2026-10-05
+00:00 UTC**. `scene_versions` still has **0 rows**. **Phase 5 remains
+unauthorized.**
+
+What §14 does change is gate coverage that was previously honest-but-unproven:
+the `scene_versions_validation_passed` half of the handoff's §K probes is now
+**exercised against live Postgres**, in both directions. The row-level
+immutability trigger remains unexercised, because that probe genuinely needs a
+committed version row and creating a fake one would corrupt the evidence table
+this document reports on.
+
+---
+
+## 15. Known limitations, after the constraint hardening
+
+Section 13 stands, with §13.4 now **resolved** by §14. One new item.
+
+1. **The remote migration history row for `phase4_validation_boolean` is
+   recorded as `20261004135243`, not the `20261004173000` its filename
+   declares** (§14.7). The schema is correct and live-proven; this is a
+   bookkeeping disagreement between the committed files and the remote history.
+   One `update` fixes it, and it needs an explicit authorisation this session
+   did not have.

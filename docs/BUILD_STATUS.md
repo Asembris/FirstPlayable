@@ -1140,8 +1140,117 @@ because fixing it needs a second forward migration and an explicit decision.
    (`docs/PHASE4_LOCAL_HANDOFF.md` §K).
 3. **Deploy and run `RUN_DEPLOY_VERIFY=1 npm run verify:deployment`**, whose
    Phase 4 sections are already written and committed.
-4. **Decide** whether to harden `scene_versions_validation_passed` with a
-   second forward migration (`docs/PHASE4_EVIDENCE.md` §13.4).
+4. ~~**Decide** whether to harden `scene_versions_validation_passed`~~ —
+   **done**, see "The Phase 4 database constraint hardening" below.
+
+## The Phase 4 database constraint hardening — 4 October 2026, same session
+
+**Phase 4 is still not complete.** This closes a database integrity gap; it
+compiles nothing. `docs/PHASE4_EVIDENCE.md` §14 and §15 are the full record.
+
+### The defect
+
+`20261004160000_phase4_compilation.sql` wrote the validated-version guard as
+`(validation_summary ->> 'ok')::boolean is true`. `->>` projects to **text**,
+and `text::boolean` accepts every spelling PostgreSQL's boolean parser takes,
+so a row whose `validation_summary.ok` was the JSON *string* `"true"` — or
+`"t"`, `"yes"`, `"on"`, `"1"` — passed a constraint whose entire purpose is to
+make "only validated versions are inserted" a database guarantee rather than a
+convention. It was found by probing the live database during the recovery
+amendment's verification.
+
+It was never reachable from this application, whose `ok` is always a Zod
+boolean, and `scene_versions` was empty, so no stored row relied on it. The
+offline suite missed it because the in-memory gateway used a strict
+`summary.ok !== true` and was therefore *stricter* than the SQL it
+re-implements: the divergence was the defect, not the strictness.
+
+### The fix
+
+One new forward migration,
+`supabase/migrations/20261004173000_phase4_validation_boolean.sql`.
+`20261004160000` was **not** edited and still carries its original text.
+
+```sql
+check (
+  validation_summary ? 'ok'
+  and jsonb_typeof(validation_summary -> 'ok') = 'boolean'
+  and (validation_summary -> 'ok') = 'true'::jsonb
+  and validation_summary ? 'subsets'
+  and validation_summary ? 'witnesses'
+)
+```
+
+The `? 'ok'` conjunct is load-bearing: a check constraint **accepts** a NULL
+expression, so without it a summary with no `ok` key would make `jsonb_typeof`
+NULL and pass. The comparison is jsonb-against-jsonb, so no text parsing
+happens at any point, and no `->>` or `::boolean` survives in the final form.
+It replaces one constraint and does nothing else.
+
+### Applied live and proven live
+
+Applied through the same already-authorised management connection Phases 2–4
+used; `supabase db push` was not attempted because the documented
+`DbConfigIpv6Error` blocker still applies. No token permission was broadened
+and no database password was used.
+
+The probe matrix was re-run against real Postgres inside an aborted `DO` block,
+committing nothing: `true` and a realistic full `ValidationSummaryView` are
+accepted; `"true"`, `"t"`, `"yes"`, `"on"`, `"1"`, `1`, `false`, `null`, a
+missing `ok`, and a summary missing either report are all refused with `23514`.
+The one row that used to get through no longer does.
+
+Posture and data after application: **8** tables, **8** with RLS, **0**
+policies, **20** functions (none added or redefined), **0** table grants to
+`anon`/`authenticated`/`PUBLIC`, the `scene_versions` immutability trigger
+intact, 29 projects / 14 decisions / 6 captures / 30 operations / 42 sessions
+intact, 0 publications, and `scene_versions` still **0** rows.
+
+**No model call and no Qloo call was spent.** `model_calls.used_calls` is still
+**31 of 40** and `qloo_calls.used_calls` is still **5**, identical to the
+reading taken before this work began. The budget is preserved intact for the
+reset window.
+
+### Commits
+
+| Commit | Message |
+|---|---|
+| `9e88b1f` | `fix: enforce boolean validation status in scene versions` |
+| `fcac34a` | `test: cover scene version validation constraint types` |
+
+### The offline gate at `fcac34a`
+
+`typecheck`, `test` (**30 files, 614 tests**), `test:e2e` (**46** tests),
+`check:fixtures`, `build`, and `check:secrets` all pass from a clean tree with
+`.next` deleted first. The nine new tests pin the static SQL text — reading the
+**last** definition in migration order, so a superseded form cannot satisfy it
+— and drive `commitSceneVersion` once per shape across the same matrix the
+live database was probed with, including that a summary a real two-module
+compilation produced is still accepted.
+
+### One open bookkeeping item
+
+The remote migration history row for this migration is recorded as
+`20261004135243`, the timestamp the management connection assigned, not the
+`20261004173000` its filename declares. The schema is correct and live-proven;
+this is a bookkeeping disagreement. Correcting it is a one-line `update` on
+`supabase_migrations.schema_migrations` which this session's tooling refused as
+a shared-resource write, so it was not performed. The committed filename was
+deliberately **not** renamed to match, because `20261004135243` sorts before
+`20261004160000` and a fresh database replaying the files in order would then
+try to drop a constraint that did not exist yet. See
+`docs/PHASE4_EVIDENCE.md` §14.7 for the exact statement.
+
+### Gate status, unchanged
+
+Gates 3, 4, 6, 7, and 10 remain **NOT RUN**, blocked on the model-call budget
+window, which resets at **2026-10-05 00:00 UTC**. What this section does change
+is that the `scene_versions_validation_passed` half of the handoff's §K
+database probes is now **exercised against live Postgres in both directions**,
+rather than asserted statically. The row-level immutability trigger remains
+unexercised, because that probe genuinely needs a committed version row.
+
+**Phase 5 remains unauthorized.**
 
 ## What Phase 4 did not build
 
@@ -1184,8 +1293,9 @@ The next authorized work is finishing Phase 4, in this order:
 2. **Re-run `RUN_PHASE4_SMOKE=1 npm run smoke:compile`** in a fresh budget
    window, for the one-influence and two-influence gates, the subset reports,
    the witnesses, base reuse, and the live stale-result compare-and-swap.
-3. **Exercise the two live probes that need a version row**: the immutability
-   trigger and the `scene_versions_validation_passed` constraint
-   (`docs/PHASE4_LOCAL_HANDOFF.md` §K).
+3. **Exercise the live probe that needs a version row**: the immutability
+   trigger (`docs/PHASE4_LOCAL_HANDOFF.md` §K). The
+   `scene_versions_validation_passed` half is now live-proven in both
+   directions — see "The Phase 4 database constraint hardening" above.
 4. **Deploy and run `RUN_DEPLOY_VERIFY=1 npm run verify:deployment`**, whose
    Phase 4 sections are already written and committed.
