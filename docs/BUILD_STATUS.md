@@ -1855,10 +1855,19 @@ made.
 |---|---|
 | `npm run typecheck` | **PASS** |
 | `npm test` | **PASS** — **711 / 711** in 34 files |
-| `npm run test:e2e` | **PASS** — **64 / 64** |
+| `npm run test:e2e` | **PASS** — **64 / 64**, with one flake recorded below |
 | `npm run check:fixtures` | **PASS** |
 | `npm run build` (`.next` deleted first) | **PASS** |
 | `npm run check:secrets` | **PASS** — 202 tracked files, **422** built assets |
+
+`test:e2e` passed 64 / 64 on its first run on this branch. On the re-run at the
+documentation HEAD it failed **1 of 64**: `example.spec.ts` "a complete run
+after load makes no request at all" timed out in `page.goto("/example")`
+(`net::ERR_ABORTED`, the local server never reached `load`) before any
+assertion ran. No code had changed since `f2048d5`. The next complete run
+passed **64 / 64**, and that test alone passed **10 / 10** with
+`--repeat-each=10`. It is recorded as an unreproduced flake, like the one in
+the Phase 5 preview section, not as a defect.
 
 ### Known limitations carried forward
 
