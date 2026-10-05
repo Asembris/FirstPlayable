@@ -1,0 +1,228 @@
+/*
+ * Phase 6 · Rehearsal Table · visual foundation.
+ *
+ * The tokens from the Phase 6 design handoff (tokens.md), scoped under `.rt`
+ * so the Phase 1–5 surfaces keep their own palette until they are redesigned.
+ *
+ * Three type roles: serif is the scene and your decisions, sans is the
+ * instrument, mono is facts retrieved from elsewhere.
+ *
+ * One accent means "observed change". `--rt-rev-*` is used only on elements
+ * that show a change the scene's own check observed; never for buttons,
+ * selection, hover, success, or Qloo.
+ */
+
+.rt {
+  /* Typography */
+  --rt-font-scene: "Instrument Serif", ui-serif, Georgia, serif;
+  --rt-font-ui: "Geist Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --rt-font-fact: "Geist Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  /* Colour */
+  --rt-paper: #f4f4f0;
+  --rt-sheet: #fbfbf9;
+  --rt-ink: #141518;
+  --rt-ink-2: #3a3d43;
+  --rt-pencil: #6b6e75;
+  --rt-quiet: #8b8e94;
+  --rt-faint: #b4b6ba;
+  --rt-rule: #d9d9d3;
+  --rt-slip-edge: #c9c9c2;
+  --rt-rev-stock: #f9e1e8;
+  --rt-rev-ink: #b0154c;
+  --rt-rev-deep: #8c0f3b;
+
+  /* Geometry (≥ 1440: gutter 112 · page 840 · gap 56 · margin 340 · trail 92) */
+  --rt-max: 1440px;
+  --rt-gutter: 112px;
+  --rt-gap: 56px;
+  --rt-margin: 340px;
+  --rt-trail: 92px;
+  --rt-topbar: 60px;
+  --rt-band: 232px;
+  --rt-header-rule: 36px;
+  --rt-row: 80px;
+  --rt-row-mobile: 52px;
+  --rt-cell-pad-top: 17px;
+  --rt-cell-pad-x: 18px;
+  --rt-num-x: -52px;
+  --rt-mark-x: -98px;
+  --rt-radius: 2px;
+
+  /* Motion (Play → Compare) */
+  --rt-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --rt-ease-press: cubic-bezier(0.3, 1.6, 0.5, 1);
+  --rt-t-quiet: 200ms;
+  --rt-t-head-in: 240ms;
+  --rt-t-split: 200ms;
+  --rt-t-stock: 260ms;
+  --rt-t-stock-stagger: 60ms;
+  --rt-t-ink-quiet: 300ms;
+  --rt-t-press: 180ms;
+  --rt-t-note: 280ms;
+  --rt-at-split: 200ms;
+  --rt-at-press: 450ms;
+  --rt-at-note: 620ms;
+  --rt-t-back: 200ms;
+
+  background: var(--rt-paper);
+  color: var(--rt-ink);
+  font-family: var(--rt-font-ui);
+  font-size: 13px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* ≥ 1280 and < 1440: gutter 88 · page fluid (760 at 1280) · gap 40 · margin 300 */
+@media (max-width: 1439.98px) {
+  .rt {
+    --rt-gutter: 88px;
+    --rt-gap: 40px;
+    --rt-margin: 300px;
+    --rt-num-x: -44px;
+    --rt-mark-x: -86px;
+  }
+}
+
+/* 1080–1279: margin 280 */
+@media (max-width: 1279.98px) {
+  .rt {
+    --rt-margin: 280px;
+    --rt-trail: 48px;
+  }
+}
+
+/* < 1080: the margin moves below the rows */
+@media (max-width: 1079.98px) {
+  .rt {
+    --rt-gutter: 80px;
+    --rt-trail: 40px;
+    --rt-num-x: -40px;
+    --rt-mark-x: -78px;
+  }
+}
+
+/* < 640: stacked rows */
+@media (max-width: 639.98px) {
+  .rt {
+    --rt-gutter: 22px;
+    --rt-trail: 22px;
+  }
+}
+
+.rt ::selection {
+  background: var(--rt-rev-stock);
+}
+
+/* Focus ring: 1.5px ink, offset 2. */
+.rt :focus-visible {
+  outline: 1.5px solid var(--rt-ink);
+  outline-offset: 2px;
+}
+
+.rt button {
+  font: inherit;
+  color: inherit;
+}
+
+/* ------------------------------------------------------------ type roles */
+
+.rt-label {
+  font: 500 10.5px/1.2 var(--rt-font-fact);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.rt-ui {
+  font: 400 13px/1.45 var(--rt-font-ui);
+}
+
+.rt-requirement {
+  font: 400 13px/1.35 var(--rt-font-ui);
+}
+
+.rt-action-label {
+  font: 400 23px/1.15 var(--rt-font-scene);
+}
+
+/* -------------------------------------------------------------- primitives */
+
+.rt-chip {
+  display: inline-block;
+  font: 500 10.5px/1.2 var(--rt-font-fact);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--rt-ink);
+  border: 1px solid var(--rt-ink);
+  border-radius: var(--rt-radius);
+  padding: 6px 9px;
+  white-space: nowrap;
+}
+
+.rt-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: 500 13px/1.2 var(--rt-font-ui);
+  padding: 9px 14px;
+  border: 1px solid var(--rt-ink);
+  border-radius: var(--rt-radius);
+  background: transparent;
+  color: var(--rt-ink);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 150ms ease-out;
+}
+
+.rt-button:hover {
+  background: var(--rt-sheet);
+}
+
+.rt-button--primary {
+  background: var(--rt-ink);
+  color: var(--rt-paper);
+}
+
+.rt-button--primary:hover {
+  background: var(--rt-ink-2);
+}
+
+.rt-wordmark {
+  font: 400 24px/1 var(--rt-font-scene);
+  letter-spacing: -0.01em;
+  color: var(--rt-ink);
+  text-decoration: none;
+}
+
+.rt-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ------------------------------------------------------------ reduced motion */
+
+/* System setting or the explicit switch: no transitions, final state only. */
+@media (prefers-reduced-motion: reduce) {
+  .rt *,
+  .rt *::before,
+  .rt *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+.rt[data-motion="off"] *,
+.rt[data-motion="off"] *::before,
+.rt[data-motion="off"] *::after {
+  transition: none !important;
+  animation: none !important;
+}

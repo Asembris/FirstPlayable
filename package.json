@@ -27,6 +27,9 @@
     "prebuild": "tsx scripts/build-export-runtime.ts"
   },
   "dependencies": {
+    "@fontsource/geist-mono": "5.3.0",
+    "@fontsource/geist-sans": "5.3.0",
+    "@fontsource/instrument-serif": "5.3.0",
     "@supabase/supabase-js": "2.117.2",
     "next": "16.3.8",
     "openai": "7.27.0",
