@@ -1,0 +1,81 @@
+{
+  "decision": {
+    "id": "8f213c1e-6683-48d9-8bb6-9c86d8ce76c1",
+    "project_id": "2568d1b1-fd82-47a2-82be-e601097a17b8",
+    "decision_kind": "edit",
+    "slot": "discovery",
+    "proposal_snapshot": {
+      "kind": "edit",
+      "proposal": {
+        "idea": "Examine the themes of memory and identity under pressure, reflected in the sealed letter. It could represent lost memories or an urgent truth waiting to be uncovered, adding tension to the decision of whether to return it.",
+        "slot": "discovery",
+        "domain": "movie",
+        "entity_id": "6BBB34F4-9345-4459-82AE-10991FA35CD2",
+        "relevance": "The exploration of identity and the impact of isolation in the reference suggests that the letter might be more than just a piece of paper—it could embody someone’s essential story.",
+        "capture_id": "e926c61a-18ac-453f-a387-d5aba4c483de",
+        "proposal_id": "pr.c820e8e8e93dbb656818",
+        "reference_id": "ref.mv.fe2f37e5fa35ed7b",
+        "reference_name": "Moon",
+        "intended_interaction": "As you hold the letter, contemplate its significance, allowing your thoughts on memory and personal narrative to guide your actions regarding its fate.",
+        "selected_evidence_ids": [
+          "ref.mv.fe2f37e5fa35ed7b#ev2",
+          "ref.mv.fe2f37e5fa35ed7b#ev3"
+        ]
+      },
+      "decided_at": "2026-10-05T22:23:38.739Z",
+      "source_kind": "qloo",
+      "approved_text": "Borrow the idea of a contradictory identity, not the film's plot. The envelope is addressed to two names: Nia's, and someone else's. Returning the letter stays locked until you ask Nia who the other name belongs to.",
+      "proposed_slot": "discovery",
+      "intended_effect": "Returning the letter stays locked until you ask Nia who the second name on the envelope belongs to.",
+      "project_revision": 2,
+      "edited_by_creator": true
+    },
+    "selected_evidence_ids": [
+      "ref.mv.fe2f37e5fa35ed7b#ev2",
+      "ref.mv.fe2f37e5fa35ed7b#ev3"
+    ],
+    "creator_text": "Borrow the idea of a contradictory identity, not the film's plot. The envelope is addressed to two names: Nia's, and someone else's. Returning the letter stays locked until you ask Nia who the other name belongs to.",
+    "predecessor_id": null,
+    "created_at": "2026-10-05T22:23:39.588702+00:00"
+  },
+  "capture": {
+    "id": "e926c61a-18ac-453f-a387-d5aba4c483de",
+    "kind": "movies",
+    "captured_at": "2026-10-04T08:56:47.844066+00:00",
+    "artist_entity_id": "70CAE5BF-2F4C-445C-A3E5-4EDACFC3591C",
+    "request_fingerprint": "movies|qloo-norm-1|578f549d2a7aed966755e093c98daf73b829f4fbc093787f82b483d7e2cf4e85"
+  },
+  "reference": {
+    "name": "Moon",
+    "year": 2009,
+    "entity_id": "6BBB34F4-9345-4459-82AE-10991FA35CD2",
+    "reference_id": "ref.mv.fe2f37e5fa35ed7b",
+    "original_rank": 3,
+    "disambiguation": "2009, Duncan Jones"
+  },
+  "evidence": [
+    {
+      "id": "ref.mv.fe2f37e5fa35ed7b#ev2",
+      "hash": "0d8ea93d2f858b17119e332be462e28ace7c2b885fbd71a56f64472b5fb57020",
+      "kind": "theme",
+      "text": "The film probes what makes someone human by exploring identity and memory under extreme isolation, while criticizing corporate practices that commodify lives and labor.",
+      "truncated": false,
+      "field_path": "properties.plot_themes_description"
+    },
+    {
+      "id": "ref.mv.fe2f37e5fa35ed7b#ev3",
+      "hash": "07d98d24459a46b2903cff7def7358324b4a6462cbde63045f5454e4bfc94980",
+      "kind": "tone",
+      "text": "A quietly wrenching and suspenseful meditation on loneliness, identity, and corporate betrayal that balances melancholy with moments of human tenderness.",
+      "truncated": false,
+      "field_path": "properties.emotional_tone_description"
+    }
+  ],
+  "removal_decision": {
+    "id": "5c40c7ac-e0a4-45ae-9bfc-0585c96f5e80",
+    "decision_kind": "remove",
+    "slot": "discovery",
+    "predecessor_id": "8f213c1e-6683-48d9-8bb6-9c86d8ce76c1",
+    "created_at": "2026-10-05T22:24:14.692004+00:00"
+  }
+}
