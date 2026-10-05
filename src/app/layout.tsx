@@ -9,6 +9,7 @@ import "@fontsource/geist-mono/400.css";
 import "@fontsource/geist-mono/500.css";
 import "./globals.css";
 import "./rehearsal/tokens.css";
+import "./rehearsal/scene.css";
 
 export const metadata: Metadata = {
   title: "FirstPlayable",
