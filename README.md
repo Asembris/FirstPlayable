@@ -12,12 +12,14 @@ and influence-approval evidence is
 compilation evidence — including every failed attempt — is
 [`docs/PHASE4_EVIDENCE.md`](docs/PHASE4_EVIDENCE.md).
 
-**Phases 1, 2, 3 and 4 are complete.** This repository contains the shared
-scene contract, the pure deterministic scene engine, hand-authored design
-fixtures, one offline vertical slice at `/example`, a persistent owner-scoped
-application shell on Supabase Postgres deployed on Vercel, the real
-cultural-influence workflow, and the compilation of approved influences into a
-validated playable scene.
+**Phases 1, 2, 3, 4 and 5 are complete**, and the Phase 5 build is deployed to
+production at <https://firstplayable.vercel.app>. This repository contains the
+shared scene contract, the pure deterministic scene engine, hand-authored
+design fixtures, one offline vertical slice at `/example`, a persistent
+owner-scoped application shell on Supabase Postgres deployed on Vercel, the
+real cultural-influence workflow, the compilation of approved influences into a
+validated playable scene, and targeted revision, version-pinned read-only
+share links, and offline HTML export.
 
 A creator searches for an artist, confirms the identity explicitly, retrieves
 real Qloo movie and videogame references, reads bounded model-proposed
@@ -69,9 +71,29 @@ Creator approved → Scene changed**. The fourth step is rendered only from a
 mechanical witness computed on the stored version, so nothing can claim a
 mechanical consequence that no compiler produced.
 
-**Not built, and not claimed:** targeted revision, publication and read-only
-share links, offline HTML export, and the model-selected comparator. Those are
-Phase 5 and none of them exists in this repository.
+### Revision, sharing, and export (Phase 5)
+
+**Revision is targeted.** A creator can edit one approved interpretation,
+replace one influence, or remove one. An edit or a replacement recompiles only
+its own slot; a removal costs no provider call at all. An ending's wording is
+previewed with one text-only call and changes nothing until the creator applies
+exactly the previewed text. Every revision is a new immutable version linked to
+its parent, labelled `mechanical` or `wording`, with a stored diff that equals
+the engine's own recomputation from the two stored scenes. Earlier versions
+stay listed and playable.
+
+**A share link names one version and can be withdrawn.** Publishing is
+previewed first and returns a read-only link pinned to the version it was made
+from. The public payload is a whitelisted snapshot that carries no project id,
+premise, artist, owner cookie, capture, entity id, or unapproved idea. Revoking
+takes effect on the next read, which is then indistinguishable from an unknown
+link.
+
+**An export is one self-contained HTML file** for the owner only. It plays from
+`file://` with the network blocked and makes no request of any kind.
+
+**Not built, and not claimed:** the model-selected comparator and the canonical
+judge experience. Those are Phase 6, which has not started.
 
 **Not claimed about Qloo:** that it recommended a mechanic, rated a reference,
 or knows a creator's taste. Returned affinity is kept private and is never
@@ -147,7 +169,7 @@ src/domain/           Zod contracts for the brief, the scene, and the project
 src/engine/           pure interpreter, composer, validator, diff, canonical hashing
 src/components/player trusted React player for the offline slice
 src/components/studio  the studio: brief, artist confirmation, reference rows, provenance, build and review
-src/app/              Next.js App Router pages and the twelve API routes
+src/app/              Next.js App Router pages and the seventeen API routes
 src/server/db/        owner-scoped repositories and the one server-only Supabase client
 src/server/security/  sessions, origin checks, body caps, error redaction
 src/server/model/     the pinned OpenAI Structured Outputs adapter
@@ -172,9 +194,9 @@ implementation.
 A project is owned by one anonymous session held in an `HttpOnly` cookie. There
 is no account, no password, and no recovery: **losing that cookie loses editing
 access.** Only a hash of the cookie's secret is stored. A compiled scene is
-therefore visible only to the browser that owns the project: there is no
-published link and no account recovery, and neither exists in this
-repository.
+visible only to the browser that owns the project unless its owner publishes a
+version: a share link reads that one version, read-only, and nothing else of
+the project. There is no account recovery.
 
 The browser never calls Qloo, OpenAI, or Supabase. Every external request is
 made server-side, behind this application's own owner-scoped routes, and no
