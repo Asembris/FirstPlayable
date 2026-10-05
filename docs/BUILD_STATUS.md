@@ -1,8 +1,10 @@
 # FirstPlayable — build status
 
-**Completed phases:** Phase 1, Phase 2, Phase 3 and **Phase 4**.
-**Next authorized phase:** Phase 5 — targeted revision, immutable sharing, and
-offline export. **Not started.**
+**Completed phases:** Phase 1, Phase 2, Phase 3, Phase 4 and **Phase 5**,
+which is deployed to production and locked (5 October 2026). See "Phase 5 —
+production closure" at the end of this file.
+**Next authorized phase:** Phase 6 — creative-tool polish and the canonical
+judge experience. **Not started.**
 
 Phase 4 passed its binary gate on 4 October 2026 at code commit `2c12321`,
 after three failed attempts recorded in full below and in
@@ -1776,3 +1778,111 @@ the scoped Supabase token to write to the table.
 Push the branch and open a PR, which needs explicit authorization. Production is
 redeployed only after the merge, and the deployed verifier then runs against
 production without the preview exemption. Phase 6 is not started.
+
+## Phase 5 — production closure — 5 October 2026
+
+**Branch:** `chore/phase-5-production-closure`, created from `main` at the
+Phase 5 merge commit `f2048d5`, which was verified clean and equal to
+`origin/main` first. No application code changed in this closure: the
+production deployment is built from `f2048d5`, and this branch adds only
+documentation.
+
+The full deployment facts are in `DEPLOYMENT_PREFLIGHT.md` §14. In summary:
+
+### Upload exclusion, verified before and after deploying
+
+| Check | Result |
+|---|---|
+| `vercel deploy --prod --dry --json` upload set | **202** entries: the 200 tracked files Vercel uploads, plus `supabase/.temp` and `test-results` as empty directory entries (mode `40666`, size 0) |
+| `.env`, `.env.local` | **ignored** by the CLI; `.env.example` is the only env file uploaded |
+| Upload entries matched by `.gitignore` | **0 files** |
+| New deployment's source, listed through the Vercel API | **200** files, all tracked, **no `.env`**, 0 git-ignored |
+| `/.env` on production | `404` |
+
+The `.env` that the previous production deployment's source carried (recorded
+in the Phase 5 preview section above) is no longer in the production
+deployment. Vercel retains that older deployment's source; the credentials it
+held were not rotated, by the owner's earlier decision.
+
+### Production deployment
+
+| Fact | Value |
+|---|---|
+| Project | the existing `firstplayable` Vercel project |
+| Deployment | `dpl_8E6pU36B4QKNxFq8nCQmVTLyoP4Z`, `READY`, target `production` |
+| Production URL | **`https://firstplayable.vercel.app`**, unchanged |
+| New project, domain, or alias | **none** |
+| Project settings or environment variables changed | **none** |
+
+### Deployed verifier against production — 118 / 118
+
+`RUN_DEPLOY_VERIFY=1 DEPLOY_URL=https://firstplayable.vercel.app npm run
+verify:deployment`, with no protection bypass and therefore **no preview
+toolbar exemption** (0 requests exempted).
+
+| Gate on production | Result |
+|---|---|
+| Phase 2 HTTP matrix, sessions, ownership, mutation-security refusals | **PASS** |
+| Phase 3 Qloo workflow over HTTP and in a real browser | **PASS** |
+| Phase 4 compilation, review, activation, zero-request playthrough | **PASS** |
+| Phase 5 edit, replace, ending-copy preview and apply, forged apply refused, remove | **PASS** |
+| Every stored diff equals the engine's recomputation; immutable history | **PASS** |
+| Publish → public read from a fresh browser → revoke; the next read is `404` | **PASS** |
+| Public payload carries no private data (20 markers, 4 unapproved ideas) | **PASS** |
+| Export owner-only; plays from `file://` offline with **0 requests** | **PASS** |
+| Browser never reaches OpenAI, Qloo, or Supabase; same-origin only | **PASS** |
+| Fresh non-owner session refused (`404`), no session refused (`401`) | **PASS** |
+| Fresh-server persistence of the active version, byte for byte | **PASS** |
+| Client chunks and rendered pages: no credential shape, no provider host | **PASS** |
+
+Both fixes found on the Phase 5 preview hold on production: a genuine
+ending-copy apply succeeds after a refused one, and the read after revocation
+is refused immediately.
+
+Two earlier invocations stopped on this machine's outbound connection
+(`UND_ERR_CONNECT_TIMEOUT`) during the opening page loads, before creating any
+session or data, while unrelated hosts were also timing out. A probe loop then
+tripped Vercel's per-IP security checkpoint, which was not bypassed and lifted
+on its own. They are recorded in `DEPLOYMENT_PREFLIGHT.md` §14 and are not
+application failures.
+
+**No production defect was found**, so no code, test, or verifier change was
+made.
+
+### The offline gate on this branch
+
+| Command | Result |
+|---|---|
+| `npm run typecheck` | **PASS** |
+| `npm test` | **PASS** — **711 / 711** in 34 files |
+| `npm run test:e2e` | **PASS** — **64 / 64** |
+| `npm run check:fixtures` | **PASS** |
+| `npm run build` (`.next` deleted first) | **PASS** |
+| `npm run check:secrets` | **PASS** — 202 tracked files, **422** built assets |
+
+### Known limitations carried forward
+
+* The orphan Phase 5 preview test publication remains live with an unknown,
+  never-recorded 256-bit token, as recorded above.
+* Vercel retains the source of the earlier production deployment that carried
+  `.env`; its credentials were not rotated, by the owner's decision.
+* This run's OpenAI spend was not read back from the budget row; Phase 5 runs
+  averaged about $0.0075 each against the $0.60 cumulative cap.
+* One full production run is evidence that the deployment works, not a
+  reliability measurement.
+* The labelling and stored-diff limitations listed in the Phase 5 preview
+  section are unchanged.
+
+## Phase 5 — locked
+
+| Gate | Result |
+|---|---|
+| Phase 5 exit gate (above) | **PASS** |
+| Merged build deployed to the existing production project | **PASS** |
+| Deployment upload excludes `.env` and every git-ignored file | **PASS** — dry run and deployed source |
+| Deployed verifier against production, no exemption | **PASS** — 118 / 118 |
+| Offline gate on the closure branch | **PASS** |
+
+**Phase 5 is complete and locked in production.** Phase 6 — creative-tool
+polish and the canonical judge experience — is the next authorized phase and
+**has not started**.
