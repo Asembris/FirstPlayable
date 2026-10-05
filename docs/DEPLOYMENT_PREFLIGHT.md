@@ -9,7 +9,8 @@
 The header above belongs to the original Phase 2 record, which is sections 1
 to 11. This file is append-only across phases: section 12 was added by the
 Phase 4 migration and environment work, and section 13 by the Phase 4
-deployment, each dated in its own opening line. Nothing in sections 1 to 11
+deployment, and section 14 by the Phase 5 production deployment, each
+dated in its own opening line. Nothing in sections 1 to 11
 has been rewritten.
 
 This file records **only what was actually executed against real accounts**.
@@ -639,3 +640,119 @@ the deployment was verified by one full verifier run, following two local live
 compilations. And the spend figures in `PHASE4_EVIDENCE.md` §16.12 are labelled
 list-price estimates computed from provider-reported usage, not amounts read
 back from the OpenAI account.
+
+## 14. Phase 5 production deployment — made, and verified against production
+
+Added 5 October 2026 (UTC), after the Phase 5 merge (`f2048d5`), on the branch
+`chore/phase-5-production-closure`. No application code changed between the
+merge and this deployment. Section 13 above is unchanged.
+
+### Upload set verified before deploying
+
+```
+vercel deploy --prod --dry --json
+```
+
+The dry run lists every file a deployment would upload and uploads nothing.
+Only file names, sizes, and modes were read; no file content was printed.
+
+| Check | Observed |
+|---|---|
+| Entries in the upload set | **202** |
+| Tracked files | 202, of which `.gitignore` and `supabase/.gitignore` are skipped by Vercel itself |
+| Upload entries that git does not track | `supabase/.temp` and `test-results`, both **empty directory entries** (mode `40666`, size 0) |
+| Env files in the upload set | **`.env.example` only** |
+| `.env`, `.env.local` | in the CLI's **ignored** list |
+| Other ignored entries | `.git`, `.next`, `.venv`, `.vercel`, `node_modules`, `next-env.d.ts`, `tsconfig.tsbuildinfo`, every `supabase/.temp/*` file, `test-results/.last-run.json` |
+| Upload entries matched by `.gitignore` (`git check-ignore --no-index`) | only the two empty directory entries above; **no file** |
+
+`.vercelignore` is effective: the upload set is the tracked tree and nothing
+else.
+
+### Production deployment
+
+```
+vercel deploy --prod --yes
+```
+
+| Fact | Observed |
+|---|---|
+| Vercel project | the existing `firstplayable` project, linked through `.vercel/project.json` |
+| Target | `production`, `READY` |
+| Deployment | `dpl_8E6pU36B4QKNxFq8nCQmVTLyoP4Z` |
+| Immutable deployment URL | `firstplayable-njhbshdlk-mohamed-aziz-ayaris-projects.vercel.app` |
+| Production URL | **`https://firstplayable.vercel.app`** — the same alias as Phases 2 to 4 |
+| Built from | `f2048d5`, the Phase 5 merge commit |
+
+No new project, domain, or alias was created, and no project setting or
+environment variable was changed or read.
+
+### The deployed source contains no `.env`
+
+The new deployment's uploaded source tree was listed by name through the Vercel
+API (`GET /v6/deployments/{id}/files`); no file content was read.
+
+| Check | Observed |
+|---|---|
+| Source files | **200**, equal to the tracked files Vercel uploads |
+| Source files git does not track | **0** |
+| Source files matched by `.gitignore` | **0** |
+| Env-like files | `.env.example` only |
+| `/.env` on production | `404` |
+
+The deployment that section 13 and `BUILD_STATUS.md` recorded as carrying
+`.env` in its source is no longer the production deployment. Vercel keeps its
+copy of that older deployment's source; the credentials it held were not
+rotated, by the owner's earlier decision.
+
+### Deployed verifier against production — 118 of 118
+
+```
+RUN_DEPLOY_VERIFY=1 DEPLOY_URL=https://firstplayable.vercel.app npm run verify:deployment
+```
+
+**118 checks, 118 passed.** The protection bypass was **not used**, so the
+preview-toolbar exemption was inactive: no request was exempted, and every
+browser request was held to the same-origin checks.
+
+| Deployed area | Result |
+|---|---|
+| `/`, `/example`, `/studio` | `200` |
+| Phase 2 HTTP matrix: HttpOnly, Secure owner cookie; persistence; foreign and unknown byte-identical `404`; no session `401`; origin, content-type, size, syntax, and contract refusals; redacted refusals | **PASS** |
+| Phase 3: real Qloo search, explicit confirmation, both reference rows from stored captures with 0 upstream calls, one bounded model proposal, one approval surviving reload, a second owner refused at every route | **PASS** |
+| Phase 3 and 4 in a real browser: same-origin requests only; Qloo, OpenAI, and Supabase never reached by the browser | **PASS** |
+| Phase 4: bounded staged compilation, pending review, the fourth provenance layer, a playthrough and reset with **0** requests, explicit activation surviving reload, a second browser refused | **PASS** |
+| Phase 5 revision: edit and replace each recompile one slot with one provider call; ending wording previewed with one call and applied with none; forged apply refused (`422`); removal; every stored diff equal to the engine's recomputation; history immutable | **PASS** |
+| Publish, public read, revoke: preview publishes nothing; a stranger is refused; the link is pinned to one version; a fresh browser plays it read-only with 0 requests; revocation is effective on the very next read (`404`, indistinguishable from an unknown token) and idempotent | **PASS** |
+| Public payload | **PASS** — none of 20 private markers or 4 unapproved ideas present |
+| Export | **PASS** — owner `200`, stranger `404`, anonymous `401`; 26,808 bytes clean; played from `file://` offline to an ending and reset with **0 requests and 0 policy violations** |
+| Fresh-server persistence | **PASS** — same active version, byte for byte, still active after a fresh server |
+| Client bundle | **PASS** — 8 chunks, no credential shape and no provider host |
+
+This is the first production run of the Phase 5 build, and the first run
+without the preview exemption against it. The two fixes found on the preview in
+Phase 5 — the ending-copy apply key and the public read's `no-store` — hold on
+production: the genuine apply succeeded after a refused one, and the read after
+revocation returned `404` immediately.
+
+### Runs that did not reach the application
+
+Two earlier invocations of the same command stopped with
+`TypeError: fetch failed` (`UND_ERR_CONNECT_TIMEOUT`) on this machine's
+outbound connection, after one and zero checks respectively. They were
+transport failures, not application responses: during the same minutes
+requests to unrelated hosts (Google, GitHub, Cloudflare) also timed out
+intermittently. A connectivity probe loop from this machine then tripped
+Vercel's per-IP security checkpoint (`403`, `X-Vercel-Mitigated: challenge`);
+it was not bypassed, and it had lifted on its own within about two minutes of
+the probing stopping. The 118 / 118 run followed. Neither aborted run got past
+the opening page loads, so neither created a session, a project, a version, or
+a publication.
+
+### What this section does not claim
+
+It does not re-read the Vercel environment variables or the Supabase catalog;
+section 12, section 13, and `BUILD_STATUS.md` record those. It does not record
+the OpenAI spend of this run, which was not read back from the budget row; the
+Phase 5 preview runs averaged about $0.0075 each. One full run is evidence that
+the deployment works, not a reliability measurement.
