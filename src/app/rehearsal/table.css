@@ -1,0 +1,415 @@
+/*
+ * Phase 6 · Rehearsal Table · what sits on the table: the band's transcript,
+ * the header rule, the action rows, the footer, and the causal note.
+ */
+
+/* ============================================================== top bar parts */
+
+.rt-seg {
+  display: flex;
+  border: 1px solid var(--rt-ink);
+  border-radius: var(--rt-radius);
+  overflow: hidden;
+}
+
+.rt-seg__option {
+  border: 0;
+  background: transparent;
+  padding: 7px 12px;
+  font: 500 12px/1.2 var(--rt-font-ui);
+  cursor: pointer;
+  transition: background-color 150ms ease-out;
+}
+
+.rt-seg__option + .rt-seg__option {
+  border-left: 1px solid var(--rt-ink);
+}
+
+.rt-seg__option[aria-pressed="true"] {
+  background: var(--rt-ink);
+  color: var(--rt-paper);
+}
+
+.rt-seg__option:not([aria-pressed="true"]):hover {
+  background: var(--rt-sheet);
+}
+
+.rt-seg__option:focus-visible {
+  outline-offset: -4px;
+  outline-color: currentColor;
+}
+
+/* ============================================================== band · Play */
+
+.rt-band__play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 34%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 34%);
+}
+
+.rt-script {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rt-script__line {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  align-items: baseline;
+}
+
+.rt-script__cue {
+  font: 500 10.5px/1.2 var(--rt-font-fact);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rt-ink);
+}
+
+.rt-script__text {
+  font: 400 21px/1.35 var(--rt-font-scene);
+  color: var(--rt-ink);
+  text-wrap: pretty;
+}
+
+.rt-script__line--choice .rt-script__cue,
+.rt-script__line--choice .rt-script__text {
+  color: var(--rt-pencil);
+}
+
+.rt-script__line--choice .rt-script__text {
+  font: 400 13.5px/1.35 var(--rt-font-ui);
+}
+
+.rt-script__line--narration .rt-script__text {
+  font-style: italic;
+  color: var(--rt-ink-2);
+}
+
+.rt-script__ending-title {
+  display: block;
+  font-size: 34px;
+  line-height: 1.1;
+}
+
+.rt-script__ending-text {
+  display: block;
+  margin-top: 6px;
+  font-style: italic;
+  color: var(--rt-ink-2);
+}
+
+/* ============================================================== header rule */
+
+.rt-head__play {
+  position: absolute;
+  left: 0;
+  bottom: 9px;
+  margin: 0;
+  color: var(--rt-ink);
+}
+
+/* ============================================================== rows */
+
+.rt-rowlist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Every layer of a row shares one grid cell, so a row is exactly as tall in
+   Play as in Compare and nothing below it moves when the mode changes. */
+.rt-row {
+  position: relative;
+  display: grid;
+  grid-template-areas: "stack";
+  min-height: var(--rt-row);
+  border-bottom: 1px solid var(--rt-rule);
+  transition: background-color 150ms ease-out;
+}
+
+.rt-row > .rt-row__single,
+.rt-row > .rt-row__split {
+  grid-area: stack;
+  min-width: 0;
+}
+
+.rt-row__single {
+  padding: var(--rt-cell-pad-top) var(--rt-cell-pad-x) 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rt-row__label {
+  color: var(--rt-ink);
+}
+
+.rt-row[data-enabled="false"] .rt-row__label {
+  color: var(--rt-quiet);
+}
+
+.rt-row__reason {
+  color: var(--rt-ink-2);
+}
+
+.rt-row__num {
+  position: absolute;
+  left: var(--rt-num-x);
+  top: 33px;
+  font: 400 11px/1 var(--rt-font-fact);
+  color: var(--rt-quiet);
+}
+
+/* The whole row is the hit target. */
+.rt-row__hit {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.rt-row__hit[aria-disabled="true"] {
+  cursor: default;
+}
+
+.rt-row:has(> .rt-row__hit:not([aria-disabled="true"]):hover) {
+  background: var(--rt-sheet);
+}
+
+/* Revision ink: this line exists because of the approved influence. */
+.rt-mark {
+  position: absolute;
+  z-index: 2;
+  left: var(--rt-mark-x);
+  top: 12px;
+  width: 36px;
+  height: 44px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: 400 50px/1 var(--rt-font-scene);
+  color: var(--rt-rev-ink);
+  text-align: center;
+  cursor: pointer;
+}
+
+/* ============================================================== footer */
+
+.rt-foot__play,
+.rt-foot__compare {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.rt-foot__note {
+  margin: 0;
+  font: 400 12.5px/1.4 var(--rt-font-ui);
+  color: var(--rt-pencil);
+}
+
+/* ============================================================== causal note */
+
+.rt-note {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  transition:
+    opacity var(--rt-t-back) ease-out,
+    visibility 0s linear 0s;
+}
+
+.rt-scene[data-view="play"][data-note="closed"] .rt-note {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--rt-t-back) ease-out,
+    visibility 0s linear var(--rt-t-back);
+}
+
+.rt-note__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  height: var(--rt-header-rule);
+  padding-bottom: 9px;
+  border-bottom: 1.5px solid var(--rt-rev-ink);
+}
+
+.rt-note__title {
+  margin: 0;
+  color: var(--rt-rev-ink);
+}
+
+.rt-note__lines {
+  font: 400 11px/1 var(--rt-font-fact);
+  color: var(--rt-pencil);
+}
+
+.rt-note__layers {
+  list-style: none;
+  margin: 0;
+  padding: 16px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.rt-layer__label {
+  margin: 0 0 6px;
+  font: 500 9.5px/1.3 var(--rt-font-fact);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--rt-pencil);
+}
+
+.rt-layer__label--decision {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  color: var(--rt-ink);
+}
+
+.rt-layer__label--change {
+  color: var(--rt-rev-ink);
+}
+
+.rt-edited {
+  font: 500 11px/1 var(--rt-font-ui);
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+/* Source: the catalogue slip, the only boxed element. */
+.rt-slip {
+  border: 1px solid var(--rt-slip-edge);
+  background: var(--rt-sheet);
+  padding: 11px 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rt-slip__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.rt-slip__name {
+  font: 500 17px/1.1 var(--rt-font-fact);
+  letter-spacing: -0.01em;
+}
+
+.rt-slip__meta,
+.rt-slip__line,
+.rt-slip__evidence {
+  font: 400 11px/1.45 var(--rt-font-fact);
+}
+
+.rt-slip__meta {
+  color: var(--rt-pencil);
+  text-align: right;
+}
+
+.rt-slip__line {
+  margin: 0;
+  color: var(--rt-ink-2);
+}
+
+.rt-slip__evidence {
+  margin: 2px 0 0;
+  padding-top: 5px;
+  border-top: 1px dashed var(--rt-rule);
+  color: var(--rt-ink-2);
+}
+
+/* Suggestion: pencil, italic, dashed underline. */
+.rt-suggestion {
+  margin: 0;
+  font: italic 400 17px/1.32 var(--rt-font-scene);
+  color: var(--rt-pencil);
+  text-decoration: underline dashed var(--rt-faint);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 5px;
+}
+
+/* Decision: ink, upright, with a left rule. */
+.rt-decision {
+  margin: 0;
+  font: 400 17px/1.32 var(--rt-font-scene);
+  color: var(--rt-ink);
+  border-left: 2px solid var(--rt-ink);
+  padding-left: 11px;
+}
+
+/* Consequence: revision stock. */
+.rt-consequence {
+  margin: 0;
+  padding: 11px 13px;
+  background: var(--rt-rev-stock);
+  font: 400 15.5px/1.35 var(--rt-font-scene);
+  color: var(--rt-ink);
+}
+
+.rt-note__foot {
+  margin: 18px 0 0;
+  font: 400 11.5px/1.45 var(--rt-font-ui);
+  color: var(--rt-pencil);
+}
+
+.rt-note__more {
+  margin-top: 12px;
+  font: 400 12.5px/1.45 var(--rt-font-ui);
+  color: var(--rt-ink-2);
+}
+
+.rt-note__more > summary {
+  cursor: pointer;
+  width: fit-content;
+  color: var(--rt-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.rt-record {
+  margin: 12px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rt-record dt {
+  font: 500 9.5px/1.3 var(--rt-font-fact);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--rt-pencil);
+}
+
+.rt-record dd {
+  margin: 4px 0 0;
+}
+
+.rt-record dd.rt-suggestion {
+  font-size: 15.5px;
+}

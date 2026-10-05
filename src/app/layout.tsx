@@ -10,11 +10,13 @@ import "@fontsource/geist-mono/500.css";
 import "./globals.css";
 import "./rehearsal/tokens.css";
 import "./rehearsal/scene.css";
+import "./rehearsal/table.css";
+import "./rehearsal/landing.css";
 
 export const metadata: Metadata = {
   title: "FirstPlayable",
   description:
-    "Choose the influences. Play the consequences. Phase 1 offline vertical slice.",
+    "Choose the influences. Play the consequences. Approve one cultural influence for a scene, then play it with and without that influence.",
 };
 
 export const viewport: Viewport = {

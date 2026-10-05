@@ -103,6 +103,17 @@ function setterOf(scene: Scene, gateId: Id): { id: Id; label: string } | null {
   return null;
 }
 
+/**
+ * Every unmet requirement on an action, each named by the label of the action
+ * that satisfies it (or, failing that, by the gate's own stored text).
+ */
+export function requirementsOf(scene: Scene, state: State, actionId: Id): string[] {
+  return unmetGates(scene, state, actionId).map((entry) => {
+    const setter = setterOf(scene, entry.gate.id);
+    return setter === null ? entry.gate.blocked_text : lowerFirst(setter.label);
+  });
+}
+
 function endingIfTaken(scene: Scene, state: State, actionId: Id): Ending | null {
   const result = step(scene, state, actionId);
   return result.ok ? result.ending : null;
@@ -255,11 +266,7 @@ function cellNote(
 ): string {
   if (status === "hidden") return "Not in this version";
   if (status === "locked") {
-    const needs = unmetGates(scene, state, actionId).map((entry) => {
-      const setter = setterOf(scene, entry.gate.id);
-      return setter === null ? entry.gate.blocked_text : lowerFirst(setter.label);
-    });
-    return `Locked · needs: ${listOf(needs)}`;
+    return `Locked · needs: ${listOf(requirementsOf(scene, state, actionId))}`;
   }
   if (other === "hidden" && side === "with") return `Added with ${pair.influenceName} · open now`;
   const ending = endingIfTaken(scene, state, actionId);
