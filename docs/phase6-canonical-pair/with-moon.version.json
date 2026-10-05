@@ -1,0 +1,580 @@
+{
+  "id": "80bbc61c-13b9-4067-85a9-09dc1b8f8ede",
+  "project_id": "2568d1b1-fd82-47a2-82be-e601097a17b8",
+  "parent_version_id": null,
+  "created_at": "2026-10-05T22:23:51.62972+00:00",
+  "input_hash": "c299abc1c3d6cba2de3228aede80b510fade224c2db0fc2b",
+  "base_hash": "43e336086f9f1a7c9279c854b8a0f053a8a67b11729d1d9071a4a1ab68c0bafa",
+  "module_hashes": {
+    "discovery": "fa065ae7fef91526e6adf4d29b120a08111a78f25f136d32efb7a89b731c2bc2"
+  },
+  "model_identifier": "gpt-4o-mini-2024-07-18",
+  "prompt_identifier": "fp-prompts-4.2",
+  "schema_identifier": "fp-model-schema-4.2",
+  "compiler_identifier": "fp-compiler-4.2",
+  "validator_identifier": "fp-engine-validator-1.0",
+  "validation_summary": {
+    "ok": true,
+    "edges": 54,
+    "notes": [],
+    "subsets": [
+      {
+        "ok": true,
+        "slots": [],
+        "finding_codes": []
+      },
+      {
+        "ok": true,
+        "slots": [
+          "discovery"
+        ],
+        "finding_codes": []
+      }
+    ],
+    "witnesses": [
+      {
+        "kind": "action_availability",
+        "slot": "discovery",
+        "after": "locked",
+        "before": "enabled",
+        "prefix": [
+          "core.ask_context",
+          "core.inspect"
+        ],
+        "sentence": "After core.ask_context then core.inspect, \"core.give\" is locked with the discovery influence and enabled without it.",
+        "action_id": "core.give",
+        "mechanical": true,
+        "approval_id": "approval.8f213c1e-6683-48d9-8bb6-9c86d8ce76c1",
+        "pairs_explored": 20
+      }
+    ],
+    "active_slots": [
+      "discovery"
+    ],
+    "finding_codes": [],
+    "reachable_endings": [
+      "end.give",
+      "end.keep",
+      "end.leave"
+    ],
+    "reachable_nonterminal_states": 20
+  },
+  "approval_snapshot": [
+    {
+      "slot": "discovery",
+      "domain": "movie",
+      "approval_id": "8f213c1e-6683-48d9-8bb6-9c86d8ce76c1",
+      "approved_at": "2026-10-05T22:23:39.588702+00:00",
+      "source_kind": "qloo",
+      "reference_id": "ref.mv.fe2f37e5fa35ed7b",
+      "approved_text": "Borrow the idea of a contradictory identity, not the film's plot. The envelope is addressed to two names: Nia's, and someone else's. Returning the letter stays locked until you ask Nia who the other name belongs to.",
+      "proposed_idea": "Examine the themes of memory and identity under pressure, reflected in the sealed letter. It could represent lost memories or an urgent truth waiting to be uncovered, adding tension to the decision of whether to return it.",
+      "reference_name": "Moon",
+      "intended_effect": "Returning the letter stays locked until you ask Nia who the second name on the envelope belongs to.",
+      "edited_by_creator": true,
+      "scene_approval_id": "approval.8f213c1e-6683-48d9-8bb6-9c86d8ce76c1",
+      "selected_evidence_ids": [
+        "ref.mv.fe2f37e5fa35ed7b#ev2",
+        "ref.mv.fe2f37e5fa35ed7b#ev3"
+      ]
+    }
+  ],
+  "revision_diff": null,
+  "scene": {
+    "core": {
+      "actions": [
+        {
+          "id": "core.inspect",
+          "verb": "inspect",
+          "when": {
+            "kind": "any",
+            "clauses": [
+              [
+                {
+                  "equals": false,
+                  "var_id": "core.inspected"
+                }
+              ]
+            ]
+          },
+          "label": "Examine the letter",
+          "target": {
+            "id": "letter",
+            "kind": "object"
+          },
+          "branches": [
+            {
+              "when": {
+                "kind": "always"
+              },
+              "effects": [
+                {
+                  "op": "set_true",
+                  "var_id": "core.inspected"
+                }
+              ],
+              "ending_id": null,
+              "dialogue_id": "core.inspect_text"
+            }
+          ]
+        },
+        {
+          "id": "core.ask_context",
+          "verb": "ask",
+          "when": {
+            "kind": "any",
+            "clauses": [
+              [
+                {
+                  "equals": false,
+                  "var_id": "core.context"
+                }
+              ]
+            ]
+          },
+          "label": "Ask Nia why she needs it back",
+          "target": {
+            "id": "nia",
+            "kind": "character"
+          },
+          "branches": [
+            {
+              "when": {
+                "kind": "always"
+              },
+              "effects": [
+                {
+                  "op": "set_true",
+                  "var_id": "core.context"
+                }
+              ],
+              "ending_id": null,
+              "dialogue_id": "core.context_text"
+            }
+          ]
+        },
+        {
+          "id": "core.ask_terms",
+          "verb": "ask",
+          "when": {
+            "kind": "any",
+            "clauses": [
+              [
+                {
+                  "equals": true,
+                  "var_id": "core.inspected"
+                },
+                {
+                  "equals": true,
+                  "var_id": "core.context"
+                },
+                {
+                  "equals": false,
+                  "var_id": "core.promised"
+                }
+              ]
+            ]
+          },
+          "label": "Promise to keep it safe while I hold it",
+          "target": {
+            "id": "nia",
+            "kind": "character"
+          },
+          "branches": [
+            {
+              "when": {
+                "kind": "always"
+              },
+              "effects": [
+                {
+                  "op": "set_true",
+                  "var_id": "core.promised"
+                }
+              ],
+              "ending_id": null,
+              "dialogue_id": "core.promise_text"
+            }
+          ]
+        },
+        {
+          "id": "core.give",
+          "verb": "give",
+          "when": {
+            "kind": "any",
+            "clauses": [
+              [
+                {
+                  "equals": true,
+                  "var_id": "core.inspected"
+                },
+                {
+                  "equals": true,
+                  "var_id": "core.context"
+                }
+              ]
+            ]
+          },
+          "label": "Return the letter",
+          "target": {
+            "id": "letter",
+            "kind": "object"
+          },
+          "branches": [
+            {
+              "when": {
+                "kind": "always"
+              },
+              "effects": [],
+              "ending_id": "end.give",
+              "dialogue_id": null
+            }
+          ]
+        },
+        {
+          "id": "core.withhold",
+          "verb": "withhold",
+          "when": {
+            "kind": "any",
+            "clauses": [
+              [
+                {
+                  "equals": true,
+                  "var_id": "core.inspected"
+                },
+                {
+                  "equals": true,
+                  "var_id": "core.context"
+                },
+                {
+                  "equals": false,
+                  "var_id": "core.promised"
+                }
+              ]
+            ]
+          },
+          "label": "Keep the letter",
+          "target": {
+            "id": "letter",
+            "kind": "object"
+          },
+          "branches": [
+            {
+              "when": {
+                "kind": "always"
+              },
+              "effects": [],
+              "ending_id": "end.keep",
+              "dialogue_id": null
+            }
+          ]
+        },
+        {
+          "id": "core.leave",
+          "verb": "leave",
+          "when": {
+            "kind": "any",
+            "clauses": [
+              [
+                {
+                  "equals": true,
+                  "var_id": "core.inspected"
+                },
+                {
+                  "equals": true,
+                  "var_id": "core.context"
+                }
+              ]
+            ]
+          },
+          "label": "Walk away for now",
+          "target": {
+            "id": "counter",
+            "kind": "room"
+          },
+          "branches": [
+            {
+              "when": {
+                "kind": "always"
+              },
+              "effects": [],
+              "ending_id": "end.leave",
+              "dialogue_id": null
+            }
+          ]
+        }
+      ],
+      "endings": [
+        {
+          "id": "end.give",
+          "text": "As you hand the letter back, Nia's eyes light up with relief. \"Thank you, I really needed this. You have no idea how much it means to me!\"",
+          "title": "You returned the letter"
+        },
+        {
+          "id": "end.keep",
+          "text": "Nia's expression falters as you tuck the letter away. \"I see. I guess I can't change your mind?\" Her voice is tinged with disappointment as she turns away, leaving you alone with your choice.",
+          "title": "You kept the letter"
+        },
+        {
+          "id": "end.leave",
+          "text": "You step back from the counter, uncertainty weighing on you. Nia’s gaze follows you, a mixture of hope and confusion in her eyes. You close your eyes, promising yourself to revisit this in the morning.",
+          "title": "You walked away undecided"
+        }
+      ],
+      "dialogue": [
+        {
+          "id": "core.inspect_text",
+          "text": "The envelope is unmarked, its contents unknown. There’s a sense of importance about it, as if it carries weight beyond its physical form.",
+          "speaker_id": "narrator"
+        },
+        {
+          "id": "core.context_text",
+          "text": "I left it behind in a rush. It contains something I need to send today, something important.",
+          "speaker_id": "nia"
+        },
+        {
+          "id": "core.promise_text",
+          "text": "I promise to hold onto it. You can trust me with it.",
+          "speaker_id": "player"
+        }
+      ],
+      "variables": [
+        {
+          "id": "core.inspected",
+          "label": "Object inspected",
+          "initial": false,
+          "visible": false
+        },
+        {
+          "id": "core.context",
+          "label": "Request understood",
+          "initial": false,
+          "visible": false
+        },
+        {
+          "id": "core.promised",
+          "label": "Return promised",
+          "initial": false,
+          "visible": false
+        }
+      ]
+    },
+    "ports": {
+      "discovery": {
+        "gate_action_ids": [
+          "core.give"
+        ],
+        "effect_action_ids": [
+          "core.inspect"
+        ]
+      },
+      "commitment": {
+        "gate_action_ids": [
+          "core.ask_terms",
+          "core.withhold"
+        ],
+        "effect_action_ids": [
+          "core.ask_context"
+        ]
+      }
+    },
+    "title": "The Second Copy",
+    "world": {
+      "room": {
+        "id": "counter",
+        "name": "Lost-property counter",
+        "description": "The station is closing. You have one letter left to return."
+      },
+      "object": {
+        "id": "letter",
+        "name": "Sealed letter",
+        "description": "One envelope, left behind earlier today."
+      },
+      "characters": [
+        {
+          "id": "nia",
+          "name": "Nia",
+          "role": "Visitor asking for her letter"
+        }
+      ],
+      "player_role": "Station attendant"
+    },
+    "modules": [
+      {
+        "slot": "discovery",
+        "gates": [
+          {
+            "id": "discovery.gate_1",
+            "when": {
+              "kind": "any",
+              "clauses": [
+                [
+                  {
+                    "equals": true,
+                    "var_id": "discovery.state_1"
+                  }
+                ]
+              ]
+            },
+            "action_id": "core.give",
+            "blocked_text": "You need to ask Nia about the other name on the letter before you can return it."
+          },
+          {
+            "id": "discovery.gate_2",
+            "when": {
+              "kind": "any",
+              "clauses": [
+                [
+                  {
+                    "equals": true,
+                    "var_id": "discovery.state_2"
+                  }
+                ]
+              ]
+            },
+            "action_id": "core.give",
+            "blocked_text": "You should first examine the envelope more closely before returning it."
+          }
+        ],
+        "actions": [
+          {
+            "id": "discovery.action_1",
+            "verb": "ask",
+            "when": {
+              "kind": "any",
+              "clauses": [
+                [
+                  {
+                    "equals": false,
+                    "var_id": "discovery.state_1"
+                  }
+                ]
+              ]
+            },
+            "label": "Ask Nia who the other name belongs to",
+            "target": {
+              "id": "nia",
+              "kind": "character"
+            },
+            "branches": [
+              {
+                "when": {
+                  "kind": "always"
+                },
+                "effects": [
+                  {
+                    "op": "set_true",
+                    "var_id": "discovery.state_1"
+                  }
+                ],
+                "ending_id": null,
+                "dialogue_id": "discovery.line_1"
+              }
+            ]
+          },
+          {
+            "id": "discovery.action_2",
+            "verb": "inspect",
+            "when": {
+              "kind": "any",
+              "clauses": [
+                [
+                  {
+                    "equals": false,
+                    "var_id": "discovery.state_2"
+                  }
+                ]
+              ]
+            },
+            "label": "Examine the envelope closely",
+            "target": {
+              "id": "letter",
+              "kind": "object"
+            },
+            "branches": [
+              {
+                "when": {
+                  "kind": "always"
+                },
+                "effects": [
+                  {
+                    "op": "set_true",
+                    "var_id": "discovery.state_2"
+                  }
+                ],
+                "ending_id": null,
+                "dialogue_id": "discovery.line_2"
+              }
+            ]
+          }
+        ],
+        "dialogue": [
+          {
+            "id": "discovery.line_1",
+            "text": "Who is the other name on this letter?",
+            "speaker_id": "player"
+          },
+          {
+            "id": "discovery.hook_line_1",
+            "text": "The other name is someone I care about deeply. It's vital that I get that letter back to them.",
+            "speaker_id": "nia"
+          },
+          {
+            "id": "discovery.line_2",
+            "text": "There must be something more to this envelope.",
+            "speaker_id": "player"
+          }
+        ],
+        "variables": [
+          {
+            "id": "discovery.state_1",
+            "label": "other_name_asked",
+            "initial": false,
+            "visible": false
+          },
+          {
+            "id": "discovery.state_2",
+            "label": "envelope_inspected",
+            "initial": false,
+            "visible": false
+          }
+        ],
+        "on_actions": [
+          {
+            "id": "discovery.hook_1",
+            "when": {
+              "kind": "always"
+            },
+            "effects": [],
+            "action_id": "core.inspect",
+            "dialogue_id": "discovery.hook_line_1"
+          }
+        ],
+        "approval_id": "approval.8f213c1e-6683-48d9-8bb6-9c86d8ce76c1"
+      }
+    ],
+    "scene_id": "scene.2791fafa870da913cf7f484c",
+    "influences": [
+      {
+        "approval_id": "approval.8f213c1e-6683-48d9-8bb6-9c86d8ce76c1",
+        "source_kind": "qloo",
+        "reference_id": "ref.mv.fe2f37e5fa35ed7b",
+        "approved_text": "Borrow the idea of a contradictory identity, not the film's plot. The envelope is addressed to two names: Nia's, and someone else's. Returning the letter stays locked until you ask Nia who the other name belongs to.",
+        "intended_effect": "Returning the letter stays locked until you ask Nia who the second name on the envelope belongs to."
+      }
+    ],
+    "provenance": [
+      {
+        "approval_id": "approval.8f213c1e-6683-48d9-8bb6-9c86d8ce76c1",
+        "mechanic_ids": [
+          "discovery.action_1",
+          "discovery.action_2",
+          "discovery.gate_1",
+          "discovery.gate_2",
+          "discovery.hook_1"
+        ]
+      }
+    ],
+    "schema_version": "1.0",
+    "ending_copy_overrides": []
+  }
+}

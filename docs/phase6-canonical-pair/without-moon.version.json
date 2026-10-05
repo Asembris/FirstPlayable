@@ -1,0 +1,460 @@
+{
+  "id": "1725dd05-4638-4484-b298-5b3b3d9ded23",
+  "project_id": "2568d1b1-fd82-47a2-82be-e601097a17b8",
+  "parent_version_id": "80bbc61c-13b9-4067-85a9-09dc1b8f8ede",
+  "created_at": "2026-10-05T22:24:15.114043+00:00",
+  "input_hash": "a98145f62212aeac8847bbfc11b6f1f4ced33a25132b489b",
+  "base_hash": "43e336086f9f1a7c9279c854b8a0f053a8a67b11729d1d9071a4a1ab68c0bafa",
+  "module_hashes": {},
+  "model_identifier": "gpt-4o-mini-2024-07-18",
+  "prompt_identifier": "fp-prompts-4.2",
+  "schema_identifier": "fp-model-schema-4.2",
+  "compiler_identifier": "fp-compiler-4.2",
+  "validator_identifier": "fp-engine-validator-1.0",
+  "validation_summary": {
+    "ok": true,
+    "edges": 10,
+    "notes": [],
+    "subsets": [
+      {
+        "ok": true,
+        "slots": [],
+        "finding_codes": []
+      }
+    ],
+    "witnesses": [],
+    "active_slots": [],
+    "finding_codes": [],
+    "reachable_endings": [
+      "end.give",
+      "end.keep",
+      "end.leave"
+    ],
+    "reachable_nonterminal_states": 5
+  },
+  "approval_snapshot": [],
+  "revision_diff": {
+    "label": "mechanical",
+    "hashes": {
+      "after_scene": "a98145f62212aeac8847bbfc11b6f1f4ced33a25132b489bd73cbc12d8f108be",
+      "before_scene": "d466febc3298ee547286af2232ba53a036357a78bb642720da685134df8f3595"
+    },
+    "replay": {
+      "after": {
+        "core.give": "enabled",
+        "core.leave": "enabled",
+        "core.withhold": "enabled",
+        "core.ask_terms": "enabled"
+      },
+      "before": {
+        "core.give": "locked",
+        "core.leave": "enabled",
+        "core.withhold": "enabled",
+        "core.ask_terms": "enabled",
+        "discovery.action_1": "enabled",
+        "discovery.action_2": "enabled"
+      },
+      "prefix": [
+        "core.ask_context",
+        "core.inspect"
+      ],
+      "changed_action_ids": [
+        "core.give",
+        "discovery.action_1",
+        "discovery.action_2"
+      ],
+      "prefix_legal_in_after": true,
+      "prefix_legal_in_before": true
+    },
+    "summary": [
+      "Interaction changed: after the same choices, \"core.give\" is locked before and enabled after.",
+      "Interaction changed: after the same choices, \"discovery.action_1\" is enabled before and hidden after.",
+      "Interaction changed: after the same choices, \"discovery.action_2\" is enabled before and hidden after."
+    ],
+    "unchanged": {
+      "core": true,
+      "ports": true,
+      "world": true,
+      "modules": {
+        "discovery": false,
+        "commitment": true
+      }
+    },
+    "changed_by": "remove",
+    "changed_slots": [
+      "discovery"
+    ],
+    "added_action_ids": [],
+    "affected_endings": [],
+    "after_version_id": null,
+    "witness_overflow": false,
+    "before_version_id": "80bbc61c-13b9-4067-85a9-09dc1b8f8ede",
+    "copy_only_changes": [],
+    "mechanical_change": true,
+    "removed_action_ids": [
+      "discovery.action_1",
+      "discovery.action_2"
+    ],
+    "structure_identical": false,
+    "wording_change_only": false,
+    "changed_gate_bindings": [
+      {
+        "slot": "discovery",
+        "gate_id": "discovery.gate_1",
+        "action_id": "core.give",
+        "present_after": false,
+        "present_before": true
+      },
+      {
+        "slot": "discovery",
+        "gate_id": "discovery.gate_2",
+        "action_id": "core.give",
+        "present_after": false,
+        "present_before": true
+      }
+    ],
+    "changed_effect_bindings": [
+      {
+        "after": [],
+        "owner": "discovery",
+        "before": [
+          "discovery.state_1"
+        ],
+        "definition_id": "discovery.action_1"
+      },
+      {
+        "after": [],
+        "owner": "discovery",
+        "before": [
+          "discovery.state_2"
+        ],
+        "definition_id": "discovery.action_2"
+      }
+    ]
+  },
+  "scene": {
+    "core": {
+      "actions": [
+        {
+          "id": "core.inspect",
+          "verb": "inspect",
+          "when": {
+            "kind": "any",
+            "clauses": [
+              [
+                {
+                  "equals": false,
+                  "var_id": "core.inspected"
+                }
+              ]
+            ]
+          },
+          "label": "Examine the letter",
+          "target": {
+            "id": "letter",
+            "kind": "object"
+          },
+          "branches": [
+            {
+              "when": {
+                "kind": "always"
+              },
+              "effects": [
+                {
+                  "op": "set_true",
+                  "var_id": "core.inspected"
+                }
+              ],
+              "ending_id": null,
+              "dialogue_id": "core.inspect_text"
+            }
+          ]
+        },
+        {
+          "id": "core.ask_context",
+          "verb": "ask",
+          "when": {
+            "kind": "any",
+            "clauses": [
+              [
+                {
+                  "equals": false,
+                  "var_id": "core.context"
+                }
+              ]
+            ]
+          },
+          "label": "Ask Nia why she needs it back",
+          "target": {
+            "id": "nia",
+            "kind": "character"
+          },
+          "branches": [
+            {
+              "when": {
+                "kind": "always"
+              },
+              "effects": [
+                {
+                  "op": "set_true",
+                  "var_id": "core.context"
+                }
+              ],
+              "ending_id": null,
+              "dialogue_id": "core.context_text"
+            }
+          ]
+        },
+        {
+          "id": "core.ask_terms",
+          "verb": "ask",
+          "when": {
+            "kind": "any",
+            "clauses": [
+              [
+                {
+                  "equals": true,
+                  "var_id": "core.inspected"
+                },
+                {
+                  "equals": true,
+                  "var_id": "core.context"
+                },
+                {
+                  "equals": false,
+                  "var_id": "core.promised"
+                }
+              ]
+            ]
+          },
+          "label": "Promise to keep it safe while I hold it",
+          "target": {
+            "id": "nia",
+            "kind": "character"
+          },
+          "branches": [
+            {
+              "when": {
+                "kind": "always"
+              },
+              "effects": [
+                {
+                  "op": "set_true",
+                  "var_id": "core.promised"
+                }
+              ],
+              "ending_id": null,
+              "dialogue_id": "core.promise_text"
+            }
+          ]
+        },
+        {
+          "id": "core.give",
+          "verb": "give",
+          "when": {
+            "kind": "any",
+            "clauses": [
+              [
+                {
+                  "equals": true,
+                  "var_id": "core.inspected"
+                },
+                {
+                  "equals": true,
+                  "var_id": "core.context"
+                }
+              ]
+            ]
+          },
+          "label": "Return the letter",
+          "target": {
+            "id": "letter",
+            "kind": "object"
+          },
+          "branches": [
+            {
+              "when": {
+                "kind": "always"
+              },
+              "effects": [],
+              "ending_id": "end.give",
+              "dialogue_id": null
+            }
+          ]
+        },
+        {
+          "id": "core.withhold",
+          "verb": "withhold",
+          "when": {
+            "kind": "any",
+            "clauses": [
+              [
+                {
+                  "equals": true,
+                  "var_id": "core.inspected"
+                },
+                {
+                  "equals": true,
+                  "var_id": "core.context"
+                },
+                {
+                  "equals": false,
+                  "var_id": "core.promised"
+                }
+              ]
+            ]
+          },
+          "label": "Keep the letter",
+          "target": {
+            "id": "letter",
+            "kind": "object"
+          },
+          "branches": [
+            {
+              "when": {
+                "kind": "always"
+              },
+              "effects": [],
+              "ending_id": "end.keep",
+              "dialogue_id": null
+            }
+          ]
+        },
+        {
+          "id": "core.leave",
+          "verb": "leave",
+          "when": {
+            "kind": "any",
+            "clauses": [
+              [
+                {
+                  "equals": true,
+                  "var_id": "core.inspected"
+                },
+                {
+                  "equals": true,
+                  "var_id": "core.context"
+                }
+              ]
+            ]
+          },
+          "label": "Walk away for now",
+          "target": {
+            "id": "counter",
+            "kind": "room"
+          },
+          "branches": [
+            {
+              "when": {
+                "kind": "always"
+              },
+              "effects": [],
+              "ending_id": "end.leave",
+              "dialogue_id": null
+            }
+          ]
+        }
+      ],
+      "endings": [
+        {
+          "id": "end.give",
+          "text": "As you hand the letter back, Nia's eyes light up with relief. \"Thank you, I really needed this. You have no idea how much it means to me!\"",
+          "title": "You returned the letter"
+        },
+        {
+          "id": "end.keep",
+          "text": "Nia's expression falters as you tuck the letter away. \"I see. I guess I can't change your mind?\" Her voice is tinged with disappointment as she turns away, leaving you alone with your choice.",
+          "title": "You kept the letter"
+        },
+        {
+          "id": "end.leave",
+          "text": "You step back from the counter, uncertainty weighing on you. Nia’s gaze follows you, a mixture of hope and confusion in her eyes. You close your eyes, promising yourself to revisit this in the morning.",
+          "title": "You walked away undecided"
+        }
+      ],
+      "dialogue": [
+        {
+          "id": "core.inspect_text",
+          "text": "The envelope is unmarked, its contents unknown. There’s a sense of importance about it, as if it carries weight beyond its physical form.",
+          "speaker_id": "narrator"
+        },
+        {
+          "id": "core.context_text",
+          "text": "I left it behind in a rush. It contains something I need to send today, something important.",
+          "speaker_id": "nia"
+        },
+        {
+          "id": "core.promise_text",
+          "text": "I promise to hold onto it. You can trust me with it.",
+          "speaker_id": "player"
+        }
+      ],
+      "variables": [
+        {
+          "id": "core.inspected",
+          "label": "Object inspected",
+          "initial": false,
+          "visible": false
+        },
+        {
+          "id": "core.context",
+          "label": "Request understood",
+          "initial": false,
+          "visible": false
+        },
+        {
+          "id": "core.promised",
+          "label": "Return promised",
+          "initial": false,
+          "visible": false
+        }
+      ]
+    },
+    "ports": {
+      "discovery": {
+        "gate_action_ids": [
+          "core.give"
+        ],
+        "effect_action_ids": [
+          "core.inspect"
+        ]
+      },
+      "commitment": {
+        "gate_action_ids": [
+          "core.ask_terms",
+          "core.withhold"
+        ],
+        "effect_action_ids": [
+          "core.ask_context"
+        ]
+      }
+    },
+    "title": "The Second Copy",
+    "world": {
+      "room": {
+        "id": "counter",
+        "name": "Lost-property counter",
+        "description": "The station is closing. You have one letter left to return."
+      },
+      "object": {
+        "id": "letter",
+        "name": "Sealed letter",
+        "description": "One envelope, left behind earlier today."
+      },
+      "characters": [
+        {
+          "id": "nia",
+          "name": "Nia",
+          "role": "Visitor asking for her letter"
+        }
+      ],
+      "player_role": "Station attendant"
+    },
+    "modules": [],
+    "scene_id": "scene.5ed1b524d3587321d090ab1f",
+    "influences": [],
+    "provenance": [],
+    "schema_version": "1.0",
+    "ending_copy_overrides": []
+  }
+}
