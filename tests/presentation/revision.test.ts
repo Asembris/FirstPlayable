@@ -6,6 +6,7 @@ import {
   actionLabelIn,
   humanizeSummary,
   humanizeSummaryLine,
+  labelActionIds,
   REVISION_LABEL_TEXT,
 } from "../../src/presentation/revision";
 
@@ -88,5 +89,19 @@ describe("the label", () => {
     expect(REVISION_LABEL_TEXT.mechanical).toMatch(/^Mechanical change/);
     expect(REVISION_LABEL_TEXT.wording).toBe("Wording changed; interaction unchanged.");
     expect(REVISION_LABEL_TEXT.none).toBe("No change.");
+  });
+});
+
+describe("a stored engine sentence", () => {
+  it("reads quoted and bare action ids as labels, and nothing else", () => {
+    expect(
+      labelActionIds(
+        'After core.ask_context then core.inspect, "core.give" is locked with the discovery influence and enabled without it.',
+        [withScene],
+      ),
+    ).toBe(
+      "After “Ask Nia why she needs it back” then “Examine the letter”, “Return the letter” is locked with the discovery influence and enabled without it.",
+    );
+    expect(labelActionIds("nothing to label here", [withScene])).toBe("nothing to label here");
   });
 });

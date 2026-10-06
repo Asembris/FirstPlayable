@@ -1,0 +1,176 @@
+/*
+ * Phase 6 · Rehearsal Table · the public player.
+ *
+ * Designed for a phone first: play only, one column, no tabs, no version
+ * control, no marks. The scene is the scene page's script and rows. When the
+ * creator included the source chain it follows the scene in the four causal
+ * materials; the engine's observation is plain ink here, because nothing on
+ * this page compares two versions side by side.
+ */
+
+.rt-topbar--public .rt-wordmark {
+  cursor: default;
+}
+
+.rt-public__stage {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 48px 40px 96px;
+}
+
+.rt-public__strip {
+  height: auto;
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+
+.rt-public__title {
+  margin: 14px 0 0 -2px;
+  font: 400 clamp(46px, 8vw, 92px) / 0.95 var(--rt-font-scene);
+  letter-spacing: -0.025em;
+  color: var(--rt-ink);
+  overflow-wrap: anywhere;
+}
+
+.rt-public__title--gone {
+  margin-top: 0;
+  font-size: clamp(38px, 6vw, 60px);
+  line-height: 1;
+}
+
+.rt-public__meta {
+  margin: 14px 0 0;
+  font: 400 13px/1.5 var(--rt-font-ui);
+  color: var(--rt-pencil);
+}
+
+.rt-public__lede {
+  margin: 18px 0 0;
+  font: 400 16px/1.5 var(--rt-font-ui);
+  color: var(--rt-ink-2);
+}
+
+.rt-public__loading {
+  padding: 24px 0;
+}
+
+.rt-public__player {
+  margin-top: 34px;
+  padding-top: 22px;
+  border-top: 1.5px solid var(--rt-ink);
+}
+
+/* The room is already the page's strip; the player starts at the object. */
+.rt-public__player .room__name,
+.rt-public__player .room__description {
+  display: none;
+}
+
+.rt-public__player .room__role {
+  margin-top: 0;
+}
+
+.rt-public__sources {
+  margin-top: 56px;
+}
+
+.rt-public__sources-heading {
+  margin: 0;
+  padding-bottom: 9px;
+  border-bottom: 1.5px solid var(--rt-ink);
+  color: var(--rt-ink);
+}
+
+.rt-public__chains {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.rt-public__chain {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 0 22px;
+  border-bottom: 1px solid var(--rt-rule);
+}
+
+.rt-public__layer-label {
+  margin: 0 0 6px;
+  font-size: 9.5px;
+  color: var(--rt-pencil);
+}
+
+.rt-public__layer-label--ink {
+  color: var(--rt-ink);
+}
+
+.rt-public__slip {
+  display: inline-block;
+  margin: 0;
+  padding: 9px 12px;
+  border: 1px solid var(--rt-slip-edge);
+  border-radius: var(--rt-radius);
+  background: var(--rt-sheet);
+  font: 500 13px/1.4 var(--rt-font-fact);
+  color: var(--rt-ink);
+}
+
+.rt-public__observed {
+  margin: 0;
+  font: 400 13.5px/1.5 var(--rt-font-ui);
+  color: var(--rt-ink);
+}
+
+.rt-public__sources > .rt-studio__note {
+  margin-top: 14px;
+}
+
+.rt-public__foot {
+  margin-top: 64px;
+  padding-top: 18px;
+  border-top: 1px solid var(--rt-rule);
+}
+
+.rt-public__made {
+  margin: 0;
+  font: 500 10.5px/1.2 var(--rt-font-fact);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--rt-pencil);
+}
+
+.rt-public__links {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.rt-public__links .rt-button {
+  min-height: 44px;
+  padding: 11px 16px;
+}
+
+.rt-public__gone {
+  padding-top: 24px;
+}
+
+@media (max-width: 639.98px) {
+  .rt-public__stage {
+    padding: 28px 22px 72px;
+  }
+
+  .rt-public__title {
+    font-size: clamp(40px, 12vw, 56px);
+  }
+
+  .rt-public__links {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .rt-public__links .rt-button {
+    justify-content: center;
+  }
+}

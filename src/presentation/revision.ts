@@ -108,3 +108,22 @@ export function humanizeSummaryLine(line: string, scenes: readonly Scene[]): str
 export function humanizeSummary(lines: readonly string[], scenes: readonly Scene[]): string[] {
   return lines.map((line) => humanizeSummaryLine(line, scenes));
 }
+
+/**
+ * Any stored engine sentence with its action ids read as the actions' labels:
+ * `"core.give"` and a bare `core.give` both become “Return the letter”. Every
+ * other word is the engine's, unchanged; an id no scene declares stays as is.
+ */
+export function labelActionIds(text: string, scenes: readonly Scene[]): string {
+  const ids = [
+    ...new Set(scenes.flatMap((scene) => [...viewOf(scene).actionById.keys()])),
+  ].sort((a, b) => b.length - a.length);
+  let out = text;
+  for (const id of ids) {
+    const label = actionLabelIn(scenes, id);
+    if (label === null) continue;
+    const escaped = id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    out = out.replace(new RegExp(`"${escaped}"|(?<![\\w.])${escaped}(?![\\w])`, "g"), `“${label}”`);
+  }
+  return out;
+}

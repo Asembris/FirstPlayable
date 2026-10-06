@@ -21,6 +21,7 @@ import "./rehearsal/revise.css";
 import "./rehearsal/versions.css";
 import "./rehearsal/share.css";
 import "./rehearsal/desk.css";
+import "./rehearsal/public.css";
 import "./rehearsal/landing.css";
 
 export const metadata: Metadata = {
