@@ -133,6 +133,17 @@ export function ProjectClient({ projectId }: { projectId: string }): React.JSX.E
 
   const { project, references, playable, versions, publications } = state.data;
   const previous = state.data.previous_playable ?? null;
+  // Which builds exist, so an approval can say truthfully whether any build
+  // carries it yet. Approving alone never changes a scene.
+  const builds = {
+    pending: playable?.state === "pending" ? playable.scene : null,
+    active:
+      playable?.state === "active"
+        ? playable.scene
+        : previous?.state === "active"
+          ? previous.scene
+          : null,
+  };
   return (
     <main className="studio">
       <header className="studio__header">
@@ -193,12 +204,14 @@ export function ProjectClient({ projectId }: { projectId: string }): React.JSX.E
         projectId={project.id}
         project={project}
         references={references}
+        builds={builds}
         onChanged={() => void load()}
       />
 
       <ApprovedInfluences
         projectId={project.id}
         project={project}
+        builds={builds}
         onChanged={() => void load()}
       />
 
