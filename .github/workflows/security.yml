@@ -60,3 +60,49 @@ jobs:
               jq -r '"| \(.DetectorName) | \(.SourceMetadata.Data.Git.file) | \(.SourceMetadata.Data.Git.line) | \(.SourceMetadata.Data.Git.commit[0:7]) |"' "$RUNNER_TEMP/unverified.jsonl"
             fi
           } >> "$GITHUB_STEP_SUMMARY"
+
+  dependency-audit:
+    name: Dependency audit (npm)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc # pins 22.22.0
+          cache: npm
+
+      # Installed only so the signature check can read node_modules; no
+      # dependency lifecycle script runs in this job.
+      - name: Install dependencies (no lifecycle scripts)
+        run: npm ci --ignore-scripts
+
+      - name: Registry signatures and provenance attestations (blocking)
+        run: npm audit signatures
+
+      # Code that ships to users. A high or critical advisory here fails the job.
+      - name: Production dependencies, high or critical advisories (blocking)
+        run: npm audit --omit=dev --audit-level=high
+
+      # Dev tooling (Vitest, Playwright, tsx, ...) never reaches the deployed
+      # bundle, and an upstream advisory without a patched release would
+      # otherwise keep CI red with nothing to act on, so the full tree is
+      # reported, at every severity, without failing the job.
+      - name: Full dependency tree, all severities (advisory)
+        if: ${{ !cancelled() }}
+        run: |
+          if npm audit > "$RUNNER_TEMP/audit.txt"; then
+            result="no known vulnerabilities"
+          else
+            result="advisories found"
+            echo "::warning title=npm audit (advisory)::Advisories found in the full dependency tree; see the job summary."
+          fi
+          {
+            echo "### npm audit, full tree including dev dependencies: $result (advisory, not blocking)"
+            echo
+            echo '```'
+            cat "$RUNNER_TEMP/audit.txt"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
