@@ -17,8 +17,8 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  quality:
-    name: Typecheck, unit tests, fixtures, build, secret scan
+  unit:
+    name: Typecheck, unit tests, fixtures
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -30,22 +30,44 @@ jobs:
           node-version-file: .nvmrc # pins 22.22.0
           cache: npm
 
-      - run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-      - run: npm run typecheck
+      - name: Typecheck (tsc --noEmit)
+        run: npm run typecheck
 
-      - run: npm test
+      - name: Unit tests (Vitest)
+        run: npm test
 
-      - run: npm run check:fixtures
+      - name: Fixture check
+        run: npm run check:fixtures
+
+  build:
+    name: Production build and secret scan (tracked files + built assets)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc # pins 22.22.0
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
 
       # Must precede check:secrets, which scans .next/static and .next/server
       # in addition to the tracked files.
-      - run: npm run build
+      - name: Production build (next build)
+        run: npm run build
 
-      - run: npm run check:secrets
+      - name: Secret scan of tracked files and built assets
+        run: npm run check:secrets
 
   e2e:
-    name: Playwright browser gate
+    name: Browser tests (Playwright, Chromium)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -57,15 +79,19 @@ jobs:
           node-version-file: .nvmrc # pins 22.22.0
           cache: npm
 
-      - run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
       # Only chromium, at the revision the pinned @playwright/test resolves to.
-      - run: npx playwright install --with-deps chromium
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
 
       # playwright.config.ts starts the app with `npm run start`, which serves
       # the build output, so the production build has to exist first.
-      - run: npm run build
+      - name: Production build (next build)
+        run: npm run build
 
       # The config overrides persistence with invalid sentinels, so this gate
       # needs no credential and reaches no external service.
-      - run: npm run test:e2e
+      - name: Browser tests (Playwright)
+        run: npm run test:e2e
