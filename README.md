@@ -22,30 +22,33 @@
 
 </div>
 
-A playable-pitch studio. The authoritative specification is
-[`docs/FIRSTPLAYABLE_BUILD_SPEC.md`](docs/FIRSTPLAYABLE_BUILD_SPEC.md); the
-build state and verification record is
-[`docs/BUILD_STATUS.md`](docs/BUILD_STATUS.md), the external-account evidence
-is [`docs/DEPLOYMENT_PREFLIGHT.md`](docs/DEPLOYMENT_PREFLIGHT.md), the Qloo
-and influence-approval evidence is
-[`docs/PHASE3_QLOO_EVIDENCE.md`](docs/PHASE3_QLOO_EVIDENCE.md), and the
-compilation evidence — including every failed attempt — is
-[`docs/PHASE4_EVIDENCE.md`](docs/PHASE4_EVIDENCE.md).
+**FirstPlayable turns one cultural influence you approve into a playable
+scene, then lets you play it with and without that influence and see exactly
+which choices it changed.**
 
-**Phases 1, 2, 3, 4 and 5 are complete**, and the Phase 5 build is deployed to
-production at <https://firstplayable.vercel.app>. This repository contains the
-shared scene contract, the pure deterministic scene engine, hand-authored
-design fixtures, one offline vertical slice at `/example`, a persistent
-owner-scoped application shell on Supabase Postgres deployed on Vercel, the
-real cultural-influence workflow, the compilation of approved influences into a
-validated playable scene, and targeted revision, version-pinned read-only
-share links, and offline HTML export.
+Every influence is traced in one order: **Qloo returned** a reference →
+**FirstPlayable proposed** an interpretation → **the creator approved** it, as
+proposed or after editing → **the build changed**. Qloo supplies the
+reference, never the mechanic, and the last step is drawn only from what the
+scene engine observed on the stored version.
 
 A creator searches for an artist, confirms the identity explicitly, retrieves
 real Qloo movie and videogame references, reads bounded model-proposed
 interactions, and approves, edits, dismisses, or replaces them. Then they press
 **Build the playable scene**, and the approved influences — and only those —
 are compiled into a scene they review and explicitly activate.
+
+The hero above is the saved Moon comparison, copied from two stored versions;
+its record is [`docs/PHASE6_CANONICAL_PAIR.md`](docs/PHASE6_CANONICAL_PAIR.md).
+The specification is
+[`docs/FIRSTPLAYABLE_BUILD_SPEC.md`](docs/FIRSTPLAYABLE_BUILD_SPEC.md), the
+build and verification record is [`docs/BUILD_STATUS.md`](docs/BUILD_STATUS.md),
+the external-account evidence is
+[`docs/DEPLOYMENT_PREFLIGHT.md`](docs/DEPLOYMENT_PREFLIGHT.md), the Qloo and
+approval evidence is
+[`docs/PHASE3_QLOO_EVIDENCE.md`](docs/PHASE3_QLOO_EVIDENCE.md), and the
+compilation evidence — including every failed attempt — is
+[`docs/PHASE4_EVIDENCE.md`](docs/PHASE4_EVIDENCE.md).
 
 ### How a scene is compiled
 
