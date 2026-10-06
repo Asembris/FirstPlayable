@@ -367,7 +367,7 @@ async function browserChecks(base: string): Promise<void> {
       await page.getByRole("button", { name: "Save this brief" }).click();
       await page.getByTestId("project-premise").waitFor({ timeout: 30_000 });
       projectUrl = page.url();
-      projectId = await page.getByTestId("project-id").innerText();
+      projectId = (await page.getByTestId("project-id").textContent()) ?? "";
       const rendered = await page.getByTestId("project-premise").innerText();
       if (rendered.trim() !== (captured.premise ?? "").trim()) captured.premise = null;
     });
@@ -397,7 +397,7 @@ async function browserChecks(base: string): Promise<void> {
         await page.goto(projectUrl ?? base, { waitUntil: "load" });
         await page.getByTestId("project-premise").waitFor({ timeout: 30_000 });
         reloaded.premise = await page.getByTestId("project-premise").innerText();
-        reloaded.id = await page.getByTestId("project-id").innerText();
+        reloaded.id = (await page.getByTestId("project-id").textContent()) ?? "";
       });
       record(
         "a reload in the same browser retrieves the persisted project",
@@ -830,7 +830,7 @@ async function phase3BrowserFlow(base: string): Promise<void> {
     await page.getByTestId("session-ready").waitFor({ timeout: 30_000 });
     await page.getByRole("button", { name: "Save this brief" }).click();
     await page.getByTestId("project-premise").waitFor({ timeout: 30_000 });
-    const projectId = await page.getByTestId("project-id").innerText();
+    const projectId = (await page.getByTestId("project-id").textContent()) ?? "";
 
     // 1. Artist search, which must not confirm anything.
     await page.getByTestId("artist-query").fill("Radiohead");
@@ -1019,7 +1019,7 @@ async function phase4BrowserFlow(base: string): Promise<void> {
     await page.getByTestId("session-ready").waitFor({ timeout: 30_000 });
     await page.getByRole("button", { name: "Save this brief" }).click();
     await page.getByTestId("project-premise").waitFor({ timeout: 30_000 });
-    const projectId = (await page.getByTestId("project-id").innerText()).trim();
+    const projectId = ((await page.getByTestId("project-id").textContent()) ?? "").trim();
 
     record(
       "the deployed build is refused until an interaction is approved",
@@ -1066,9 +1066,9 @@ async function phase4BrowserFlow(base: string): Promise<void> {
       "no stage shows a third attempt",
     );
 
-    const modelCallText = await page.getByTestId("compile-model-calls").innerText();
+    const modelCallText = (await page.getByTestId("compile-model-calls").textContent()) ?? "";
     const reportedCalls = Number(/(\d+)/.exec(modelCallText)?.[1] ?? "-1");
-    const stateText = (await page.getByTestId("compile-state").innerText())
+    const stateText = ((await page.getByTestId("compile-state").textContent()) ?? "")
       .replace(/\s+/g, " ")
       .trim();
     record(
@@ -1077,7 +1077,7 @@ async function phase4BrowserFlow(base: string): Promise<void> {
       `${modelCallText.replace(/\s+/g, " ").trim()} · ${stateText}`,
     );
 
-    const pendingVersionId = (await page.getByTestId("pending-version-id").innerText()).trim();
+    const pendingVersionId = ((await page.getByTestId("pending-version-id").textContent()) ?? "").trim();
     record(
       "a deployed pending validated scene appears, and nothing is active yet",
       pendingVersionId.length > 0 && (await page.getByTestId("active-playable").count()) === 0,
@@ -1142,7 +1142,7 @@ async function phase4BrowserFlow(base: string): Promise<void> {
 
     await page.getByTestId("activate-version").click();
     await page.getByTestId("active-playable").waitFor({ timeout: 60_000 });
-    const activeId = (await page.getByTestId("active-version-id").innerText()).trim();
+    const activeId = ((await page.getByTestId("active-version-id").textContent()) ?? "").trim();
     record(
       "clicking confirm makes exactly the reviewed version current",
       activeId === pendingVersionId && (await page.getByTestId("pending-review").count()) === 0,
@@ -1153,9 +1153,9 @@ async function phase4BrowserFlow(base: string): Promise<void> {
     await page.getByTestId("active-playable").waitFor({ timeout: 60_000 });
     record(
       "the deployed active version survives a full page reload and still plays",
-      (await page.getByTestId("active-version-id").innerText()).trim() === pendingVersionId &&
+      ((await page.getByTestId("active-version-id").textContent()) ?? "").trim() === pendingVersionId &&
         (await page.getByTestId("active-choices").count()) === 1,
-      (await page.getByTestId("version-list").innerText()).replace(/\s+/g, " ").trim().slice(0, 140),
+      ((await page.getByTestId("version-list").textContent()) ?? "").replace(/\s+/g, " ").trim().slice(0, 140),
     );
 
     // ------------------------------- phase 5 controls on an activated version
@@ -2051,7 +2051,7 @@ async function phase5Flow(base: string): Promise<void> {
       page.on("request", (request) => requests.push(request.url()));
       await page.goto(`${base}${playPath}`, { waitUntil: "load" });
       await page.getByTestId("public-player").waitFor({ timeout: 30_000 });
-      const loadedVersion = (await page.getByTestId("public-version-id").innerText()).trim();
+      const loadedVersion = ((await page.getByTestId("public-version-id").textContent()) ?? "").trim();
       const beforePlay = requests.length;
       let ended = false;
       for (let stepIndex = 0; stepIndex < 14 && !ended; stepIndex += 1) {
