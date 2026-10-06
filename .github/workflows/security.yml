@@ -1,0 +1,62 @@
+name: Security
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  # Weekly, so a newly published advisory or a newly recognised secret format
+  # surfaces even when nothing is pushed.
+  schedule:
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+
+# Like CI, this workflow reads no repository secret and calls no application
+# service (Qloo, OpenAI, Supabase).
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  secret-history:
+    name: Secret scan of full git history (TruffleHog)
+    runs-on: ubuntu-latest
+    env:
+      TRUFFLEHOG_IMAGE: ghcr.io/trufflesecurity/trufflehog:3.98.1
+    steps:
+      # Full history, not a shallow clone: a credential committed and later
+      # deleted is still in the repository. `npm run check:secrets` in CI covers
+      # the other side, the current tracked files and the built client bundle.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      # The official action only scans the pushed commit range, so the CLI is
+      # run directly against every commit.
+      - name: Scan every commit for live or unverifiable secrets (blocking)
+        run: |
+          docker run --rm -v "$PWD:/repo" "$TRUFFLEHOG_IMAGE" \
+            git file:///repo --no-update --results=verified,unknown --fail --github-actions
+
+      # Unverified matches are pattern hits that the provider rejected, and
+      # history cannot be rewritten, so they are listed for review rather than
+      # failing the job. Only metadata is printed, never the matched text.
+      - name: List unverified pattern matches (advisory)
+        if: ${{ !cancelled() }}
+        run: |
+          docker run --rm -v "$PWD:/repo" "$TRUFFLEHOG_IMAGE" \
+            git file:///repo --no-update --results=unverified --json > "$RUNNER_TEMP/unverified.jsonl"
+          count=$(wc -l < "$RUNNER_TEMP/unverified.jsonl")
+          {
+            echo "### TruffleHog unverified matches: $count (advisory, not blocking)"
+            echo
+            if [ "$count" -gt 0 ]; then
+              echo "| Detector | File | Line | Commit |"
+              echo "|---|---|---|---|"
+              jq -r '"| \(.DetectorName) | \(.SourceMetadata.Data.Git.file) | \(.SourceMetadata.Data.Git.line) | \(.SourceMetadata.Data.Git.commit[0:7]) |"' "$RUNNER_TEMP/unverified.jsonl"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
