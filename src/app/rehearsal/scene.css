@@ -178,6 +178,18 @@
 
 /* ------------------------------------------------------------ breakpoints */
 
+/* Keep the mode buttons clear when the full saved label no longer fits. */
+@media (min-width: 640px) and (max-width: 1279.98px) {
+  .rt-scene .rt-topbar__right > .rt-chip {
+    display: none;
+  }
+
+  .rt-scene .rt-compact-status {
+    display: block;
+    margin-bottom: 18px;
+  }
+}
+
 /* < 1080: the margin moves below the rows. */
 @media (max-width: 1079.98px) {
   .rt-stage {

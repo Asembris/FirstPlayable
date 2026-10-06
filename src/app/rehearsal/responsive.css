@@ -13,7 +13,7 @@
  */
 
 /* A page that ends in the margin note still ends on paper. */
-body:has(> .rt) {
+body:has(.rt) {
   background: #f4f4f0;
 }
 
@@ -95,8 +95,10 @@ body:has(> .rt) {
     display: none;
   }
 
+  /* Keep long speaker cues above the script, as in the shared player. */
   .rt-script__line {
-    grid-template-columns: 44px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 3px;
   }
 
   .rt-script__cue {
