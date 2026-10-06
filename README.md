@@ -133,6 +133,136 @@ candidates, is [`docs/PHASE6_CANONICAL_PAIR.md`](docs/PHASE6_CANONICAL_PAIR.md).
 A normal uncached creation costs **three** Qloo calls: one search and two
 first-hop requests. Compilation, activation, and playthrough cost **zero**.
 
+## Architecture
+
+```mermaid
+flowchart TB
+    Browser["Browser<br/>studio and player, running the deterministic engine"]
+    Routes["Owner-scoped API routes<br/>Next.js on Vercel"]
+    QlooAdapter["Qloo adapter<br/>3 fixed requests"]
+    Controller["Bounded controller<br/>and compilers"]
+    DB[("Supabase Postgres<br/>8 tables")]
+    Qloo(["Qloo API"])
+    OpenAI(["OpenAI API"])
+    Validator["Validator<br/>same engine"]
+
+    Browser <-->|"same-origin only: requests in, validated scenes out"| Routes
+    Routes --> QlooAdapter --> Qloo
+    Routes --> Controller --> OpenAI
+    Controller --> Validator
+    Routes <--> DB
+```
+
+| Layer | Responsibility |
+|---|---|
+| `src/domain/`, `src/engine/` | Zod contracts and the pure engine: interpreter, composer, validator, diff, canonical hashing. No React, Next.js, server, or configuration dependency |
+| `src/components/` | The studio, the rehearsal table (`/` and `/difference`), the public player, and the trusted scene player |
+| `src/server/qloo/` | Three frozen operations, normalization, cache, and a database-backed launch limiter |
+| `src/server/influence/` | The context firewall, the proposal stage, creator decisions, provenance |
+| `src/server/compile/` | Isolated payload builders, the base and module compilers, the bounded controller |
+| `src/server/revision/`, `src/server/publish/`, `src/export/` | Targeted revision, immutable sharing, offline export |
+| `src/app/` | Next.js App Router pages and seventeen API routes |
+| `supabase/migrations/` | Eight tables, their access posture, and the atomic functions |
+
+The browser never calls Qloo, OpenAI, or Supabase. Every credential is server
+only; no `NEXT_PUBLIC_` variable exists in the repository. The same engine runs
+in the browser player, the server validator, the tests, the fixture checker,
+and the exported HTML file — there is no second, simplified engine.
+
+## Approval and provenance
+
+Approval is the boundary between what Qloo returned and what the scene may
+contain.
+
+```mermaid
+flowchart TB
+    A["Qloo returned<br/>a reference and its evidence"] --> B["FirstPlayable proposed<br/>an interpretation"]
+    B --> C{"Creator decides"}
+    C -->|"approve or edit"| D["Approved influence<br/>frozen snapshot"]
+    C -->|"dismiss"| X["Discarded<br/>never reaches a compiler"]
+    D --> E["Compiler built<br/>one module in its slot"]
+    E --> F["Validator observed<br/>the mechanical change"]
+    F --> G["Creator activated<br/>the version"]
+```
+
+| Rule | How it is enforced |
+|---|---|
+| Nothing is approved by default | Approvals are written only by an explicit creator decision, through one database function |
+| Only approved influences reach the compiler | The module payload is built from one approval and its own cited evidence. Dismissed, unselected, and other-slot material is unreachable, proven with planted sentinel strings |
+| Editing never rewrites evidence | The creator's wording is stored beside the frozen proposal; capture and decision rows reject `UPDATE` |
+| Evidence can only narrow | An approval may cite fewer of the proposal's evidence ids, never one outside them |
+| History is append-only | Replacements and removals add rows and keep their predecessors |
+| "Scene changed" cannot be faked | That layer is rendered only from a witness the engine computed on the stored version, never from model or creator text |
+
+The UI says *Qloo returned*, *FirstPlayable proposed*, *Creator approved*. A
+browser test and the deployed verifier both scan for affinity, confidence,
+percentages, and phrases like "Qloo recommends" — and fail if they appear.
+
+The isolation guarantee is **dataflow and ownership isolation**. It is not a
+claim about what a language model could independently invent from the brief.
+
+## Deterministic compilation and validation
+
+The line between what the server owns and what the model may choose is the
+core of the design.
+
+| | Server-owned, deterministic | Model-selected, schema-bounded |
+|---|---|---|
+| **Base scene** | State variables, the six actions with their verbs, targets and conditions, one branch per action, the three endings, the attachment ports | Title, action labels, dialogue, ending text |
+| **Influence module** | Identifiers, the flag and its initial value, the condition that offers the action, the effect that sets the flag, the gate on the earned base action, the port it attaches to | How many mechanics (one to three), `inspect` or `ask`, which base action each gates, whether its flag is shown, all copy |
+| **Validation** | Schema, authority, and exhaustive reachable-state analysis; every subset of modules; the mechanical witness; the revision diff | — |
+| **Gameplay** | Every step, ending, and reset | — |
+
+A module therefore **cannot** write the foundation's state, read the other
+slot's state, end the scene, or attach to a port that is not its own. These are
+not rejected values; the schema gives the model nowhere to express them.
+
+**What the validator checks**, on every candidate:
+
+- Every reachable state has exactly one applicable branch per enabled action,
+  and every non-terminal step makes progress.
+- No soft-lock: every reachable state can still reach an ending.
+- At least one non-terminal choice narrows which endings remain reachable.
+- Each approved module has an observable **mechanical witness** when present
+  versus absent — an action that changes availability, or an ending that
+  changes reachability — found by bounded paired-state replay.
+- The base alone, each module alone, and both together are all valid, so a
+  later removal is always safe.
+
+**Bounded generation.** The pinned model is `gpt-4o-mini-2024-07-18` through
+Structured Outputs. Each stage gets one attempt and at most one repair. A
+rejected candidate lives only in a bounded operation record; only a validated
+scene becomes a version, which the database enforces as well as the
+application. Model spend is held under a hard cumulative **$0.60** cap in one
+Postgres row; reaching it is an honest exhausted-budget state, never a fallback.
+
+## Versions, revision, sharing, and export
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    state "Superseded: still listed and playable" as Superseded
+    [*] --> Pending: build or revision validated
+    Pending --> Active: creator activates
+    Pending --> [*]: creator declines, active version unchanged
+    Active --> Superseded: a newer version is activated
+```
+
+Every version is immutable. A failed build or a declined review leaves the
+previously active version active and playable.
+
+| Capability | Behaviour | Provider calls |
+|---|---|---|
+| **Remove an influence** | Recomposes without that slot's module and stores the diff, labelled `mechanical` or `wording` | **0** |
+| **Edit or replace an influence** | Changes one approval; the next build recompiles only that slot and reuses the base and the other slot by input hash | Only the rebuilt slot's module |
+| **Reword an ending** | Previewed with one text-only call; applied only if the creator applies exactly the previewed text | 1 for the preview, 0 to apply |
+| **Compare versions** | Same choices replayed on both; the stored diff must equal the engine's recomputation | **0** |
+| **Share** | Previewed, then published as a read-only link pinned to one version. The public payload is a whitelisted snapshot with no project id, premise, owner data, capture, or unapproved idea. Revocation takes effect on the next read | **0** |
+| **Export** | One self-contained HTML file, owner only. It plays from `file://` with the network blocked and makes no request of any kind | **0** |
+
+Gameplay is local: a complete playthrough, every ending, and a reset make
+**zero** requests.
+
 ## Requirements
 
 Node `22.22.0` (see `.nvmrc`; `engines` requires `>=22.12.0`). Dependencies are
