@@ -1,0 +1,82 @@
+name: CodeQL
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  # Weekly, so queries added to CodeQL later are run against unchanged code.
+  schedule:
+    - cron: "41 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  analyze:
+    name: CodeQL (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Read workflow run metadata, which the CodeQL action needs in a private
+      # repository.
+      actions: read
+      # Upload to Code Scanning. Used only when the repository is public; see
+      # the visibility step below.
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        # javascript-typescript covers src/ and scripts/; actions covers the
+        # workflows themselves (script injection, excessive permissions).
+        language: [javascript-typescript, actions]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # Code Scanning upload needs the repository to be public (or GitHub Code
+      # Security). Asked of the API rather than the event payload, which a
+      # scheduled run does not carry.
+      - name: Choose Code Scanning upload by repository visibility
+        id: visibility
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "$(gh api "repos/$GITHUB_REPOSITORY" --jq .private)" = "false" ]; then
+            echo "upload=always" >> "$GITHUB_OUTPUT"
+          else
+            echo "upload=never" >> "$GITHUB_OUTPUT"
+            echo "::notice title=CodeQL::Private repository: results are gated from the SARIF file in this job, not uploaded to Code Scanning."
+          fi
+
+      # No build step: both languages are extracted from source.
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+          config-file: ./.github/codeql/codeql-config.yml
+
+      - uses: github/codeql-action/analyze@v4
+        with:
+          category: /language:${{ matrix.language }}
+          upload: ${{ steps.visibility.outputs.upload }}
+          output: ${{ runner.temp }}/codeql-sarif
+
+      # The analyze step succeeds whatever it finds, so the gate is here: any
+      # unsuppressed result from the default Code Scanning suite fails the job,
+      # whether or not the SARIF was also uploaded.
+      - name: Fail on any CodeQL result
+        env:
+          LANGUAGE: ${{ matrix.language }}
+        run: |
+          results=$(jq -s '[.[].runs[].results[] | select((.suppressions // []) | length == 0)]' "$RUNNER_TEMP"/codeql-sarif/*.sarif)
+          count=$(jq 'length' <<< "$results")
+          jq -r '.[] | "::error file=\(.locations[0].physicalLocation.artifactLocation.uri),line=\(.locations[0].physicalLocation.region.startLine // 1),title=\(.ruleId)::\(.message.text | gsub("\n"; " "))"' <<< "$results"
+          echo "### CodeQL ($LANGUAGE): $count result(s)" >> "$GITHUB_STEP_SUMMARY"
+          test "$count" -eq 0

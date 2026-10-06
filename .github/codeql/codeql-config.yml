@@ -1,0 +1,10 @@
+name: FirstPlayable CodeQL
+
+# Analyse what ships. The unit and browser suites under tests/ feed hostile
+# strings into the code on purpose and assert they are neutralised, which the
+# data-flow queries read as the vulnerability itself (for example
+# js/incomplete-url-substring-sanitization on an assertion that a hostile URL
+# is absent from an export). Production code, scripts, and workflows are all
+# still analysed.
+paths-ignore:
+  - tests
