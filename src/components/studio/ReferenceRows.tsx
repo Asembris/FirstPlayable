@@ -112,8 +112,8 @@ export function ReferenceRows({
 
   if (!project.anchor_confirmed) {
     return (
-      <section className="rt rt-studio rt-approval" aria-labelledby="references-heading">
-        <p className="rt-label rt-studio__eyebrow">Influences</p>
+      <section className="rt rt-studio rt-approval" id="influences" aria-labelledby="references-heading">
+        <p className="rt-label rt-studio__eyebrow">03 · Influences</p>
         <h2 className="rt-studio__title rt-studio__title--small" id="references-heading">
           Which influence should shape the scene?
         </h2>
@@ -126,11 +126,10 @@ export function ReferenceRows({
   }
 
   return (
-    <section className="rt rt-studio rt-approval" aria-labelledby="references-heading">
+    <section className="rt rt-studio rt-approval" id="influences" aria-labelledby="references-heading">
       <header className="rt-studio__head">
         <p className="rt-label rt-studio__eyebrow">
-          Artist confirmed · {project.anchor?.name ?? "your artist"} · references Qloo returned
-          for that artist
+          03 · Influences · references Qloo returned for {project.anchor?.name ?? "your artist"}
         </p>
         <h2 className="rt-studio__title" id="references-heading">
           Which influence should shape the scene?

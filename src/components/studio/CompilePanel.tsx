@@ -205,10 +205,10 @@ export function CompilePanel({
   const approvals = `${approvedCount} approved interpretation${approvedCount === 1 ? "" : "s"}`;
 
   return (
-    <section className="rt rt-studio rt-build" data-testid="compile-panel" aria-labelledby="build-heading">
+    <section className="rt rt-studio rt-build" id="build" data-testid="compile-panel" aria-labelledby="build-heading">
       <header className="rt-build__head">
         <div className="rt-studio__head">
-          <p className="rt-label rt-studio__eyebrow">Build and review</p>
+          <p className="rt-label rt-studio__eyebrow">04 · Build and review</p>
           <h2 className="rt-studio__title rt-studio__title--small" id="build-heading">
             {pending !== null
               ? "A new version is waiting for your review"

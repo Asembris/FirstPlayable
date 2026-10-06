@@ -119,9 +119,9 @@ export function InlineFailure({
   testId?: string;
 }): React.JSX.Element {
   return (
-    <p className="studio__error-message" role="alert" data-testid={testId ?? "inline-failure"}>
+    <p className="rt-failure-line" role="alert" data-testid={testId ?? "inline-failure"}>
       {failure.message}{" "}
-      <span className="studio__hint">
+      <span className="rt-failure__meta">
         ({failure.code} · request {failure.request_id})
       </span>
     </p>
@@ -138,27 +138,31 @@ export function ErrorPanel({
   onRetry?: () => void;
 }): React.JSX.Element {
   return (
-    <div className="studio__error" role="alert" data-testid="error-panel">
-      <p className="studio__error-heading">{heading}</p>
-      <p className="studio__error-message">{failure.message}</p>
-      <p className="studio__error-meta">
+    <div className="rt-failure" role="alert" data-testid="error-panel">
+      <p className="rt-failure__heading">{heading}</p>
+      <p className="rt-failure__message">{failure.message}</p>
+      <p className="rt-failure__meta">
         <span data-testid="error-code">{failure.code}</span>
         {" · request "}
         <span data-testid="error-request-id">{failure.request_id}</span>
       </p>
-      <div className="studio__actions">
+      <div className="rt-studio__actions">
         {failure.retryable && onRetry !== undefined && (
-          <button className="button" type="button" onClick={onRetry}>
+          <button className="rt-button" type="button" onClick={onRetry}>
             Try again
           </button>
         )}
-        <Link className="button button--primary" href="/example" data-testid="error-example-link">
+        <Link
+          className="rt-button rt-button--primary"
+          href="/example"
+          data-testid="error-example-link"
+        >
           Play saved example
         </Link>
       </div>
-      <p className="studio__hint">
-        The saved example is a static pre-generated asset. It plays without the
-        database and without any model call.
+      <p className="rt-studio__note">
+        The saved example was generated from a real build and ships with the app. It plays
+        without saving, loading, or generating anything.
       </p>
     </div>
   );

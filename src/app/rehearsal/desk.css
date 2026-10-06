@@ -1,0 +1,457 @@
+/*
+ * Phase 6 · Rehearsal Table · the studio desk.
+ *
+ * The paper page under every creator surface: the brief, the project, and
+ * the sheets set into it (artist, influences, build, revision, comparison,
+ * sharing). Sheets on the desk are not boxes: each one opens on a 1.5px ink
+ * rule, as the scene page's header rule does, and the desk keeps one centred
+ * column so nothing shifts as a project moves from step to step.
+ *
+ * Nothing here wears the revision colour.
+ */
+
+.rt.rt-desk {
+  --rt-desk-width: 1240px;
+  --rt-desk-pad: 56px;
+}
+
+.rt-topbar--desk {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.rt-topbar--desk .rt-topbar__crumb {
+  max-width: 44vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rt-desk__stage {
+  max-width: calc(var(--rt-desk-width) + 2 * var(--rt-desk-pad));
+  margin: 0 auto;
+  padding: 56px var(--rt-desk-pad) 120px;
+}
+
+/* A sheet on the desk: a ruled section, not a card. */
+.rt-desk .rt.rt-studio {
+  width: auto;
+  min-height: 0;
+  margin: 72px 0 0;
+  padding: 26px 0 0;
+  border-top: 1.5px solid var(--rt-ink);
+  border-radius: 0;
+  background: transparent;
+  scroll-margin-top: 84px;
+}
+
+.rt-desk .rt.rt-studio.rt-approved {
+  padding-top: 26px;
+  padding-bottom: 0;
+}
+
+.rt-desk__loading {
+  padding: 40px 0;
+}
+
+.rt-desk__foot {
+  margin-top: 88px;
+  padding-top: 22px;
+  border-top: 1px solid var(--rt-rule);
+}
+
+/* ------------------------------------------------------------ headings */
+
+.rt-desk__head {
+  max-width: 100%;
+}
+
+.rt-desk__title {
+  margin: 14px 0 0 -3px;
+  font: 400 clamp(48px, 6.4vw, 92px) / 0.95 var(--rt-font-scene);
+  letter-spacing: -0.025em;
+  color: var(--rt-ink);
+  overflow-wrap: anywhere;
+}
+
+.rt-desk__title--message {
+  margin-top: 0;
+  font-size: clamp(40px, 5vw, 68px);
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+}
+
+.rt-desk__message {
+  max-width: 820px;
+  padding-top: 24px;
+}
+
+.rt-desk__message .rt-failure {
+  margin-top: 28px;
+}
+
+.rt-desk__status {
+  margin-top: 22px;
+  max-width: 820px;
+}
+
+/* ------------------------------------------------------- the project head */
+
+.rt-project__strip {
+  height: auto;
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+
+.rt-project__title {
+  margin-top: 18px;
+}
+
+.rt-project__brief {
+  margin-top: 40px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  column-gap: 56px;
+  row-gap: 32px;
+  align-items: start;
+}
+
+.rt-project__label {
+  margin: 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--rt-rule);
+  color: var(--rt-pencil);
+}
+
+/* The creator's own words: decision material, upright serif ink. */
+.rt-project__premise {
+  margin: 16px 0 0;
+  padding-left: 18px;
+  border-left: 1.5px solid var(--rt-ink);
+  max-width: 760px;
+  font: 400 clamp(21px, 2vw, 26px) / 1.32 var(--rt-font-scene);
+  color: var(--rt-ink);
+  text-wrap: pretty;
+}
+
+.rt-project__cast .rt-cast__list {
+  margin-top: 14px;
+}
+
+.rt-project__record {
+  margin-top: 22px;
+}
+
+/* --------------------------------------------------------------- the steps */
+
+.rt-steps {
+  margin-top: 48px;
+}
+
+.rt-steps__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  border-top: 1.5px solid var(--rt-ink);
+}
+
+.rt-steps__item + .rt-steps__item {
+  border-left: 1px solid var(--rt-rule);
+}
+
+.rt-steps__link {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  column-gap: 8px;
+  row-gap: 3px;
+  min-height: 64px;
+  padding: 13px 14px 12px;
+  color: var(--rt-ink);
+  text-decoration: none;
+}
+
+.rt-steps__link:hover {
+  background: var(--rt-sheet);
+}
+
+.rt-steps__num {
+  grid-row: span 2;
+  font: 500 11px/1.6 var(--rt-font-fact);
+  color: var(--rt-pencil);
+}
+
+.rt-steps__item[data-done="true"] .rt-steps__num {
+  color: var(--rt-ink);
+}
+
+.rt-steps__label {
+  font: 500 14px/1.3 var(--rt-font-ui);
+}
+
+.rt-steps__status {
+  font: 400 12.5px/1.35 var(--rt-font-ui);
+  color: var(--rt-pencil);
+  overflow-wrap: anywhere;
+}
+
+/* ------------------------------------------------------------------ fields */
+
+.rt-field__hint {
+  margin-left: 6px;
+  font: 400 12px/1 var(--rt-font-ui);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--rt-pencil);
+}
+
+.rt-field__input--title {
+  font-size: clamp(26px, 2.6vw, 34px);
+  line-height: 1.15;
+}
+
+.rt-field__input--line {
+  border-bottom-width: 1px;
+  font-size: 21px;
+}
+
+.rt-field__input--plain + .rt-field__input,
+.rt-field__input--line + .rt-field__input--plain {
+  margin-top: 4px;
+}
+
+.rt-field__input:disabled {
+  color: var(--rt-ink-2);
+}
+
+/* --------------------------------------------------------------- the brief */
+
+.rt-brief {
+  margin-top: 44px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: 56px;
+  row-gap: 32px;
+  align-items: start;
+}
+
+.rt-brief__set {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.rt-brief__legend {
+  float: left;
+  width: 100%;
+  margin: 0 0 4px;
+  padding: 0 0 9px;
+  border-bottom: 1.5px solid var(--rt-ink);
+  color: var(--rt-ink);
+}
+
+.rt-brief__legend + * {
+  clear: left;
+}
+
+.rt-brief__set > .rt-studio__note {
+  margin-top: 14px;
+}
+
+.rt-brief__set .rt-field {
+  margin-top: 26px;
+}
+
+.rt-brief__tone {
+  margin-left: 0;
+  margin-right: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.rt-brief__tone > legend {
+  padding: 0;
+  margin-bottom: 8px;
+}
+
+.rt-tones {
+  align-self: flex-start;
+  display: inline-flex;
+  flex-wrap: wrap;
+  border: 1px solid var(--rt-ink);
+  border-radius: var(--rt-radius);
+}
+
+.rt-tones__option {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 18px;
+  font: italic 400 19px/1 var(--rt-font-scene);
+  color: var(--rt-ink);
+  cursor: pointer;
+}
+
+.rt-tones__option + .rt-tones__option {
+  border-left: 1px solid var(--rt-ink);
+}
+
+.rt-tones__option input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.rt-tones__option:hover {
+  background: var(--rt-sheet);
+}
+
+.rt-tones__option:has(input:checked) {
+  background: var(--rt-ink);
+  color: var(--rt-paper);
+}
+
+.rt-tones__option:has(input:focus-visible) {
+  outline: 1.5px solid var(--rt-ink);
+  outline-offset: 2px;
+}
+
+.rt-brief__failure,
+.rt-brief__actions {
+  grid-column: 1 / -1;
+}
+
+.rt-brief__actions {
+  margin-top: 8px;
+  padding-top: 22px;
+  border-top: 1px solid var(--rt-rule);
+}
+
+/* ----------------------------------------------------------------- failures */
+
+.rt-failure {
+  display: grid;
+  gap: 8px;
+  padding: 20px 22px;
+  border: 1px solid var(--rt-ink);
+  border-radius: var(--rt-radius);
+  background: var(--rt-sheet);
+  color: var(--rt-ink);
+}
+
+.rt-failure p {
+  margin: 0;
+}
+
+.rt-failure__heading {
+  font: 400 26px/1.1 var(--rt-font-scene);
+  color: var(--rt-ink);
+}
+
+.rt-failure__message {
+  font: 400 14px/1.5 var(--rt-font-ui);
+  color: var(--rt-ink-2);
+}
+
+.rt-failure__meta {
+  font: 400 11.5px/1.5 var(--rt-font-fact);
+  color: var(--rt-pencil);
+  overflow-wrap: anywhere;
+}
+
+.rt-failure .rt-studio__actions {
+  margin-top: 10px;
+}
+
+.rt-failure-line {
+  margin: 14px 0 0;
+  padding-left: 12px;
+  border-left: 1.5px solid var(--rt-ink);
+  font: 400 13.5px/1.5 var(--rt-font-ui);
+  color: var(--rt-ink);
+}
+
+/* ------------------------------------------------------------- breakpoints */
+
+@media (max-width: 1079.98px) {
+  .rt.rt-desk {
+    --rt-desk-pad: 40px;
+  }
+
+  .rt-project__brief,
+  .rt-brief {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rt-steps__list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .rt-steps__item:nth-child(4) {
+    border-left: 0;
+  }
+
+  .rt-steps__item:nth-child(n + 4) {
+    border-top: 1px solid var(--rt-rule);
+  }
+}
+
+@media (max-width: 639.98px) {
+  .rt.rt-desk {
+    --rt-desk-pad: 22px;
+  }
+
+  .rt-desk__stage {
+    padding-top: 32px;
+    padding-bottom: 88px;
+  }
+
+  .rt-desk .rt.rt-studio {
+    margin-top: 56px;
+    padding: 22px 0 0;
+  }
+
+  .rt-desk__title {
+    font-size: clamp(40px, 12vw, 56px);
+  }
+
+  .rt-steps__list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rt-steps__item + .rt-steps__item {
+    border-left: 0;
+    border-top: 1px solid var(--rt-rule);
+  }
+
+  .rt-steps__link {
+    grid-template-columns: 26px auto minmax(0, 1fr);
+    align-items: baseline;
+    min-height: 52px;
+    padding: 14px 0;
+  }
+
+  .rt-steps__num {
+    grid-row: auto;
+  }
+
+  .rt-steps__status {
+    justify-self: end;
+    text-align: right;
+  }
+
+  .rt-brief__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .rt-brief__actions .rt-button {
+    justify-content: center;
+  }
+}

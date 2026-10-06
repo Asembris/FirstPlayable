@@ -71,7 +71,7 @@ export function ApprovedInfluences({
 
   return (
     <section className="rt rt-studio rt-approved" aria-labelledby="approved-heading">
-      <p className="rt-label rt-studio__eyebrow">Your decisions</p>
+      <p className="rt-label rt-studio__eyebrow">03 · Your decisions</p>
       <h2 className="rt-studio__title rt-studio__title--small" id="approved-heading">
         Approved influences
       </h2>
