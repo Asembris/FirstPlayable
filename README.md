@@ -1,6 +1,26 @@
+<div align="center">
+
+<img src="docs/readme/mark.svg" alt="" width="72" height="72" />
+
 # FirstPlayable
 
-> Choose the influences. Play the consequences.
+*Choose the influences. Play the consequences.*
+
+<a href="https://firstplayable.vercel.app/difference"><img src="docs/readme/hero.svg" width="100%" alt="A saved comparison from a real FirstPlayable build. Qloo returned the film Moon; FirstPlayable proposed an interpretation; the creator edited and approved it. After the same two choices, in the same room with the same Nia and the same letter, Return the letter is open without the influence and locked with it, and Moon adds two choices: Ask Nia who the other name belongs to, and Examine the envelope closely. 3 changed, 3 unchanged." /></a>
+
+[![Live product](https://img.shields.io/badge/Live_product-141518?style=for-the-badge)](https://firstplayable.vercel.app)
+[![Play the difference](https://img.shields.io/badge/%E2%96%B6_Play_the_difference-B0154C?style=for-the-badge)](https://firstplayable.vercel.app/difference)
+[![Create your scene](https://img.shields.io/badge/Create_your_scene-3A3D43?style=for-the-badge)](https://firstplayable.vercel.app/studio)
+[![Qloo Agentic Hackathon](https://img.shields.io/badge/Qloo_Agentic_Hackathon-6B6E75?style=for-the-badge)](https://qloo.devpost.com/)
+
+[![Production](https://img.shields.io/badge/production-firstplayable.vercel.app-141518?logo=vercel&logoColor=white)](https://firstplayable.vercel.app)
+[![Unit tests](https://img.shields.io/badge/unit_tests-761_passing-2F6F44)](#commands)
+[![Browser tests](https://img.shields.io/badge/browser_tests-133_passing-2F6F44)](#commands)
+[![CI](https://github.com/Asembris/FirstPlayable/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Asembris/FirstPlayable/actions/workflows/ci.yml)
+[![Node 22.22](https://img.shields.io/badge/node-22.22-3A3D43?logo=nodedotjs&logoColor=white)](.nvmrc)
+[![License: MIT](https://img.shields.io/badge/license-MIT-6B6E75)](LICENSE)
+
+</div>
 
 A playable-pitch studio. The authoritative specification is
 [`docs/FIRSTPLAYABLE_BUILD_SPEC.md`](docs/FIRSTPLAYABLE_BUILD_SPEC.md); the
