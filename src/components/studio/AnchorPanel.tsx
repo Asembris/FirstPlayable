@@ -90,61 +90,75 @@ export function AnchorPanel({
   }
 
   return (
-    <section className="panel" aria-labelledby="anchor-heading">
-      <h2 className="panel__heading" id="anchor-heading">
-        Cultural anchor
-      </h2>
+    <section className="rt rt-studio rt-artist" id="artist" aria-labelledby="anchor-heading">
+      <header className="rt-studio__head">
+        <p className="rt-label rt-studio__eyebrow">02 · The artist</p>
+        <h2 className="rt-studio__title rt-studio__title--small" id="anchor-heading">
+          {anchor === null ? "Start from an artist you love" : "The artist you confirmed"}
+        </h2>
+        <p className="rt-studio__lede">
+          FirstPlayable asks Qloo for films and games related to one artist. Qloo returns
+          references; it never decides anything about your scene.
+        </p>
+      </header>
 
       {anchor !== null && (
-        <div className="anchor" data-testid="anchor-confirmed">
-          <p className="anchor__name">
-            <span className="chip">Confirmed</span>{" "}
-            <strong data-testid="anchor-name">{anchor.name}</strong>
+        <div className="rt-artist__confirmed" data-testid="anchor-confirmed">
+          <div className="rt-ref__slip rt-artist__slip">
+            <p className="rt-ref__kind">Qloo returned · artist</p>
+            <p className="rt-ref__name" data-testid="anchor-name">
+              {anchor.name}
+            </p>
             {anchor.disambiguation !== null && (
-              <span className="studio__hint"> · {anchor.disambiguation}</span>
+              <p className="rt-ref__maker">{anchor.disambiguation}</p>
             )}
-          </p>
-          {anchor.short_description !== null && (
-            <p className="studio__prose">{anchor.short_description}</p>
-          )}
-          <p className="studio__hint">
-            Qloo retrieved this artist for “{anchor.query}” as result{" "}
-            {anchor.original_rank}. You confirmed it.
-          </p>
+            {anchor.short_description !== null && (
+              <p className="rt-ref__evidence">{anchor.short_description}</p>
+            )}
+          </div>
+          <div className="rt-artist__decision">
+            <p className="rt-ref__approved">✓ You confirmed this artist</p>
+            <p className="rt-studio__note">
+              Qloo retrieved this artist for “{anchor.query}” as result{" "}
+              {anchor.original_rank}. You confirmed it.
+            </p>
+          </div>
         </div>
       )}
 
-      <form className="anchor__form" onSubmit={runSearch}>
-        <label className="studio__label" htmlFor="artist-query">
-          {anchor === null ? "Search for an artist" : "Search for a different artist"}
-        </label>
-        <div className="anchor__row">
-          <input
-            className="studio__input"
-            id="artist-query"
-            data-testid="artist-query"
-            value={query}
-            maxLength={80}
-            minLength={2}
-            required
-            onChange={(event) => setQuery(event.target.value)}
-          />
-          <button
-            className="button button--primary"
-            type="submit"
-            data-testid="artist-search-submit"
-            disabled={search.status === "searching" || query.trim().length < 2}
-          >
-            {search.status === "searching" ? "Searching…" : "Search"}
-          </button>
+      <form className="rt-artist__form" onSubmit={runSearch}>
+        <div className="rt-field">
+          <label className="rt-field__label" htmlFor="artist-query">
+            {anchor === null ? "Search for an artist" : "Search for a different artist"}
+          </label>
+          <div className="rt-artist__row">
+            <input
+              className="rt-field__input rt-field__input--line"
+              id="artist-query"
+              data-testid="artist-query"
+              value={query}
+              maxLength={80}
+              minLength={2}
+              required
+              onChange={(event) => setQuery(event.target.value)}
+            />
+            <button
+              className="rt-button rt-button--primary"
+              type="submit"
+              data-testid="artist-search-submit"
+              disabled={search.status === "searching" || query.trim().length < 2}
+            >
+              {search.status === "searching" ? "Searching…" : "Search"}
+            </button>
+          </div>
         </div>
-        <p className="studio__hint">
+        <p className="rt-studio__note rt-artist__hint">
           Searching is not choosing. You will pick the exact artist yourself.
         </p>
       </form>
 
       {search.status === "searching" && (
-        <p className="studio__note" aria-live="polite" data-testid="artist-searching">
+        <p className="rt-studio__note" aria-live="polite" data-testid="artist-searching">
           Looking up artists…
         </p>
       )}
@@ -154,26 +168,26 @@ export function AnchorPanel({
       )}
 
       {search.status === "done" && search.candidates.length === 0 && (
-        <p className="studio__note" data-testid="artist-no-match">
+        <p className="rt-studio__note rt-artist__empty" data-testid="artist-no-match">
           No matching artist. Try the exact spelling, or another artist. Your brief
           is unchanged and nothing was retrieved.
         </p>
       )}
 
       {search.status === "done" && search.candidates.length > 0 && (
-        <div className="anchor__results">
-          <p className="studio__hint" data-testid="artist-results-note">
+        <div className="rt-artist__results">
+          <p className="rt-label rt-artist__count" data-testid="artist-results-note">
             {search.candidates.length} result
             {search.candidates.length === 1 ? "" : "s"} ·{" "}
             {search.cache === "live" ? "retrieved just now" : "from a recent lookup"} ·
             choose the one you mean
           </p>
-          <ul className="anchor__list" data-testid="artist-results">
+          <ul className="rt-artist__list" data-testid="artist-results">
             {search.candidates.map((candidate) => {
               const selected = chosen === candidate.entity_id;
               return (
-                <li key={candidate.entity_id} className="anchor__item">
-                  <label className="anchor__choice">
+                <li key={candidate.entity_id} className="rt-artist__item">
+                  <label className="rt-artist__choice" data-selected={selected}>
                     <input
                       type="radio"
                       name="artist"
@@ -182,18 +196,18 @@ export function AnchorPanel({
                       data-testid={`artist-option-${candidate.original_rank}`}
                       onChange={() => setChosen(candidate.entity_id)}
                     />
-                    <span>
-                      <strong>{candidate.name}</strong>
+                    <span className="rt-artist__facts">
+                      <strong className="rt-artist__name">{candidate.name}</strong>
                       {candidate.disambiguation !== null && (
-                        <span className="studio__hint"> · {candidate.disambiguation}</span>
+                        <span className="rt-artist__meta">{candidate.disambiguation}</span>
                       )}
                       {candidate.short_description !== null && (
-                        <span className="anchor__description">
+                        <span className="rt-artist__description">
                           {candidate.short_description}
                         </span>
                       )}
                       {candidate.identity_hints.length > 0 && (
-                        <span className="studio__hint">
+                        <span className="rt-artist__meta rt-artist__hints">
                           Also listed on {candidate.identity_hints.join(", ")}
                         </span>
                       )}
@@ -208,9 +222,9 @@ export function AnchorPanel({
             <InlineFailure failure={confirmFailure} testId="anchor-confirm-failure" />
           )}
 
-          <div className="studio__actions">
+          <div className="rt-studio__actions">
             <button
-              className="button button--primary"
+              className="rt-button rt-button--primary"
               type="button"
               data-testid="anchor-confirm"
               disabled={chosen === null || confirming}
@@ -220,9 +234,12 @@ export function AnchorPanel({
             >
               {confirming ? "Confirming…" : "Confirm this artist"}
             </button>
+            {chosen === null ? (
+              <p className="rt-studio__note">Nothing is chosen for you. Pick one to confirm.</p>
+            ) : null}
           </div>
           {anchor !== null && (
-            <p className="studio__hint" data-testid="anchor-rebranch-warning">
+            <p className="rt-studio__note rt-artist__warning" data-testid="anchor-rebranch-warning">
               Confirming a different artist discards influences approved for the
               current one. You will be asked again before that happens.
             </p>
