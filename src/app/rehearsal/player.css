@@ -194,11 +194,14 @@
 }
 
 @media (max-width: 639.98px) {
+  /* A cue name such as NARRATION is wider than any phone gutter: set it above. */
   .rt-player .line {
-    grid-template-columns: 44px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 3px;
   }
 
   .rt-player .line__text {
+    grid-column: 1;
     font-size: 17px;
   }
 
