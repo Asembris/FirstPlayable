@@ -247,7 +247,7 @@ export function ProjectClient({ projectId }: { projectId: string }): React.JSX.E
         <nav className="rt-steps" aria-label="Where this scene stands">
           <ol className="rt-steps__list">
             {steps.map((step, index) => (
-              <li key={step.href} className="rt-steps__item" data-done={step.done}>
+              <li key={step.label} className="rt-steps__item" data-done={step.done}>
                 <a className="rt-steps__link" href={step.href}>
                   <span className="rt-steps__num" aria-hidden="true">
                     {step.done ? "✓" : String(index + 1).padStart(2, "0")}
