@@ -131,6 +131,27 @@
   color: var(--rt-ink);
 }
 
+/* The studio's own Phase 1–5 text classes, where they appear inside a sheet,
+   take paper colours: on paper their dark-theme greys fall below 4.5:1. */
+.rt.rt-studio .studio__note,
+.rt.rt-studio .studio__hint,
+.rt.rt-studio .studio__prose,
+.rt.rt-studio .panel__list,
+.rt.rt-studio .studio__error-message,
+.rt.rt-studio .studio__error-meta {
+  color: var(--rt-ink-2);
+}
+
+.rt.rt-studio code {
+  color: inherit;
+  background: transparent;
+}
+
+.rt.rt-studio .studio__error {
+  border-color: var(--rt-ink);
+  color: var(--rt-ink);
+}
+
 /* ------------------------------------------------------- column heads */
 
 .rt-ref-heads {
