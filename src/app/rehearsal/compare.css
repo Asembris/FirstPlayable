@@ -1,0 +1,359 @@
+/*
+ * Phase 6 · Rehearsal Table · Compare, and the Play ↔ Compare choreography.
+ *
+ * Unchanged things do not move. Changed things do.
+ *
+ * Play → Compare (the transition declared on the Compare state):
+ *     0ms   the shell holds; transcript and "What do you do?" fade out (200)
+ *   200ms   compare head and column heads fade in (240); each changed row
+ *           cross-fades from its single label into the split (200); revision
+ *           stock sweeps left to right, staggered 60ms per changed row (260);
+ *           unchanged rows only change colour (300)
+ *   450ms   asterisks press in (180)
+ *   620ms   "Why this changed" resolves in the margin (280)
+ * Compare → Play (declared on the Play state): everything reverses in 200ms.
+ * Nothing slides. Reduced motion (tokens.css) lands on the final state.
+ */
+
+/* ============================================================ top bar · modes */
+
+.rt-modes {
+  display: flex;
+  gap: 30px;
+}
+
+.rt-modes__tab {
+  border: 0;
+  border-bottom: 1.5px solid transparent;
+  background: transparent;
+  padding: 6px 0;
+  font: 500 13.5px/1.2 var(--rt-font-ui);
+  color: var(--rt-pencil);
+  cursor: pointer;
+  transition: color 150ms ease-out;
+}
+
+.rt-modes__tab:hover {
+  color: var(--rt-ink);
+}
+
+.rt-modes__tab[aria-pressed="true"] {
+  color: var(--rt-ink);
+  border-bottom-color: var(--rt-ink);
+}
+
+/* The version control belongs to Play; in Compare it quiets but keeps its box. */
+.rt-topbar__right .rt-seg {
+  transition:
+    opacity var(--rt-t-back) ease-out,
+    visibility 0s linear 0s;
+}
+
+.rt-scene[data-view="compare"] .rt-topbar__right .rt-seg {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--rt-t-quiet) ease-out,
+    visibility 0s linear var(--rt-t-quiet);
+}
+
+/* ============================================================ band */
+
+.rt-band__cmp {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.rt-cmp__prefix-head {
+  margin: 0;
+  color: var(--rt-pencil);
+}
+
+.rt-cmp__prefix {
+  margin: 0;
+  font: italic 400 20px/1.3 var(--rt-font-scene);
+  color: var(--rt-ink-2);
+}
+
+.rt-cmp__headline {
+  margin: 6px 0 0;
+  font: 400 50px/1 var(--rt-font-scene);
+  letter-spacing: -0.015em;
+  color: var(--rt-ink);
+}
+
+.rt-cmp__count {
+  margin: 4px 0 0;
+  font: 400 15px/1.3 var(--rt-font-ui);
+  color: var(--rt-ink-2);
+}
+
+/* An observed change: revision ink. */
+.rt-cmp__changed {
+  color: var(--rt-rev-ink);
+  font-weight: 600;
+}
+
+.rt-cmp__fallback {
+  margin: 0;
+  font: 400 12.5px/1.4 var(--rt-font-ui);
+  color: var(--rt-pencil);
+}
+
+/* ============================================================ header rule */
+
+.rt-head__cmp {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: end;
+  padding-bottom: 9px;
+}
+
+.rt-head__without {
+  color: var(--rt-pencil);
+}
+
+.rt-head__with {
+  padding-left: var(--rt-cell-pad-x);
+  color: var(--rt-ink);
+}
+
+/* ============================================================ layer swaps */
+
+/* Play layers: present in Play, quiet in Compare. */
+.rt-band__play,
+.rt-head__play,
+.rt-foot__play {
+  transition:
+    opacity var(--rt-t-back) ease-out,
+    visibility 0s linear 0s;
+}
+
+.rt-scene[data-view="compare"] .rt-band__play,
+.rt-scene[data-view="compare"] .rt-head__play,
+.rt-scene[data-view="compare"] .rt-foot__play {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--rt-t-quiet) ease-out,
+    visibility 0s linear var(--rt-t-quiet);
+}
+
+/* Compare layers: absent in Play, in from 200ms in Compare. */
+.rt-band__cmp,
+.rt-head__cmp,
+.rt-foot__compare {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--rt-t-back) ease-out,
+    visibility 0s linear var(--rt-t-back);
+}
+
+.rt-scene[data-view="compare"] .rt-band__cmp,
+.rt-scene[data-view="compare"] .rt-head__cmp,
+.rt-scene[data-view="compare"] .rt-foot__compare {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity var(--rt-t-head-in) ease-out var(--rt-at-split),
+    visibility 0s linear var(--rt-at-split);
+}
+
+/* Both footers share one cell, so the footer never moves either. */
+.rt-foot {
+  display: grid;
+  grid-template-areas: "stack";
+}
+
+.rt-foot > * {
+  grid-area: stack;
+}
+
+/* ============================================================ rows */
+
+.rt-row__label {
+  transition: color var(--rt-t-back) var(--rt-ease);
+}
+
+.rt-row__single,
+.rt-row__reason {
+  transition:
+    opacity var(--rt-t-back) ease-out,
+    visibility 0s linear 0s;
+}
+
+/* Unchanged rows: one stable full-width row; only the colour changes.
+   (Pencil rather than quiet grey, so the text keeps 4.5:1 on paper.) */
+.rt-scene[data-view="compare"] .rt-row[data-kind="unchanged"] .rt-row__label {
+  color: var(--rt-pencil);
+  transition: color var(--rt-t-ink-quiet) var(--rt-ease) var(--rt-at-split);
+}
+
+.rt-scene[data-view="compare"] .rt-row__reason {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--rt-t-quiet) ease-out,
+    visibility 0s linear var(--rt-t-quiet);
+}
+
+/* Changed rows: the single label cross-fades into the split. The Without cell
+   starts at the single label's x, so the label itself stays put. */
+.rt-row__split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--rt-t-back) ease-out,
+    visibility 0s linear var(--rt-t-back);
+}
+
+.rt-scene[data-view="compare"] .rt-row__split {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity var(--rt-t-split) ease-out var(--rt-at-split),
+    visibility 0s linear var(--rt-at-split);
+}
+
+.rt-scene[data-view="compare"] .rt-row:not([data-kind="unchanged"]):not([data-kind="none"]) .rt-row__single {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--rt-t-split) ease-out var(--rt-at-split),
+    visibility 0s linear calc(var(--rt-at-split) + var(--rt-t-split));
+}
+
+/* Rows the Play list does not have (added rows below, when playing Without). */
+.rt-scene[data-view="play"] .rt-row[data-in-play="false"],
+.rt-scene[data-view="compare"] .rt-row[data-in-compare="false"] {
+  display: none;
+}
+
+.rt-scene[data-view="compare"] .rt-row[data-in-play="false"] {
+  animation: rt-row-in var(--rt-t-split) ease-out var(--rt-at-split) both;
+}
+
+@keyframes rt-row-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.rt-cell {
+  position: relative;
+  min-width: 0;
+  padding: var(--rt-cell-pad-top) var(--rt-cell-pad-x) 10px 0;
+}
+
+.rt-cell--without {
+  border-right: 1px solid var(--rt-rule);
+}
+
+.rt-cell--with {
+  padding-left: var(--rt-cell-pad-x);
+}
+
+/* Revision stock: the observed change, swept in from the left. */
+.rt-cell--with::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 -1px 0;
+  background: var(--rt-rev-stock);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--rt-t-back) var(--rt-ease);
+}
+
+.rt-scene[data-view="compare"] .rt-cell--with::before {
+  transform: scaleX(1);
+  transition: transform var(--rt-t-stock) var(--rt-ease)
+    calc(var(--rt-at-split) + var(--rt-t-stock-stagger) * var(--i, 0));
+}
+
+.rt-cell__body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Column heads name the sides on desktop; the tags take over on mobile. */
+.rt-cell__tag {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+.rt-cell__label {
+  color: var(--rt-ink);
+}
+
+.rt-cell[data-status="hidden"] .rt-cell__label {
+  color: var(--rt-faint);
+}
+
+.rt-cell__note {
+  color: var(--rt-ink-2);
+}
+
+.rt-cell--with .rt-cell__note {
+  color: var(--rt-rev-deep);
+}
+
+/* ============================================================ marks */
+
+.rt-mark {
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.6);
+  transition:
+    opacity var(--rt-t-back) ease-out,
+    transform var(--rt-t-back) ease-out,
+    visibility 0s linear var(--rt-t-back);
+}
+
+.rt-scene[data-view="play"] .rt-mark[data-play="true"] {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
+  transition:
+    opacity var(--rt-t-back) ease-out,
+    transform var(--rt-t-back) ease-out,
+    visibility 0s linear 0s;
+}
+
+.rt-scene[data-view="compare"] .rt-mark[data-compare="true"] {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
+  cursor: default;
+  transition:
+    opacity 140ms ease-out var(--rt-at-press),
+    transform var(--rt-t-press) var(--rt-ease-press) var(--rt-at-press),
+    visibility 0s linear var(--rt-at-press);
+}
+
+/* ============================================================ causal note */
+
+.rt-scene[data-view="compare"] .rt-note {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity var(--rt-t-note) ease-out var(--rt-at-note),
+    visibility 0s linear var(--rt-at-note);
+}

@@ -6,6 +6,15 @@ export const metadata = {
     "Saved example, generated from a real build. Play it with and without the approved influence; nothing is generated live.",
 };
 
-export default function DifferencePage() {
-  return <RehearsalScene />;
+type Params = Promise<Record<string, string | string[] | undefined>>;
+
+/**
+ * `?view=play` and `?view=compare` open that mode directly. With no view, the
+ * saved example opens on Play at the recorded point and splits into Compare
+ * by itself, as the judge path does.
+ */
+export default async function DifferencePage({ searchParams }: { searchParams: Params }) {
+  const view = (await searchParams)["view"];
+  const initialView = view === "compare" ? "compare" : "play";
+  return <RehearsalScene initialView={initialView} autoSplit={view === undefined} />;
 }

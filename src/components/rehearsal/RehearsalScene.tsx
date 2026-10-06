@@ -4,24 +4,41 @@
  * The saved example on the Rehearsal Table: the real With-Moon / Without-Moon
  * pair, played in the browser against the same pure engine the validator
  * uses. No fetch, no API route, no provider, no database.
+ *
+ * Play and Compare are one page. The shell never re-mounts; a mode change
+ * flips `data-view` and the CSS choreography in compare.css does the rest:
+ * the band and header quiet, changed rows split in place, unchanged rows only
+ * change colour, the marks press in, and the causal note resolves last.
  */
 
-import { useCallback, useId, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import type { Id } from "../../domain/scene";
 import { CANONICAL_PAIR } from "../../presentation/canonical-pair";
 import {
+  compareAt,
   lineNumber,
+  numberWord,
   playRows,
   runChoices,
   transcriptOf,
 } from "../../presentation/rehearsal";
-import type { Side, Taken, TranscriptEntry } from "../../presentation/rehearsal";
+import type {
+  CompareRow,
+  PlayRow,
+  Side,
+  Taken,
+  TranscriptEntry,
+} from "../../presentation/rehearsal";
 import { CausalNote } from "./CausalNote";
 import { SceneShell } from "./SceneShell";
+import type { SceneView } from "./SceneShell";
 
 const pair = CANONICAL_PAIR;
 
 const SAVED_LABEL = "Saved example · generated from a real build";
+
+/** The pause before the saved example splits into Compare on first entry. */
+const AUTO_SPLIT_MS = 1100;
 
 function sceneOf(side: Side) {
   return side === "with" ? pair.withScene : pair.withoutScene;
@@ -76,7 +93,80 @@ function Transcript({ entries }: { entries: readonly TranscriptEntry[] }): React
   );
 }
 
-export function RehearsalScene(): React.ReactElement {
+/** One table row, carrying its Play reading and its Compare reading. */
+type TableRow = {
+  readonly id: Id;
+  readonly play: PlayRow | null;
+  readonly compare: CompareRow | null;
+};
+
+/**
+ * Play and Compare share row coordinates whenever the Play list is a prefix
+ * of the Compare list (the Without list is always a prefix of the With list).
+ * Then every row is one element in both modes and only its contents change.
+ * Otherwise the player is somewhere else in the scene, and each mode shows
+ * its own rows.
+ */
+function tableRows(
+  view: SceneView,
+  play: readonly PlayRow[],
+  compare: readonly CompareRow[],
+): TableRow[] {
+  const aligned = play.every((row, index) => compare[index]?.id === row.id);
+  if (aligned) {
+    return compare.map((row, index) => ({ id: row.id, play: play[index] ?? null, compare: row }));
+  }
+  return view === "play"
+    ? play.map((row) => ({ id: row.id, play: row, compare: null }))
+    : compare.map((row) => ({ id: row.id, play: null, compare: row }));
+}
+
+function CompareCellView({
+  row,
+  side,
+}: {
+  row: CompareRow;
+  side: Side;
+}): React.ReactElement {
+  const cell = side === "with" ? row.with : row.without;
+  const absent = cell.status === "hidden";
+  return (
+    <div
+      className={`rt-cell rt-cell--${side}`}
+      data-status={cell.status}
+      data-testid={`rt-cell-${side}-${row.id}`}
+    >
+      <div className="rt-cell__body">
+        <span className="rt-cell__tag">
+          {side === "with" ? `With ${pair.influenceName}` : "Without"}
+          <span className="rt-sr-only">: </span>
+        </span>
+        <span className="rt-action-label rt-cell__label">
+          {absent ? (
+            <>
+              <span aria-hidden="true">—</span>
+              <span className="rt-sr-only">{row.label}</span>
+            </>
+          ) : (
+            row.label
+          )}
+        </span>
+        <span className="rt-requirement rt-cell__note" data-testid={`rt-note-${side}-${row.id}`}>
+          {cell.note}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+export type RehearsalSceneProps = {
+  readonly initialView?: SceneView;
+  /** Split into Compare by itself shortly after first entry. */
+  readonly autoSplit?: boolean;
+};
+
+export function RehearsalScene(props: RehearsalSceneProps): React.ReactElement {
+  const [view, setView] = useState<SceneView>(props.initialView ?? "play");
   const [side, setSide] = useState<Side>("with");
   const [taken, setTaken] = useState<Taken>({
     choices: pair.recordedPrefix,
@@ -85,13 +175,74 @@ export function RehearsalScene(): React.ReactElement {
   const [noteOpen, setNoteOpen] = useState(false);
   const [notice, setNotice] = useState("");
   const uid = useId();
+  const tabRefs = useRef<Record<SceneView, HTMLButtonElement | null>>({ play: null, compare: null });
+  const userSwitch = useRef(false);
 
   const scene = sceneOf(side);
   const run = useMemo(() => runChoices(scene, taken.choices), [scene, taken.choices]);
   const transcript = useMemo(() => transcriptOf(scene, taken), [scene, taken]);
   const ended = taken.endingActionId !== null;
   const rows = useMemo(() => (ended ? [] : playRows(scene, run.state)), [ended, scene, run.state]);
-  const markedLines = rows.flatMap((row, index) => (row.marked ? [lineNumber(index)] : []));
+  const comparison = useMemo(() => compareAt(pair, taken.choices), [taken.choices]);
+  const table = useMemo(
+    () => tableRows(view, rows, comparison.rows),
+    [view, rows, comparison.rows],
+  );
+
+  const compareView = view === "compare";
+  const changedLines = table.flatMap((row, index) =>
+    row.compare !== null && row.compare.kind !== "unchanged" ? [lineNumber(index)] : [],
+  );
+  const markedLines = table.flatMap((row, index) =>
+    row.play?.marked === true ? [lineNumber(index)] : [],
+  );
+  const noteVisible = compareView || (noteOpen && side === "with");
+
+  const switchView = useCallback((next: SceneView, byUser: boolean) => {
+    userSwitch.current = byUser;
+    setView(next);
+  }, []);
+
+  // The saved example opens on Play at the recorded point, then splits into
+  // Compare by itself, unless the visitor has already started doing something.
+  useEffect(() => {
+    if (props.autoSplit !== true) return;
+    let cancelled = false;
+    const cancel = (): void => {
+      cancelled = true;
+    };
+    window.addEventListener("pointerdown", cancel, { once: true });
+    window.addEventListener("keydown", cancel, { once: true });
+    const timer = window.setTimeout(() => {
+      if (!cancelled) switchView("compare", false);
+    }, AUTO_SPLIT_MS);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("pointerdown", cancel);
+      window.removeEventListener("keydown", cancel);
+    };
+  }, [props.autoSplit, switchView]);
+
+  // Keep the mode in the address, so a reload or a shared link lands on it.
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("view") === view) return;
+    if (url.searchParams.get("view") === null && view === (props.initialView ?? "play") && !userSwitch.current) {
+      return;
+    }
+    url.searchParams.set("view", view);
+    window.history.replaceState(window.history.state, "", url);
+  }, [view, props.initialView]);
+
+  // A user-driven mode change never strands keyboard focus inside the layer
+  // that just went inert; it lands on the tab that is now current.
+  useEffect(() => {
+    if (!userSwitch.current) return;
+    const active = document.activeElement;
+    if (active === null || active === document.body || active.closest("[inert]") !== null) {
+      tabRefs.current[view]?.focus();
+    }
+  }, [view]);
 
   const take = useCallback(
     (id: Id) => {
@@ -133,8 +284,40 @@ export function RehearsalScene(): React.ReactElement {
     [side, taken.choices],
   );
 
+  /** Continue from the compared point, in one version. */
+  const continueIn = useCallback(
+    (next: Side) => {
+      setSide(next);
+      setTaken({ choices: comparison.prefix, endingActionId: null });
+      setNoteOpen(false);
+      setNotice("");
+      switchView("play", true);
+    },
+    [comparison.prefix, switchView],
+  );
+
+  const modes = (
+    <div className="rt-modes" role="group" aria-label="View">
+      {(["play", "compare"] as const).map((candidate) => (
+        <button
+          key={candidate}
+          ref={(element) => {
+            tabRefs.current[candidate] = element;
+          }}
+          type="button"
+          className="rt-modes__tab"
+          aria-pressed={view === candidate}
+          data-testid={`rt-tab-${candidate}`}
+          onClick={() => switchView(candidate, true)}
+        >
+          {candidate === "play" ? "Play" : "Compare"}
+        </button>
+      ))}
+    </div>
+  );
+
   const versions = (
-    <div className="rt-seg" role="group" aria-label="Version">
+    <div className="rt-seg" role="group" aria-label="Version" inert={compareView}>
       {(["with", "without"] as const).map((candidate) => (
         <button
           key={candidate}
@@ -157,13 +340,19 @@ export function RehearsalScene(): React.ReactElement {
         ? "Lines marked * exist because of the influence you approved. Click one to see why."
         : "Without the influence: no marks, nothing added.";
 
+  const headline =
+    comparison.changedCount > 0 ? "Same choices. Different next move." : "Same choices. Same next move.";
+  const changedText = `${comparison.changedCount} choice${comparison.changedCount === 1 ? "" : "s"} changed`;
+  const npc = pair.withScene.world.characters[0];
+  const objectWord = (pair.withScene.world.object.name.trim().split(/\s+/).pop() ?? "").toLowerCase();
+
   return (
     <SceneShell
       scene={pair.withScene}
-      view="play"
+      view={view}
       crumb="/ saved example"
-      noteOpen={noteOpen}
-      modes={null}
+      noteOpen={noteVisible}
+      modes={modes}
       status={
         <>
           {versions}
@@ -174,82 +363,200 @@ export function RehearsalScene(): React.ReactElement {
       }
       compactStatus={<span className="rt-chip">{SAVED_LABEL}</span>}
       band={
-        <div className="rt-band__play" data-testid="rt-band-play">
-          <Transcript entries={transcript} />
-        </div>
+        <>
+          <div className="rt-band__play" data-testid="rt-band-play" inert={compareView}>
+            <Transcript entries={transcript} />
+          </div>
+          <div className="rt-band__cmp" data-testid="rt-band-compare" inert={!compareView}>
+            <p className="rt-label rt-cmp__prefix-head">
+              {comparison.mine
+                ? "After your choices, in both versions"
+                : "After the same choices, in both versions"}
+            </p>
+            <p className="rt-cmp__prefix" data-testid="rt-compare-prefix">
+              {comparison.prefixLabels.length === 0
+                ? "At the start of the scene"
+                : comparison.prefixLabels.join(" → ")}
+            </p>
+            <h2 className="rt-cmp__headline" data-testid="rt-compare-headline">
+              {headline}
+            </h2>
+            <p className="rt-cmp__count" data-testid="rt-compare-count">
+              <span className={comparison.changedCount > 0 ? "rt-cmp__changed" : undefined}>
+                {changedText}
+              </span>
+              <span aria-hidden="true"> · </span>
+              <span className="rt-sr-only">, </span>
+              <span>{comparison.unchangedCount} unchanged</span>
+              {comparison.sameWorld ? (
+                <>
+                  <span aria-hidden="true"> · </span>
+                  <span className="rt-sr-only">, </span>
+                  <span>
+                    same room, same {npc.name}, same {objectWord}
+                  </span>
+                </>
+              ) : null}
+            </p>
+            {comparison.fellBack ? (
+              <p className="rt-cmp__fallback">
+                One of your choices exists only with {pair.influenceName}, so this compares the
+                recorded point instead.
+              </p>
+            ) : null}
+          </div>
+        </>
       }
       header={
-        <p className="rt-label rt-head__play" id={`${uid}-what`}>
-          {ended ? "Scene ended" : "What do you do?"}
-        </p>
+        <>
+          <p className="rt-label rt-head__play" id={`${uid}-what`} inert={compareView}>
+            {ended ? "Scene ended" : "What do you do?"}
+          </p>
+          <div className="rt-head__cmp" aria-hidden="true" data-testid="rt-compare-heads">
+            <span className="rt-label rt-head__without">Without this influence</span>
+            <span className="rt-label rt-head__with">With {pair.influenceName} · you approved</span>
+          </div>
+        </>
       }
       rows={
-        <ol className="rt-rowlist" aria-labelledby={`${uid}-what`} data-testid="rt-rowlist">
-          {rows.map((row, index) => {
-            const labelId = `${uid}-label-${index}`;
-            const reasonId = `${uid}-reason-${index}`;
-            return (
-              <li
-                key={row.id}
-                className="rt-row"
-                data-action={row.id}
-                data-enabled={row.enabled}
-                data-testid={`rt-row-${row.id}`}
-              >
-                <span className="rt-row__num" aria-hidden="true">
-                  {lineNumber(index)}
-                </span>
-                {row.marked ? (
-                  <button
-                    type="button"
-                    className="rt-mark"
-                    aria-label={`Why line ${lineNumber(index)} exists`}
-                    aria-expanded={noteOpen}
-                    aria-controls="rt-note"
-                    data-testid={`rt-mark-${row.id}`}
-                    onClick={() => setNoteOpen((open) => !open)}
-                  >
-                    <span aria-hidden="true">*</span>
-                  </button>
-                ) : null}
-                <div className="rt-row__single">
-                  <span id={labelId} className="rt-action-label rt-row__label">
-                    {row.label}
+        <>
+          <p className="rt-sr-only" aria-live="polite" data-testid="rt-announce">
+            {compareView
+              ? `Comparing with and without ${pair.influenceName}: ${changedText}, ${comparison.unchangedCount} unchanged.`
+              : ""}
+          </p>
+          <ol
+            className="rt-rowlist"
+            aria-label={compareView ? "Choices in both versions" : undefined}
+            aria-labelledby={compareView ? undefined : `${uid}-what`}
+            data-testid="rt-rowlist"
+          >
+            {table.map((row, index) => {
+              const labelId = `${uid}-label-${index}`;
+              const reasonId = `${uid}-reason-${index}`;
+              const kind = row.compare?.kind ?? "none";
+              const changed = kind !== "none" && kind !== "unchanged";
+              const markInPlay = row.play?.marked === true && side === "with";
+              const changedIndex = changed
+                ? table.slice(0, index).filter((r) => {
+                    const k = r.compare?.kind;
+                    return k !== undefined && k !== "unchanged";
+                  }).length
+                : 0;
+              const label = row.play?.label ?? row.compare?.label ?? "";
+              const playable = !compareView && row.play !== null;
+              return (
+                <li
+                  key={row.id}
+                  className="rt-row"
+                  data-action={row.id}
+                  data-kind={kind}
+                  data-in-play={row.play !== null}
+                  data-in-compare={row.compare !== null}
+                  data-enabled={row.play === null ? undefined : row.play.enabled}
+                  data-testid={`rt-row-${row.id}`}
+                  style={{ "--i": changedIndex } as React.CSSProperties}
+                >
+                  <span className="rt-row__num" aria-hidden="true">
+                    {lineNumber(index)}
                   </span>
-                  {row.reason === null ? null : (
-                    <span id={reasonId} className="rt-requirement rt-row__reason">
-                      {row.reason}
+                  {markInPlay || changed ? (
+                    <button
+                      type="button"
+                      className="rt-mark"
+                      data-play={markInPlay}
+                      data-compare={changed}
+                      aria-label={`Why line ${lineNumber(index)} exists`}
+                      aria-expanded={noteOpen}
+                      aria-controls="rt-note"
+                      aria-hidden={playable && markInPlay ? undefined : true}
+                      tabIndex={playable && markInPlay ? undefined : -1}
+                      data-testid={`rt-mark-${row.id}`}
+                      onClick={() => {
+                        if (!compareView) setNoteOpen((open) => !open);
+                      }}
+                    >
+                      <span aria-hidden="true">*</span>
+                    </button>
+                  ) : null}
+                  <div className="rt-row__single" aria-hidden={compareView && changed ? true : undefined}>
+                    <span id={labelId} className="rt-action-label rt-row__label">
+                      {label}
                     </span>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  className="rt-row__hit"
-                  aria-labelledby={labelId}
-                  aria-describedby={row.reason === null ? undefined : reasonId}
-                  aria-disabled={row.enabled ? undefined : true}
-                  data-testid={`rt-choice-${row.id}`}
-                  onClick={() => take(row.id)}
-                />
-              </li>
-            );
-          })}
-        </ol>
+                    {row.play?.reason == null ? null : (
+                      <span id={reasonId} className="rt-requirement rt-row__reason">
+                        {row.play.reason}
+                      </span>
+                    )}
+                  </div>
+                  {changed && row.compare !== null ? (
+                    <div
+                      className="rt-row__split"
+                      aria-hidden={compareView ? undefined : true}
+                      data-testid={`rt-split-${row.id}`}
+                    >
+                      <CompareCellView row={row.compare} side="without" />
+                      <CompareCellView row={row.compare} side="with" />
+                    </div>
+                  ) : null}
+                  {playable && row.play !== null ? (
+                    <button
+                      type="button"
+                      className="rt-row__hit"
+                      aria-labelledby={labelId}
+                      aria-describedby={row.play.reason === null ? undefined : reasonId}
+                      aria-disabled={row.play.enabled ? undefined : true}
+                      data-testid={`rt-choice-${row.id}`}
+                      onClick={() => take(row.id)}
+                    />
+                  ) : null}
+                </li>
+              );
+            })}
+          </ol>
+        </>
       }
       foot={
-        <div className="rt-foot__play">
-          <button type="button" className="rt-button" data-testid="rt-restart" onClick={restart}>
-            {ended ? "Play it again" : "Start over"}
-          </button>
-          <p className="rt-foot__note" role="status">
-            {playFootNote}
-          </p>
-        </div>
+        <>
+          <div className="rt-foot__play" inert={compareView}>
+            <button type="button" className="rt-button" data-testid="rt-restart" onClick={restart}>
+              {ended ? "Play it again" : "Start over"}
+            </button>
+            <p className="rt-foot__note" role="status">
+              {playFootNote}
+            </p>
+          </div>
+          <div className="rt-foot__compare" inert={!compareView}>
+            <button
+              type="button"
+              className="rt-button rt-button--primary"
+              data-testid="rt-continue-with"
+              onClick={() => continueIn("with")}
+            >
+              Continue with {pair.influenceName}
+            </button>
+            <button
+              type="button"
+              className="rt-button"
+              data-testid="rt-continue-without"
+              onClick={() => continueIn("without")}
+            >
+              Continue without
+            </button>
+            <p className="rt-foot__note">
+              {comparison.prefix.length === 0
+                ? "Both start from the beginning."
+                : `Both pick up from the same ${numberWord(comparison.prefix.length)} choice${comparison.prefix.length === 1 ? "" : "s"}.`}
+            </p>
+          </div>
+        </>
       }
       note={
-        side === "with" ? (
-          <CausalNote pair={pair} lines={markedLines} hidden={!noteOpen} />
-        ) : null
+        <CausalNote
+          pair={pair}
+          lines={compareView ? changedLines : markedLines}
+          hidden={!noteVisible}
+        />
       }
     />
   );

@@ -240,13 +240,18 @@ export type Comparison = {
 
 /**
  * Which point to compare: the player's own choices when they are legal in
- * both versions, otherwise the stored `diff.replay.prefix`.
+ * both versions, otherwise the stored `diff.replay.prefix`. Standing exactly
+ * on the recorded point (where the saved example opens) is the recorded point,
+ * not a choice the visitor made.
  */
 export function comparisonPoint(
   pair: CanonicalPair,
   choices: readonly Id[],
 ): { prefix: readonly Id[]; mine: boolean; fellBack: boolean } {
-  if (choices.length > 0) {
+  const recorded =
+    choices.length === pair.recordedPrefix.length &&
+    choices.every((id, index) => pair.recordedPrefix[index] === id);
+  if (choices.length > 0 && !recorded) {
     const legal =
       runChoices(pair.withScene, choices).legal && runChoices(pair.withoutScene, choices).legal;
     if (legal) return { prefix: choices, mine: true, fellBack: false };
