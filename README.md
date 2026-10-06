@@ -68,8 +68,9 @@ same choices with and without the influence and reporting what differs.
 | **Verify** | Deterministic engine | A mechanical witness: what the influence changed, observed by replay |
 | **Activate** | The creator | Nothing becomes current until they confirm it |
 
-Removing Qloo would not leave a smaller version of the same product. It would
-remove the part a creator can check:
+Removing Qloo would leave the compiler and the player, but it would remove the
+auditable cultural-grounding layer that makes FirstPlayable's central claim
+possible:
 
 - **The references stop being real.** A model asked for "films like this
   artist" returns recall that nobody retrieved and nobody can audit. Qloo's
