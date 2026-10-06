@@ -23,6 +23,10 @@ export type ContrastFailure = {
 };
 
 export async function auditContrast(page: Page): Promise<ContrastFailure[]> {
+  // Text behind a disclosure is read once opened, so it is audited open.
+  await page.evaluate(() => {
+    for (const details of document.querySelectorAll(".rt details")) details.setAttribute("open", "");
+  });
   return page.evaluate(() => {
     type Rgb = [number, number, number];
     const parse = (value: string): [number, number, number, number] | null => {
