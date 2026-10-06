@@ -53,6 +53,27 @@ const SHORTCUTS: Readonly<Record<string, "play" | "compare" | "with" | "without"
   o: "without",
 };
 
+/** Where a visitor's "shortcuts off" choice is remembered, in this browser only. */
+const SHORTCUTS_KEY = "fp.rehearsal.shortcuts";
+
+function readShortcutsOn(): boolean {
+  try {
+    return window.localStorage.getItem(SHORTCUTS_KEY) !== "off";
+  } catch {
+    return true;
+  }
+}
+
+function writeShortcutsOn(on: boolean): void {
+  try {
+    if (on) window.localStorage.removeItem(SHORTCUTS_KEY);
+    else window.localStorage.setItem(SHORTCUTS_KEY, "off");
+  } catch {
+    // Storage can be unavailable (private mode, blocked site data); the choice
+    // then lasts for this page only, which still turns the shortcuts off.
+  }
+}
+
 function typingInto(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   return (
@@ -197,6 +218,17 @@ export function RehearsalScene(props: RehearsalSceneProps): React.ReactElement {
   });
   const [noteOpen, setNoteOpen] = useState(false);
   const [notice, setNotice] = useState("");
+  // WCAG 2.1.4: single-character shortcuts can be turned off, and stay off.
+  const [shortcutsOn, setShortcutsOn] = useState(true);
+  useEffect(() => {
+    setShortcutsOn(readShortcutsOn());
+  }, []);
+  const toggleShortcuts = useCallback(() => {
+    setShortcutsOn((on) => {
+      writeShortcutsOn(!on);
+      return !on;
+    });
+  }, []);
   const uid = useId();
   const tabRefs = useRef<Record<SceneView, HTMLButtonElement | null>>({ play: null, compare: null });
   const sheetRef = useRef<HTMLDialogElement | null>(null);
@@ -330,8 +362,10 @@ export function RehearsalScene(props: RehearsalSceneProps): React.ReactElement {
     [comparison.prefix, switchView],
   );
 
-  // Single-key shortcuts, ignored while typing, with a modifier, or under a dialog.
+  // Single-key shortcuts, ignored while typing, with a modifier, under a
+  // dialog, or once the visitor has turned them off.
   useEffect(() => {
+    if (!shortcutsOn) return;
     const onKey = (event: KeyboardEvent): void => {
       if (event.altKey || event.ctrlKey || event.metaKey || event.repeat) return;
       if (typingInto(event.target) || sheetRef.current?.open === true) return;
@@ -348,7 +382,7 @@ export function RehearsalScene(props: RehearsalSceneProps): React.ReactElement {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [switchSide, switchView, view]);
+  }, [shortcutsOn, switchSide, switchView, view]);
 
   const modes = (
     <div className="rt-modes" role="group" aria-label="View">
@@ -361,7 +395,7 @@ export function RehearsalScene(props: RehearsalSceneProps): React.ReactElement {
           type="button"
           className="rt-modes__tab"
           aria-pressed={view === candidate}
-          aria-keyshortcuts={candidate === "play" ? "P" : "C"}
+          aria-keyshortcuts={shortcutsOn ? (candidate === "play" ? "P" : "C") : undefined}
           data-testid={`rt-tab-${candidate}`}
           onClick={() => switchView(candidate, true)}
         >
@@ -380,7 +414,7 @@ export function RehearsalScene(props: RehearsalSceneProps): React.ReactElement {
           type="button"
           className="rt-seg__option"
           aria-pressed={side === candidate}
-          aria-keyshortcuts={candidate === "with" ? "W" : "O"}
+          aria-keyshortcuts={shortcutsOn ? (candidate === "with" ? "W" : "O") : undefined}
           data-testid={`${testPrefix}-${candidate}`}
           onClick={() => switchSide(candidate)}
         >
@@ -613,6 +647,24 @@ export function RehearsalScene(props: RehearsalSceneProps): React.ReactElement {
             </p>
           </div>
         </>
+      }
+      colophon={
+        <p className="rt-shortcuts">
+          <span className="rt-shortcuts__text" id={`${uid}-shortcuts`}>
+            {shortcutsOn
+              ? "Keyboard shortcuts: P Play · C Compare · W With · O Without."
+              : "Keyboard shortcuts are off."}
+          </span>{" "}
+          <button
+            type="button"
+            className="rt-shortcuts__toggle"
+            aria-describedby={`${uid}-shortcuts`}
+            data-testid="rt-shortcuts-toggle"
+            onClick={toggleShortcuts}
+          >
+            {shortcutsOn ? "Turn off" : "Turn on"}
+          </button>
+        </p>
       }
       note={
         <>

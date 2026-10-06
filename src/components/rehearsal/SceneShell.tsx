@@ -32,6 +32,8 @@ export type SceneShellProps = {
   readonly note?: ReactNode;
   readonly motion?: "on" | "off";
   readonly noteOpen?: boolean;
+  /** Small print under the footer: page-level settings such as shortcuts. */
+  readonly colophon?: ReactNode;
 };
 
 export function SceneShell(props: SceneShellProps): React.ReactElement {
@@ -102,6 +104,9 @@ export function SceneShell(props: SceneShellProps): React.ReactElement {
         </aside>
 
         <div className="rt-note-anchor">{props.note}</div>
+        {props.colophon === undefined ? null : (
+          <div className="rt-colophon">{props.colophon}</div>
+        )}
       </main>
     </div>
   );

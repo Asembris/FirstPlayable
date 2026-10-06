@@ -400,6 +400,30 @@ test.describe("Phase 6 · Play ↔ Compare", () => {
   });
 });
 
+test.describe("Phase 6 · shortcuts can be turned off (WCAG 2.1.4)", () => {
+  test("turning them off stops single keys, and the choice survives a reload", async ({ page }) => {
+    await openPlay(page);
+    const toggle = page.getByTestId("rt-shortcuts-toggle");
+    await expect(toggle).toHaveText("Turn off");
+    await expect(page.getByTestId("rt-tab-compare")).toHaveAttribute("aria-keyshortcuts", "C");
+
+    await toggle.click();
+    await expect(toggle).toHaveText("Turn on");
+    await expect(page.getByTestId("rt-tab-compare")).not.toHaveAttribute("aria-keyshortcuts", /.*/);
+    await page.locator("body").press("c");
+    await expect(page.locator(".rt-scene")).toHaveAttribute("data-view", "play");
+
+    await page.reload();
+    await expect(page.getByTestId("rt-shortcuts-toggle")).toHaveText("Turn on");
+    await page.locator("body").press("c");
+    await expect(page.locator(".rt-scene")).toHaveAttribute("data-view", "play");
+
+    await page.getByTestId("rt-shortcuts-toggle").click();
+    await page.locator("body").press("c");
+    await expect(page.locator(".rt-scene")).toHaveAttribute("data-view", "compare");
+  });
+});
+
 test.describe("Phase 6 · mobile", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 

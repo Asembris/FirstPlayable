@@ -62,8 +62,9 @@
     ". band . cast"
     ". head . note"
     ". rows . note"
-    ". foot . note";
-  grid-template-rows: auto auto auto auto auto auto 1fr;
+    ". foot . note"
+    ". colophon . .";
+  grid-template-rows: auto auto auto auto auto auto auto 1fr;
 }
 
 .rt-strip {
@@ -128,6 +129,11 @@
   align-self: start;
 }
 
+.rt-colophon {
+  grid-area: colophon;
+  margin-top: 20px;
+}
+
 /* ------------------------------------------------------------------ margin */
 
 .rt-cast {
@@ -184,6 +190,7 @@
       ". head"
       ". rows"
       ". foot"
+      ". colophon"
       ". note"
       ". cast";
     grid-template-rows: none;
@@ -230,6 +237,7 @@
       "rows"
       "note"
       "cast"
+      "colophon"
       "foot";
   }
 

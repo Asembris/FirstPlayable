@@ -413,3 +413,24 @@
 .rt-record dd.rt-suggestion {
   font-size: 15.5px;
 }
+
+/* ============================================================== colophon */
+
+.rt-shortcuts {
+  margin: 0;
+  font: 400 12px/1.5 var(--rt-font-ui);
+  color: var(--rt-pencil);
+}
+
+.rt-shortcuts__toggle {
+  min-height: 24px;
+  margin: 0;
+  padding: 0 2px;
+  border: 0;
+  background: transparent;
+  font: 500 12px/1.5 var(--rt-font-ui);
+  color: var(--rt-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
