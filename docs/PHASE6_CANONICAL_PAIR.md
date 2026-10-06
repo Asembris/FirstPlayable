@@ -3,6 +3,10 @@
 **Recorded:** 5 October 2026, 22:15–22:30 UTC · **Code:** `main` at `3106cdb`,
 unchanged · **Phase 6 UI:** not started.
 
+> **Current status:** this pair was recorded before the Phase 6 UI was built,
+> and the header above is kept as recorded. Phase 6 is now complete; see
+> [`BUILD_STATUS.md`](BUILD_STATUS.md).
+
 This is the one real, saved "with this influence / without this influence" pair
 that the Phase 6 judge experience is built on. It was produced entirely through
 the product's own route handlers (`scripts/smoke-compile.ts`'s in-process
