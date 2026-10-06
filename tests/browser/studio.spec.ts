@@ -70,16 +70,21 @@ test("the error state leads to a saved example that plays without a database", a
   const foreign = watchForeignRequests(page, baseURL ?? "");
 
   await page.goto("/studio");
+  // Phase 6: the saved example is the canonical Moon difference, not the
+  // Phase 1 design fixture.
+  await expect(page.getByTestId("error-example-link")).toHaveAttribute("href", "/difference");
   await page.getByTestId("error-example-link").click();
 
+  await expect(page).toHaveURL(/\/difference$/);
   await expect(page.getByRole("heading", { name: "The Second Copy" })).toBeVisible();
 
-  // A complete run through the real engine, with the database still absent.
-  await page.getByTestId("choice-core.inspect").click();
-  await page.getByTestId("choice-core.ask_context").click();
-  await page.getByTestId("choice-discovery.ask_identity").click();
-  await page.getByTestId("choice-core.withhold").click();
-  await expect(page.getByTestId("ending")).toBeVisible();
+  // A complete run through the real engine, with the database still absent:
+  // from the recorded point, both requirements unlock Return, which ends it.
+  await page.getByTestId("rt-tab-play").click();
+  await page.getByTestId("rt-choice-discovery.action_1").click();
+  await page.getByTestId("rt-choice-discovery.action_2").click();
+  await page.getByTestId("rt-choice-core.give").click();
+  await expect(page.getByTestId("rt-restart")).toHaveText("Play it again");
 
   expect(foreign).toEqual([]);
 });

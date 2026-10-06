@@ -154,7 +154,7 @@ export function ErrorPanel({
         )}
         <Link
           className="rt-button rt-button--primary"
-          href="/example"
+          href="/difference"
           data-testid="error-example-link"
         >
           Play saved example

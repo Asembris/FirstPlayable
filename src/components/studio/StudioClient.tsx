@@ -307,7 +307,7 @@ export function StudioClient(): React.JSX.Element {
             <button className="rt-button rt-button--primary" type="submit" disabled={submitting}>
               {submitting ? "Saving…" : "Save this brief"}
             </button>
-            <Link className="rt-button" href="/example">
+            <Link className="rt-button" href="/difference">
               Play saved example
             </Link>
             <p className="rt-studio__note">Next, you choose an artist you love.</p>

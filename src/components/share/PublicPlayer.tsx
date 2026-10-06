@@ -113,7 +113,7 @@ export function PublicPlayer({ token }: { token: string }): React.JSX.Element {
             it, or it may never have existed.
           </p>
           <div className="rt-public__links">
-            <Link className="rt-button rt-button--primary" href="/example">
+            <Link className="rt-button rt-button--primary" href="/difference">
               Play the saved example
             </Link>
           </div>
@@ -207,7 +207,7 @@ export function PublicPlayer({ token }: { token: string }): React.JSX.Element {
       <footer className="rt-public__foot">
         <p className="rt-public__made">Made with FirstPlayable · play only</p>
         <div className="rt-public__links">
-          <Link className="rt-button" href="/example">
+          <Link className="rt-button" href="/difference">
             Play the saved example
           </Link>
           <Link className="rt-button" href="/studio">

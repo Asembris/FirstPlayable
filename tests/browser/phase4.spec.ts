@@ -221,7 +221,7 @@ test("playing the generated scene makes no request at all", async ({ page, baseU
    * reset, and a replay cause zero Qloo calls, zero model calls, and no
    * gameplay server write. So this counts requests to this application's own
    * API and to any foreign host. Next.js's own route prefetches for the two
-   * `<Link>` elements on the page — `/studio?_rsc=…`, `/example?_rsc=…`, and
+   * `<Link>` elements on the page — `/studio?_rsc=…`, `/difference?_rsc=…`, and
    * static chunks — are same-origin framework navigation, not gameplay, and
    * are deliberately not counted as either.
    */

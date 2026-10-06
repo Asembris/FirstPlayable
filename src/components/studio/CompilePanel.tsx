@@ -292,7 +292,7 @@ export function CompilePanel({
               : `Your active version ${status.last_good_version_id} is untouched and still plays.`}
           </p>
           <div className="rt-studio__actions">
-            <Link className="rt-button" href="/example">
+            <Link className="rt-button" href="/difference">
               Play saved example
             </Link>
           </div>

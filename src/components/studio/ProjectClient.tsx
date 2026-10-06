@@ -158,7 +158,7 @@ export function ProjectClient({ projectId }: { projectId: string }): React.JSX.E
             <Link className="rt-button rt-button--primary" href="/studio">
               Create your own scene
             </Link>
-            <Link className="rt-button" href="/example">
+            <Link className="rt-button" href="/difference">
               Play saved example
             </Link>
           </div>
@@ -327,7 +327,7 @@ export function ProjectClient({ projectId }: { projectId: string }): React.JSX.E
         <Link className="rt-button" href="/studio">
           Start another brief
         </Link>
-        <Link className="rt-button" href="/example">
+        <Link className="rt-button" href="/difference">
           Play saved example
         </Link>
       </div>
