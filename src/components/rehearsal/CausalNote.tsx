@@ -25,6 +25,22 @@ export function PhraseText({ phrase }: { phrase: Phrase }): React.ReactElement {
   );
 }
 
+/**
+ * The proofreader's caret: this text is the creator's edit of a suggestion.
+ * Drawn, because the UI face has no caret glyph and a fallback one reads as
+ * an underscore.
+ */
+export function EditedMark({ testId }: { testId?: string }): React.ReactElement {
+  return (
+    <span className="rt-edited" data-testid={testId}>
+      <svg className="rt-edited__caret" viewBox="0 0 10 9" aria-hidden="true" focusable="false">
+        <path d="M1 8 L5 1.5 L9 8" />
+      </svg>
+      Edited by you
+    </span>
+  );
+}
+
 export type CausalNoteProps = {
   readonly pair: CanonicalPair;
   /** "lines 02 · 05 · 06": the rows this note explains. */
@@ -93,7 +109,7 @@ export function CausalNote(props: CausalNoteProps): React.ReactElement {
             <span>
               3 · Decision · {decision.editedByCreator ? "you edited, then approved" : "you approved"}
             </span>
-            {decision.editedByCreator ? <span className="rt-edited">‸ edited</span> : null}
+            {decision.editedByCreator ? <EditedMark /> : null}
           </p>
           <blockquote className="rt-decision" data-testid="rt-layer-approved">
             {decision.approvedText}

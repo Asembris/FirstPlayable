@@ -293,10 +293,26 @@
 }
 
 .rt-edited {
-  font: 500 11px/1 var(--rt-font-ui);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px 2px 4px;
+  border: 1px solid var(--rt-ink);
+  border-radius: var(--rt-radius);
+  font: 500 11px/1.2 var(--rt-font-ui);
   letter-spacing: 0;
   text-transform: none;
   white-space: nowrap;
+  color: var(--rt-ink);
+}
+
+.rt-edited__caret {
+  width: 10px;
+  height: 9px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linejoin: round;
 }
 
 /* Source: the catalogue slip, the only boxed element. */

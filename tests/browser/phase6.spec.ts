@@ -230,7 +230,7 @@ test.describe("Phase 6 · canonical Compare", () => {
     const proposed = await note.getByTestId("rt-layer-proposed").innerText();
     expect(approval.proposed_idea.startsWith(proposed.replace(/…$/, ""))).toBe(true);
     await expect(note.getByTestId("rt-layer-approved")).toHaveText(approval.approved_text);
-    await expect(note).toContainText("‸ edited");
+    await expect(note).toContainText("Edited by you");
     await expect(note.getByTestId("rt-layer-consequence")).toHaveText(
       `After the same two choices, ${label("core.give")} is locked with Moon and open without it. ` +
         `With Moon, two choices are added, and ${label("core.give")} needs both.`,
