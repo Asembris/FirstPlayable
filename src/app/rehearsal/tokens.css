@@ -25,6 +25,9 @@
   --rt-ink-2: #3a3d43;
   --rt-pencil: #6b6e75;
   --rt-quiet: #8b8e94;
+  /* Quiet but readable: locked actions and line numbers are read, and the
+     causal note refers to rows by number, so they keep 4.5:1 on paper. */
+  --rt-quiet-text: var(--rt-pencil);
   --rt-faint: #b4b6ba;
   --rt-rule: #d9d9d3;
   --rt-slip-edge: #c9c9c2;

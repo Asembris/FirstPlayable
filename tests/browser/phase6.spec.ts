@@ -4,6 +4,7 @@ import type { Locator, Page, Request } from "@playwright/test";
 import provenanceJson from "../../docs/phase6-canonical-pair/provenance.json";
 import withMoonJson from "../../docs/phase6-canonical-pair/with-moon.version.json";
 import withoutMoonJson from "../../docs/phase6-canonical-pair/without-moon.version.json";
+import { auditContrast } from "./support/contrast";
 
 /**
  * Browser behaviour of the Phase 6 judge path: landing → Play → Compare on
@@ -398,6 +399,25 @@ test.describe("Phase 6 · Play ↔ Compare", () => {
     await page.keyboard.press("Enter");
     await expect(page.getByTestId("rt-transcript")).toContainText(dialogue("core.promise_text"));
   });
+});
+
+test.describe("Phase 6 · contrast", () => {
+  for (const [name, path, width] of [
+    ["landing", "/", 1440],
+    ["Play", "/difference?view=play", 1440],
+    ["Compare", "/difference?view=compare", 1440],
+    ["mobile Play", "/difference?view=play", 390],
+    ["mobile Compare", "/difference?view=compare", 390],
+  ] as const) {
+    test(`every meaningful text on ${name} at ${width}px reaches AA`, async ({ page }) => {
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(path);
+      await expect(page.locator(".rt").first()).toBeVisible();
+      if (name === "Play") await page.getByTestId("rt-mark-core.give").click();
+      expect(await auditContrast(page)).toEqual([]);
+    });
+  }
 });
 
 test.describe("Phase 6 · shortcuts can be turned off (WCAG 2.1.4)", () => {

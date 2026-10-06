@@ -105,7 +105,7 @@
   top: 50%;
   transform: translateY(-50%);
   font: 400 11px/1 var(--rt-font-fact);
-  color: var(--rt-quiet);
+  color: var(--rt-quiet-text);
 }
 
 .rt-door__label {

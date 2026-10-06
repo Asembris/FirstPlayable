@@ -154,7 +154,7 @@
 }
 
 .rt-row[data-enabled="false"] .rt-row__label {
-  color: var(--rt-quiet);
+  color: var(--rt-quiet-text);
 }
 
 .rt-row__reason {
@@ -166,7 +166,7 @@
   left: var(--rt-num-x);
   top: 33px;
   font: 400 11px/1 var(--rt-font-fact);
-  color: var(--rt-quiet);
+  color: var(--rt-quiet-text);
 }
 
 /* The whole row is the hit target. */
