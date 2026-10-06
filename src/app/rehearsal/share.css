@@ -1,0 +1,211 @@
+/*
+ * Phase 6 · Rehearsal Table · sharing one version.
+ *
+ * Choose a version, preview it as a viewer would get it, then publish. The
+ * preview is a small specimen of the public player's head, set on sheet; the
+ * link, once made, is a mono fact. Sharing is not an observed change, so
+ * nothing here wears the revision colour.
+ */
+
+.rt-share__warning {
+  margin: 22px 0 0;
+  max-width: 820px;
+  padding-left: 14px;
+  border-left: 1.5px solid var(--rt-ink);
+  font: 400 14px/1.5 var(--rt-font-ui);
+  color: var(--rt-ink);
+}
+
+.rt-share__grid {
+  margin-top: 30px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: 56px;
+  row-gap: 32px;
+  align-items: start;
+}
+
+.rt-share__choose {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.rt-share__choose .rt-field,
+.rt-share__choose .rt-studio__actions {
+  margin-top: 0;
+}
+
+.rt-share__select {
+  min-height: 44px;
+  cursor: pointer;
+  text-overflow: ellipsis;
+}
+
+.rt-share__check {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  font: 400 13.5px/1.45 var(--rt-font-ui);
+  color: var(--rt-ink);
+  cursor: pointer;
+}
+
+.rt-share__check input {
+  width: 18px;
+  height: 18px;
+  margin: 1px 0 0;
+  accent-color: var(--rt-ink);
+}
+
+.rt-share__result {
+  min-width: 0;
+  padding-left: 32px;
+  border-left: 1px solid var(--rt-rule);
+  min-height: 180px;
+}
+
+.rt-share__idle {
+  padding-top: 4px;
+}
+
+.rt-share__heading {
+  margin: 0;
+  padding-bottom: 9px;
+  border-bottom: 1.5px solid var(--rt-ink);
+  color: var(--rt-ink);
+}
+
+.rt-share__preview,
+.rt-share__link {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rt-share__preview .rt-studio__actions,
+.rt-share__link .rt-studio__actions {
+  margin-top: 4px;
+}
+
+.rt-share__specimen {
+  padding: 18px 20px;
+  border: 1px solid var(--rt-slip-edge);
+  border-radius: var(--rt-radius);
+  background: var(--rt-sheet);
+}
+
+.rt-share__specimen-kind {
+  margin: 0;
+  color: var(--rt-pencil);
+}
+
+.rt-share__specimen-title {
+  margin: 8px 0 0;
+  font: 400 clamp(30px, 3vw, 40px) / 1 var(--rt-font-scene);
+  letter-spacing: -0.015em;
+  color: var(--rt-ink);
+}
+
+.rt-share__facts {
+  margin: 14px 0 0;
+  display: grid;
+  gap: 4px;
+}
+
+.rt-share__facts > div {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.rt-share__facts dt {
+  font: 400 12.5px/1.5 var(--rt-font-ui);
+  color: var(--rt-pencil);
+}
+
+.rt-share__facts dd {
+  margin: 0;
+  font: 400 12.5px/1.5 var(--rt-font-ui);
+  color: var(--rt-ink);
+}
+
+.rt-share__link-heading {
+  margin: 0;
+  font: 400 30px/1.05 var(--rt-font-scene);
+  color: var(--rt-ink);
+}
+
+.rt-share__path {
+  margin: 0;
+  padding: 11px 13px;
+  border: 1px solid var(--rt-slip-edge);
+  border-radius: var(--rt-radius);
+  background: var(--rt-sheet);
+  font: 400 12px/1.5 var(--rt-font-fact);
+  color: var(--rt-ink);
+  overflow-wrap: anywhere;
+}
+
+.rt-share__list-heading {
+  margin-top: 40px;
+}
+
+.rt-share__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.rt-share__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  min-height: 56px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--rt-rule);
+}
+
+.rt-share__item-text {
+  flex: 1 1 260px;
+  font: 400 13.5px/1.45 var(--rt-font-ui);
+  color: var(--rt-ink-2);
+}
+
+.rt-share__after {
+  margin-top: 14px;
+}
+
+@media (max-width: 1079.98px) {
+  .rt-share__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rt-share__result {
+    padding-left: 0;
+    border-left: 0;
+    min-height: 0;
+  }
+}
+
+@media (max-width: 639.98px) {
+  .rt-share__choose .rt-studio__actions,
+  .rt-share__preview .rt-studio__actions,
+  .rt-share__link .rt-studio__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .rt-share__choose .rt-button,
+  .rt-share__preview .rt-button,
+  .rt-share__link .rt-button {
+    justify-content: center;
+  }
+
+  .rt-share__facts > div {
+    grid-template-columns: 92px minmax(0, 1fr);
+  }
+}
