@@ -512,7 +512,7 @@ function Candidate({
 }): React.JSX.Element {
   return (
     <section
-      className="rt-candidate"
+      className="rt-candidate rt-player"
       ref={sectionRef}
       tabIndex={-1}
       aria-labelledby={`candidate-${prefix}`}

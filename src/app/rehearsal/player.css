@@ -1,0 +1,209 @@
+/*
+ * Phase 6 · Rehearsal Table · the local scene player on paper.
+ *
+ * `ScenePlayer` keeps its own markup and test ids everywhere it runs: the
+ * candidate under review, either side of a version comparison, and the
+ * public share. Wrapping it in `.rt-player` sets it like the scene page: the
+ * room as a mono strip, dialogue as a play script, and the choices as ruled
+ * action rows. Nothing here wears the revision colour; playing a version is
+ * not an observed change.
+ */
+
+.rt-player .scene {
+  display: grid;
+  gap: 16px;
+  color: var(--rt-ink);
+}
+
+.rt-player .room,
+.rt-player .object {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
+}
+
+.rt-player .room__name {
+  margin: 0;
+  font: 500 11px/1.2 var(--rt-font-fact);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--rt-ink);
+}
+
+.rt-player .room__description,
+.rt-player .room__role {
+  margin: 4px 0 0;
+  font: italic 400 17px/1.35 var(--rt-font-scene);
+  color: var(--rt-ink-2);
+}
+
+.rt-player .object__name {
+  margin: 0;
+  font: 400 21px/1.1 var(--rt-font-scene);
+  color: var(--rt-ink);
+}
+
+.rt-player .object__description {
+  margin: 2px 0 0;
+  font: 400 12.5px/1.4 var(--rt-font-ui);
+  color: var(--rt-ink-2);
+}
+
+.rt-player .transcript {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rt-player .line {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  align-items: baseline;
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.rt-player .line__speaker {
+  font: 500 10.5px/1.2 var(--rt-font-fact);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rt-ink);
+}
+
+.rt-player .line__text {
+  grid-column: 2;
+  margin: 0;
+  font: 400 19px/1.35 var(--rt-font-scene);
+  color: var(--rt-ink);
+}
+
+.rt-player .line--choice .line__text,
+.rt-player .line--blocked .line__text {
+  font: 400 13.5px/1.35 var(--rt-font-ui);
+  color: var(--rt-pencil);
+}
+
+.rt-player .choices__heading {
+  margin: 8px 0 0;
+  padding-bottom: 9px;
+  border-bottom: 1.5px solid var(--rt-ink);
+  font: 500 10.5px/1.2 var(--rt-font-fact);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--rt-ink);
+}
+
+.rt-player .choices {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.rt-player .choices > .line__text {
+  padding: 14px 0;
+  font: italic 400 17px/1.35 var(--rt-font-scene);
+  color: var(--rt-ink-2);
+}
+
+.rt-player .button.choice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  min-height: 56px;
+  padding: 14px 0;
+  border: 0;
+  border-bottom: 1px solid var(--rt-rule);
+  border-radius: 0;
+  background: transparent;
+  text-align: left;
+  font: 400 21px/1.15 var(--rt-font-scene);
+  color: var(--rt-ink);
+}
+
+.rt-player .button.choice:hover:not(:disabled) {
+  background: var(--rt-sheet);
+}
+
+.rt-player .button.choice:focus-visible {
+  outline: 1.5px solid var(--rt-ink);
+  outline-offset: 2px;
+}
+
+.rt-player .button.choice:disabled {
+  color: var(--rt-quiet-text);
+  cursor: default;
+}
+
+.rt-player .choice__lock {
+  display: none;
+}
+
+.rt-player .choice__reason {
+  display: block;
+  font: 400 13px/1.35 var(--rt-font-ui);
+  color: var(--rt-ink-2);
+}
+
+.rt-player .ending {
+  border: 0;
+  border-top: 1.5px solid var(--rt-ink);
+  background: transparent;
+  padding: 18px 0 0;
+}
+
+.rt-player .ending__title {
+  margin: 0 0 8px;
+  font: 400 34px/1.1 var(--rt-font-scene);
+  color: var(--rt-ink);
+}
+
+.rt-player .ending > .line__text {
+  font: 400 19px/1.4 var(--rt-font-scene);
+  color: var(--rt-ink);
+}
+
+.rt-player .button:not(.choice) {
+  min-height: 44px;
+  margin-top: 14px;
+  padding: 10px 16px;
+  border: 1px solid var(--rt-ink);
+  border-radius: var(--rt-radius);
+  background: transparent;
+  font: 500 13px/1.2 var(--rt-font-ui);
+  color: var(--rt-ink);
+}
+
+.rt-player .button:not(.choice):hover {
+  background: var(--rt-sheet);
+}
+
+.rt-player .button.button--primary {
+  background: var(--rt-ink);
+  color: var(--rt-paper);
+}
+
+.rt-player .button.button--primary:hover {
+  background: var(--rt-ink-2);
+}
+
+@media (max-width: 639.98px) {
+  .rt-player .line {
+    grid-template-columns: 44px minmax(0, 1fr);
+  }
+
+  .rt-player .line__text {
+    font-size: 17px;
+  }
+
+  .rt-player .button.choice {
+    min-height: 52px;
+    font-size: 19px;
+  }
+}
