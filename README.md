@@ -106,7 +106,8 @@ generated live. Step 6 is optional and uses the live creation path.
 Keyboard: <kbd>P</kbd> / <kbd>C</kbd> switch Play and Compare, <kbd>W</kbd> /
 <kbd>O</kbd> switch versions; single-key shortcuts can be turned off.
 
-The saved example is bundled from the three stored rows in
+The saved example is bundled from the two stored versions and their
+provenance record in
 [`docs/phase6-canonical-pair/`](docs/phase6-canonical-pair/), so it plays with
 no database, model, or Qloo call. Its full record, including the two rejected
 candidates, is [`docs/PHASE6_CANONICAL_PAIR.md`](docs/PHASE6_CANONICAL_PAIR.md).
@@ -141,7 +142,7 @@ first-hop requests. Compilation, activation, and playthrough cost **zero**.
 flowchart TB
     Browser["Browser<br/>studio and player, running the deterministic engine"]
     Routes["Owner-scoped API routes<br/>Next.js on Vercel"]
-    QlooAdapter["Qloo adapter<br/>3 fixed requests"]
+    QlooAdapter["Qloo adapter<br/>3 fixed operations"]
     Controller["Bounded controller<br/>and compilers"]
     DB[("Supabase Postgres<br/>8 tables")]
     Qloo(["Qloo API"])
@@ -316,8 +317,9 @@ controller and eight tables.
 
 ## Quickstart
 
-The engine, the saved examples, the tests, and the production build need **no
-account, no credential, and no network access**.
+Once dependencies are installed, the engine, the saved examples, the tests,
+and the production build need **no account, no credential, and no network
+access to any application service**.
 
 ```bash
 npm ci
@@ -404,7 +406,7 @@ guard, and none is a dependency of `npm test` or `npm run build`.
 | [`docs/FIRSTPLAYABLE_BUILD_SPEC.md`](docs/FIRSTPLAYABLE_BUILD_SPEC.md) | The authoritative specification: scene schema, validation, Qloo layer, isolation, revision semantics, non-goals |
 | [`docs/BUILD_STATUS.md`](docs/BUILD_STATUS.md) | The append-only build and verification record for every phase, including failures |
 | [`docs/PHASE6_CANONICAL_PAIR.md`](docs/PHASE6_CANONICAL_PAIR.md) | The saved Moon pair: identifiers, provenance, diff, independent re-verification, caveats, and the rejected candidates |
-| [`docs/phase6-canonical-pair/`](docs/phase6-canonical-pair/) | The three stored rows the judge path is built from |
+| [`docs/phase6-canonical-pair/`](docs/phase6-canonical-pair/) | The two stored versions and their provenance record, from which the judge path is built |
 | [`docs/PHASE3_QLOO_EVIDENCE.md`](docs/PHASE3_QLOO_EVIDENCE.md) | The exact Qloo requests, field mappings, live captures, cache policy, proposal boundary, isolation sentinels |
 | [`docs/PHASE4_EVIDENCE.md`](docs/PHASE4_EVIDENCE.md) | Compilation evidence, including every failed attempt |
 | [`docs/DEPLOYMENT_PREFLIGHT.md`](docs/DEPLOYMENT_PREFLIGHT.md) | External accounts, migrations, deployments, and deployed verification runs |
