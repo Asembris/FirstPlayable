@@ -32,101 +32,106 @@ proposed or after editing → **the build changed**. Qloo supplies the
 reference, never the mechanic, and the last step is drawn only from what the
 scene engine observed on the stored version.
 
-A creator searches for an artist, confirms the identity explicitly, retrieves
-real Qloo movie and videogame references, reads bounded model-proposed
-interactions, and approves, edits, dismisses, or replaces them. Then they press
-**Build the playable scene**, and the approved influences — and only those —
-are compiled into a scene they review and explicitly activate.
+## At a glance
 
-The hero above is the saved Moon comparison, copied from two stored versions;
-its record is [`docs/PHASE6_CANONICAL_PAIR.md`](docs/PHASE6_CANONICAL_PAIR.md).
-The specification is
-[`docs/FIRSTPLAYABLE_BUILD_SPEC.md`](docs/FIRSTPLAYABLE_BUILD_SPEC.md), the
-build and verification record is [`docs/BUILD_STATUS.md`](docs/BUILD_STATUS.md),
-the external-account evidence is
-[`docs/DEPLOYMENT_PREFLIGHT.md`](docs/DEPLOYMENT_PREFLIGHT.md), the Qloo and
-approval evidence is
-[`docs/PHASE3_QLOO_EVIDENCE.md`](docs/PHASE3_QLOO_EVIDENCE.md), and the
-compilation evidence — including every failed attempt — is
-[`docs/PHASE4_EVIDENCE.md`](docs/PHASE4_EVIDENCE.md).
+| | |
+|---|---|
+| **Live product** | [firstplayable.vercel.app](https://firstplayable.vercel.app) — no sign-in |
+| **Fastest proof** | [`/difference`](https://firstplayable.vercel.app/difference): a saved, real build played with and without one approved Qloo influence |
+| **Frozen production commit** | [`f15ed67`](https://github.com/Asembris/FirstPlayable/commit/f15ed67dc7557ff5c2a4dc9e64776c5b310aa14c) |
+| **Deployed verifier against production** | **118 / 118** checks pass |
+| **Offline gates** | **761** unit tests and **133** browser tests pass; CI runs with no secrets |
+| **Status** | Feature-complete through Phase 6; production is frozen for submission |
 
-### How a scene is compiled
+## What FirstPlayable is
 
-**The base is deterministic.** Every mechanical element of the one-room
-foundation is fixed by the product contract: the state variables, the six
-action ids with their verbs, targets and availability conditions, the one
-branch per action with its effects and ending binding, the three endings, and
-the attachment ports. The server constructs all of it from the frozen brief.
-The model supplies the title, the labels, the dialogue, and the ending text,
-and has no field in which to put anything else.
+A small creative tool for pitching interactive scenes. A creator writes a
+one-room brief, names an artist, and picks which of the artist's cultural
+neighbours — real films and videogames returned by Qloo — should shape the
+scene. FirstPlayable compiles only the approved influences into a validated,
+deterministic, playable scene.
 
-**A module's mechanics are model-selected but server-wired.** An approved
-influence becomes one to three *mechanics*. The model decides how many, whether
-each is an `inspect` or an `ask`, which base action each one earns the right to
-take — the commitment slot genuinely chooses between `core.ask_terms` and
-`core.withhold` — whether a mechanic also adds a line on its slot's effect
-port, whether its flag is shown to the player, and all of the copy. The server
-writes the wiring: the identifiers, the flag and its initial value, the
-condition that offers the action only while that flag is false, the effect that
-sets it, the single branch, the gate that blocks the earned action until the
-flag is true, and the port it attaches to. A module therefore cannot write the
-foundation's state, read the other slot's, end the scene, or attach to a port
-that is not its own — not as a rejected value but as one it has nowhere to
-express.
+The product's one claim is narrow and checkable: **this approved influence
+changed these choices in this scene.** The engine proves it by playing the
+same choices with and without the influence and reporting what differs.
 
-Both stages get one initial attempt and at most one repair, and the Phase 1
-validator — unchanged by Phase 4 — decides every candidate. A rejected
-candidate lives only in a bounded operation artifact; only a validated scene
-becomes a version, which the database enforces as well as the application.
+## Why Qloo is load-bearing
 
-**Review and activation are explicit.** A finished build is *pending*: it is
-playable in the browser for review, and nothing becomes current until the
-creator confirms it. Declining a review, or a later failed build, leaves the
-previously active version active and playable.
+**Qloo does not generate mechanics.** The division of labour is fixed:
 
-**Gameplay after generation is local.** A complete playthrough, every ending,
-and a reset make **zero** requests — no model call, no Qloo call, no database
-read. The scene is a value the browser already holds, replayed by the same
-deterministic engine the tests and `/example` run.
+| Step | Who | What they contribute |
+|---|---|---|
+| **Retrieve** | Qloo | The confirmed artist, and real movie and videogame references with their descriptive evidence |
+| **Interpret** | FirstPlayable (model, bounded) | One proposed idea per reference, citing only evidence Qloo returned |
+| **Decide** | The creator | Approve, edit, dismiss, or replace. Nothing is approved by default |
+| **Compile** | FirstPlayable (model-selected, server-wired) | One module in the approved influence's own slot |
+| **Verify** | Deterministic engine | A mechanical witness: what the influence changed, observed by replay |
+| **Activate** | The creator | Nothing becomes current until they confirm it |
 
-The chain a creator can inspect is **Qloo retrieved → FirstPlayable proposed →
-Creator approved → Scene changed**. The fourth step is rendered only from a
-mechanical witness computed on the stored version, so nothing can claim a
-mechanical consequence that no compiler produced.
+Removing Qloo would not leave a smaller version of the same product. It would
+remove the part a creator can check:
 
-### Revision, sharing, and export (Phase 5)
+- **The references stop being real.** A model asked for "films like this
+  artist" returns recall that nobody retrieved and nobody can audit. Qloo's
+  references are stored captures with entity ids and timestamps.
+- **The evidence chain breaks.** An approval must cite evidence ids that
+  resolve inside the stored Qloo capture; the compiler payload refuses to
+  build otherwise. Without a capture there is nothing to cite.
+- **The cross-domain step disappears.** The creator starts from music and
+  receives film and game references. That adjacency is Qloo's, not the
+  model's.
+- **Provenance loses its first layer.** "Qloo returned" is the root of every
+  chain the creator and the judge can inspect.
 
-**Revision is targeted.** A creator can edit one approved interpretation,
-replace one influence, or remove one. An edit or a replacement recompiles only
-its own slot; a removal costs no provider call at all. An ending's wording is
-previewed with one text-only call and changes nothing until the creator applies
-exactly the previewed text. Every revision is a new immutable version linked to
-its parent, labelled `mechanical` or `wording`, with a stored diff that equals
-the engine's own recomputation from the two stored scenes. Earlier versions
-stay listed and playable.
+What is **not** claimed: that Qloo recommended a mechanic, rated a reference,
+knows a creator's taste, or produced an idea a language model could not
+otherwise invent. Qloo's returned affinity is kept private and is never shown
+as creative confidence.
 
-**A share link names one version and can be withdrawn.** Publishing is
-previewed first and returns a read-only link pinned to the version it was made
-from. The public payload is a whitelisted snapshot that carries no project id,
-premise, artist, owner cookie, capture, entity id, or unapproved idea. Revoking
-takes effect on the next read, which is then indistinguishable from an unknown
-link.
+## Judge demo path
 
-**An export is one self-contained HTML file** for the owner only. It plays from
-`file://` with the network blocked and makes no request of any kind.
+About a minute, no account, nothing generated live.
 
-**Not built, and not claimed:** the model-selected comparator and the canonical
-judge experience. Those are Phase 6, which has not started.
+| # | Do this | What it shows |
+|---|---|---|
+| 1 | Open [the landing page](https://firstplayable.vercel.app) and press **Play the difference** | A saved example, labelled as generated from a real build |
+| 2 | Watch the scene open at the recorded point, then split into **Compare** by itself | The same room, Nia, and letter after the same two choices: **3 changed, 3 unchanged** |
+| 3 | Read the changed rows | Without Moon, *Return the letter* is open. With Moon, it is locked, and two new choices exist |
+| 4 | Open a mark to read the causal note | The four stored layers: Qloo returned → proposed → creator approved → scene changed |
+| 5 | Press **Continue without**, or play on with Moon | Both sides are fully playable; with Moon, both requirements unlock Return, which ends the scene |
+| 6 | Go back and press **Create your scene** | The real path: brief → artist → influences → build → review. It makes live Qloo and model calls |
 
-**Not claimed about Qloo:** that it recommended a mechanic, rated a reference,
-or knows a creator's taste. Returned affinity is kept private and is never
-shown as creative confidence. The influence isolation guarantee is dataflow and
-ownership isolation, not a claim about what a language model could
-independently invent.
+Keyboard: <kbd>P</kbd> / <kbd>C</kbd> switch Play and Compare, <kbd>W</kbd> /
+<kbd>O</kbd> switch versions; single-key shortcuts can be turned off.
 
-Running the engine, `/example`, the unit tests, the browser tests, and the
-production build requires **no account, no credential, and no network access**.
-Only the persistent studio and the opt-in live commands need configuration.
+The saved example is bundled from the three stored rows in
+[`docs/phase6-canonical-pair/`](docs/phase6-canonical-pair/), so it plays with
+no database, model, or Qloo call. Its full record, including the two rejected
+candidates, is [`docs/PHASE6_CANONICAL_PAIR.md`](docs/PHASE6_CANONICAL_PAIR.md).
+
+## How it works
+
+1. **Brief.** A one-room premise: a character, an object, and a fixed set of
+   choices. It is frozen before anything is generated.
+2. **Artist.** The creator searches Qloo and explicitly confirms one identity.
+   The first search result is never assumed.
+3. **References.** Two Qloo requests return movie and videogame neighbours of
+   the confirmed artist. Each is normalized into evidence items and stored.
+4. **Proposals.** One bounded model call proposes interpretations for up to
+   six usable references. Each must cite only its own reference's evidence, or
+   the whole set is rejected.
+5. **Approval.** The creator approves, edits, dismisses, or replaces. At most
+   one influence per slot: *Discovery* and *Commitment*.
+6. **Build.** The server compiles a clean base and one module per approved
+   influence, validates every candidate, and stores a version as *pending*.
+7. **Review and activate.** The creator plays the pending version, sees what
+   each influence was intended to do beside what the engine observed, and
+   activates it — or does not.
+8. **Revise, share, export.** Targeted revisions, read-only share links, and a
+   one-file offline export, all described below.
+
+A normal uncached creation costs **three** Qloo calls: one search and two
+first-hop requests. Compilation, activation, and playthrough cost **zero**.
 
 ## Requirements
 
