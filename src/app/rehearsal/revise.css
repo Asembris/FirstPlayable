@@ -1,0 +1,185 @@
+/*
+ * Phase 6 · Rehearsal Table · changing one idea.
+ *
+ * The approved wording is the creator's decision (ink, left rule); a proposed
+ * ending is FirstPlayable's suggestion (pencil, italic, dashed underline).
+ * The engine's verdict reads as plain instrument text. Revising is not an
+ * observed change in itself, so nothing here wears the revision colour: the
+ * change shows on stock only where two versions are compared.
+ */
+
+.rt-revise__heading {
+  margin: 40px 0 0;
+  padding-bottom: 9px;
+  border-bottom: 1.5px solid var(--rt-ink);
+  color: var(--rt-ink);
+}
+
+.rt-revise__empty,
+.rt-revise__intro {
+  margin-top: 14px;
+  max-width: 760px;
+}
+
+.rt-revise__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.rt-revise__item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  column-gap: 40px;
+  row-gap: 18px;
+  padding: 24px 0 28px;
+  border-bottom: 1px solid var(--rt-rule);
+}
+
+.rt-revise__slot {
+  margin: 0 0 4px;
+  color: var(--rt-pencil);
+}
+
+.rt-revise__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.rt-revise__actions .rt-button {
+  justify-content: flex-start;
+}
+
+.rt-revise__form {
+  grid-column: 1 / -1;
+  max-width: 820px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px 0 0 18px;
+  border-left: 1px solid var(--rt-rule);
+}
+
+.rt-revise__form .rt-field {
+  margin-top: 0;
+}
+
+.rt-revise__form .rt-studio__actions {
+  margin-top: 0;
+}
+
+/* Endings: scene copy, set like the scene's own ending. */
+.rt-revise__ending {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 40px;
+  row-gap: 14px;
+  align-items: start;
+  padding: 20px 0 22px;
+  border-bottom: 1px solid var(--rt-rule);
+}
+
+.rt-revise__ending-title {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  font: 400 23px/1.15 var(--rt-font-scene);
+  color: var(--rt-ink);
+}
+
+.rt-revise__edited {
+  font-size: 9.5px;
+}
+
+.rt-revise__ending-copy {
+  margin: 6px 0 0;
+  max-width: 760px;
+  font: 400 17px/1.4 var(--rt-font-scene);
+  color: var(--rt-ink-2);
+  text-wrap: pretty;
+}
+
+.rt-revise__preview {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 6px;
+}
+
+.rt-revise__proposed-label {
+  margin: 0;
+  color: var(--rt-pencil);
+}
+
+.rt-revise__proposed {
+  font-size: 21px;
+  line-height: 1.35;
+  text-wrap: pretty;
+}
+
+.rt-revise__result {
+  margin-top: 30px;
+  padding-top: 18px;
+  border-top: 1.5px solid var(--rt-ink);
+  max-width: 820px;
+}
+
+.rt-revise__verdict {
+  margin: 0;
+  font: 400 26px/1.15 var(--rt-font-scene);
+  color: var(--rt-ink);
+}
+
+.rt-revise__summary {
+  margin: 12px 0 14px;
+  padding-left: 18px;
+  font: 400 13.5px/1.5 var(--rt-font-ui);
+  color: var(--rt-ink-2);
+}
+
+.rt-revise__summary li + li {
+  margin-top: 4px;
+}
+
+@media (max-width: 1079.98px) {
+  .rt-revise__item {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rt-revise__actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .rt-revise__actions .rt-studio__note {
+    flex-basis: 100%;
+  }
+}
+
+@media (max-width: 639.98px) {
+  .rt-revise__actions,
+  .rt-revise__ending {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .rt-revise__actions .rt-button,
+  .rt-revise__ending > .rt-button {
+    justify-content: center;
+  }
+
+  .rt-revise__form {
+    padding-left: 12px;
+  }
+
+  .rt-revise__form .rt-studio__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

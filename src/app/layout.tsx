@@ -17,6 +17,7 @@ import "./rehearsal/studio.css";
 import "./rehearsal/review.css";
 import "./rehearsal/player.css";
 import "./rehearsal/artist.css";
+import "./rehearsal/revise.css";
 import "./rehearsal/landing.css";
 
 export const metadata: Metadata = {
