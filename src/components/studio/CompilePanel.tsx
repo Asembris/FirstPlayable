@@ -282,20 +282,23 @@ export function CompilePanel({
         <div className="rt-stages" role="alert" data-testid="compile-failed">
           <p className="rt-review__outcome">This build did not finish</p>
           <p className="rt-studio__note">{status.failure.message}</p>
-          <p className="rt-stages__state">
-            <span data-testid="compile-failure-code">{status.failure.code}</span>
-            {status.failure.stage === null ? null : ` · ${status.failure.stage}`}
-          </p>
-          <p className="rt-studio__note" data-testid="compile-last-good">
-            {status.last_good_version_id === null
-              ? "No earlier version has been activated, so nothing was replaced. Your brief and approvals are unchanged."
-              : (
-                <>
-                  Your current version is untouched and still plays · version{" "}
-                  <span className="rt-record-id">{status.last_good_version_id}</span>
-                </>
+          <div className="rt-studio__note" data-testid="compile-last-good">
+            <p>
+              {status.last_good_version_id === null
+                ? "No earlier version has been activated, so nothing was replaced. Your brief and approvals are unchanged."
+                : "Your current version is untouched and still plays."}
+            </p>
+            <details className="rt-record-details">
+              <summary>Failure details</summary>
+              <p className="rt-stages__code">
+                <span data-testid="compile-failure-code">{status.failure.code}</span>
+                {status.failure.stage === null ? null : ` · ${status.failure.stage}`}
+              </p>
+              {status.last_good_version_id === null ? null : (
+                <p>Current version: <span className="rt-record-id">{status.last_good_version_id}</span></p>
               )}
-          </p>
+            </details>
+          </div>
           <div className="rt-studio__actions">
             <Link className="rt-button" href="/difference">
               Play saved example
@@ -347,7 +350,7 @@ export function CompilePanel({
             playable={active}
             prefix="active"
             heading="Play the current version"
-            note="Every choice and reset here runs in your browser, through the same engine that checked it."
+            note="Play this version as often as you like. Your brief and approvals stay the same."
           />
           <details className="rt-record-details">
             <summary>Build record</summary>
@@ -392,22 +395,39 @@ function StageList({
 }): React.JSX.Element {
   return (
     <div className="rt-stages" aria-live="polite">
-      <p className="rt-stages__state" data-testid="compile-state">
+      <p className="rt-stages__state">
         {BUILD_STATE_TEXT[status.state]}
         {busy && status.next_stage !== null ? ` · ${status.next_stage_label}…` : ""}
-        <span className="rt-stages__code"> · {status.state}</span>
       </p>
-      <ul className="rt-stages__list" data-testid="compile-stages">
+      <ul className="rt-stages__list" aria-label="Build progress">
         {status.stages.map((stage) => (
-          <li key={stage.stage} data-testid={`stage-${stage.stage}`}>
-            <span className="chip">{stage.status}</span> {stage.label}
-            {stage.repaired ? " · repaired once" : ""}
+          <li key={stage.stage}>
+            <span className="chip">
+              {stage.status === "committed"
+                ? "Done"
+                : stage.status === "failed"
+                  ? "Stopped"
+                  : busy && status.next_stage === stage.stage
+                    ? "In progress"
+                    : "Waiting"}
+            </span>{" "}
+            {stage.label}
           </li>
         ))}
       </ul>
-      <p className="rt-studio__note" data-testid="compile-model-calls">
-        Model calls so far: {status.model_calls}
-      </p>
+      <details className="rt-record-details" data-testid="compile-state">
+        <summary>Build details</summary>
+        <p className="rt-stages__code">Stored state: {status.state}</p>
+        <ul data-testid="compile-stages">
+          {status.stages.map((stage) => (
+            <li key={stage.stage} data-testid={`stage-${stage.stage}`}>
+              {stage.label}: {stage.status}
+              {stage.repaired ? " · repaired once" : ""}
+            </li>
+          ))}
+        </ul>
+        <p data-testid="compile-model-calls">Model calls so far: {status.model_calls}</p>
+      </details>
     </div>
   );
 }
@@ -620,7 +640,7 @@ function ReviewBlock({
         playable={playable}
         prefix="pending"
         heading="Play this version"
-        note="It runs here, through the same engine that checked it. Playing it changes nothing."
+        note="Try every choice before you decide. This version is still awaiting your review."
         sectionRef={candidateRef}
       />
 

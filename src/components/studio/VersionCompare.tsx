@@ -119,7 +119,7 @@ export function VersionCompare({ current, previous }: Props): React.JSX.Element 
           <div className="rt-versions__prefix" data-testid="replay-prefix">
             <p className="rt-label rt-versions__prefix-head">
               {mine ? "Your choices" : "The recorded difference"}
-              {mine ? ", in both versions" : ", in both versions · the engine recorded this point"}
+              {", in both versions"}
             </p>
             <p className="rt-versions__prefix-labels">{comparison.prefixLabels.join(" → ")}</p>
             <details className="rt-record-details rt-versions__ids">
@@ -199,8 +199,7 @@ export function VersionCompare({ current, previous }: Props): React.JSX.Element 
           {side === "current"
             ? "Your choices here are replayed in the previous version above."
             : "Playing the previous version changes nothing; your comparison keeps this version's choices."}{" "}
-          A revision starts a new run. No flag from an earlier playthrough is carried into a
-          changed version.
+          Each version starts a fresh playthrough.
         </p>
         <div className="rt-player rt-versions__player">
           <ScenePlayer
@@ -212,8 +211,7 @@ export function VersionCompare({ current, previous }: Props): React.JSX.Element 
         </div>
         <p className="rt-studio__note" data-testid="compare-offline-note">
           {availableActions(shown.scene, initialState(shown.scene)).length} choices are
-          open at the start. Everything on this screen is computed in your browser
-          by the same engine that validated both versions.
+          open at the start. Play either version to try its choices.
         </p>
         <details className="rt-record-details">
           <summary>Version record</summary>

@@ -109,7 +109,7 @@ export function deleteJson<T>(path: string): Promise<RequestResult<T>> {
 
 /**
  * The inline failure line used beside a step, where a whole panel would be
- * too much. It is still a finished state: a code, a sentence, and a request id.
+ * too much. Lead with the sentence; keep the code and request id in its record.
  */
 export function InlineFailure({
   failure,
@@ -119,12 +119,13 @@ export function InlineFailure({
   testId?: string;
 }): React.JSX.Element {
   return (
-    <p className="rt-failure-line" role="alert" data-testid={testId ?? "inline-failure"}>
-      {failure.message}{" "}
-      <span className="rt-failure__meta">
-        ({failure.code} · request {failure.request_id})
-      </span>
-    </p>
+    <div className="rt-failure-line" role="alert" data-testid={testId ?? "inline-failure"}>
+      <p>{failure.message}</p>
+      <details className="rt-record-details">
+        <summary>Request details</summary>
+        <p className="rt-failure__meta">{failure.code} · request {failure.request_id}</p>
+      </details>
+    </div>
   );
 }
 
@@ -140,12 +141,19 @@ export function ErrorPanel({
   return (
     <div className="rt-failure" role="alert" data-testid="error-panel">
       <p className="rt-failure__heading">{heading}</p>
-      <p className="rt-failure__message">{failure.message}</p>
-      <p className="rt-failure__meta">
-        <span data-testid="error-code">{failure.code}</span>
-        {" · request "}
-        <span data-testid="error-request-id">{failure.request_id}</span>
+      <p className="rt-failure__message">
+        {failure.code === "PERSISTENCE_UNAVAILABLE"
+          ? "Saving is temporarily unavailable. You can still play the saved example."
+          : failure.message}
       </p>
+      <details className="rt-record-details">
+        <summary>Request details</summary>
+        <p className="rt-failure__meta">
+          <span data-testid="error-code">{failure.code}</span>
+          {" · request "}
+          <span data-testid="error-request-id">{failure.request_id}</span>
+        </p>
+      </details>
       <div className="rt-studio__actions">
         {failure.retryable && onRetry !== undefined && (
           <button className="rt-button" type="button" onClick={onRetry}>
@@ -161,8 +169,7 @@ export function ErrorPanel({
         </Link>
       </div>
       <p className="rt-studio__note">
-        The saved example was generated from a real build and ships with the app. It plays
-        without saving, loading, or generating anything.
+        The saved example was generated from a real build. It is ready to play.
       </p>
     </div>
   );

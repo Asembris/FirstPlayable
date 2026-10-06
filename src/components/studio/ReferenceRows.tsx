@@ -156,7 +156,7 @@ export function ReferenceRows({
 
       {retrieving && (
         <p className="rt-studio__note" aria-live="polite" data-testid="finding-references">
-          Finding references. Two requests: one for movies, one for videogames.
+          Finding films and video games related to your artist…
         </p>
       )}
 
@@ -229,8 +229,7 @@ export function ReferenceRows({
               Re-read references
             </button>
             <p className="rt-studio__note">
-              Re-reading uses the stored capture. It makes no new request unless
-              the capture has expired.
+              Re-reading shows the saved references while they are still available.
             </p>
           </div>
         </>

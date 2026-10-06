@@ -369,6 +369,14 @@
   margin-top: 10px;
 }
 
+.rt-failure-line > p {
+  margin: 0;
+}
+
+.rt-failure .rt-record-details {
+  margin-top: 4px;
+}
+
 .rt-failure-line {
   margin: 14px 0 0;
   padding-left: 12px;

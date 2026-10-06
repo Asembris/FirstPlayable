@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { installPhase4Api, PROJECT_ID } from "./support/phase4-api";
 
 for (const width of [1280, 1100, 1024, 768, 640]) {
   test(`polish: Play and Compare remain clickable and aligned at ${width}px`, async ({ page }) => {
@@ -24,4 +25,28 @@ test("polish: an expanded causal record stays on paper below the scene", async (
   await page.getByTestId("rt-note").locator(".rt-note__more > summary").click();
   await page.getByTestId("rt-note").locator(".rt-note__more").scrollIntoViewIfNeeded();
   expect(await page.locator("body").evaluate(el => getComputedStyle(el).backgroundColor)).toBe("rgb(244, 244, 240)");
+});
+
+test("polish: build progress reads naturally and its diagnostics remain available", async ({ page }) => {
+  await installPhase4Api(page);
+  await page.goto(`/studio/${PROJECT_ID}`);
+  await page.getByTestId("compile-start").click();
+  await expect(page.getByTestId("pending-review")).toBeVisible();
+  const panel = page.getByTestId("compile-panel");
+  await expect(panel.getByRole("list", { name: "Build progress" })).toContainText("Done");
+  await expect(page.getByTestId("compile-model-calls")).toBeHidden();
+  expect(await panel.innerText()).not.toMatch(/REVIEW_PLAYABLE|Model calls|committed/);
+  await panel.getByText("Build details", { exact: true }).click();
+  await expect(page.getByTestId("compile-model-calls")).toBeVisible();
+  await expect(page.getByTestId("compile-state")).toContainText("REVIEW_PLAYABLE");
+});
+
+test("polish: an unavailable studio leads with recovery and keeps request details secondary", async ({ page }) => {
+  await page.goto("/studio");
+  await expect(page.getByTestId("error-panel")).toBeVisible();
+  await expect(page.getByTestId("error-code")).toBeHidden();
+  await expect(page.getByTestId("error-example-link")).toBeVisible();
+  await page.getByText("Request details", { exact: true }).click();
+  await expect(page.getByTestId("error-code")).toHaveText("PERSISTENCE_UNAVAILABLE");
+  await expect(page.getByTestId("error-request-id")).toBeVisible();
 });
