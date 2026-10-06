@@ -125,7 +125,7 @@ test.describe("Phase 6 · canonical Play", () => {
     await openPlay(page);
     await expect(page.getByTestId("rt-strip")).toContainText(scene.world.room.name);
     await expect(page.getByTestId("rt-strip")).toContainText(scene.world.room.description);
-    await expect(page.getByTestId("rt-cast")).toContainText(scene.world.characters[0].name);
+    await expect(page.getByTestId("rt-cast")).toContainText(scene.world.characters[0]!.name);
     await expect(page.getByTestId("rt-cast")).toContainText(scene.world.object.name);
     await expect(page.getByTestId("rt-cast")).toContainText(scene.world.player_role);
 
