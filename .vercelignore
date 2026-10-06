@@ -35,3 +35,6 @@ probes/out/
 # its env files at any depth.
 supabase/.branches/
 supabase/.temp/
+
+# Local design handoff and inspection material are not deployment inputs.
+phase6-handoff/

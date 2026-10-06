@@ -1,0 +1,172 @@
+/*
+ * Phase 6 · Rehearsal Table · choosing the artist.
+ *
+ * Every artist Qloo returned is a catalogue slip: mono, boxed, the only boxed
+ * material, because it is a fact retrieved from elsewhere. Choosing one is the
+ * creator's decision, so the selected slip takes an ink edge and the
+ * confirmation reads in ink. Nothing is preselected, ranked, or highlighted
+ * as a best match, and nothing here wears the revision colour.
+ */
+
+.rt-artist__confirmed {
+  margin-top: 30px;
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  column-gap: 40px;
+  row-gap: 18px;
+  align-items: start;
+}
+
+.rt-artist__decision {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.rt-artist__form {
+  margin-top: 30px;
+  max-width: 760px;
+}
+
+.rt-artist__form .rt-field {
+  margin-top: 0;
+}
+
+.rt-artist__row {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+}
+
+.rt-artist__row .rt-field__input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.rt-artist__row .rt-button {
+  flex: none;
+}
+
+.rt-artist__hint {
+  margin-top: 10px;
+}
+
+.rt-artist__empty {
+  margin-top: 18px;
+}
+
+.rt-artist__results {
+  margin-top: 30px;
+}
+
+.rt-artist__count {
+  margin: 0;
+  padding-bottom: 9px;
+  border-bottom: 1.5px solid var(--rt-ink);
+  color: var(--rt-ink);
+}
+
+.rt-artist__list {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.rt-artist__item {
+  min-width: 0;
+}
+
+.rt-artist__choice {
+  position: relative;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  column-gap: 12px;
+  align-items: start;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 14px 16px;
+  border: 1px solid var(--rt-slip-edge);
+  border-radius: var(--rt-radius);
+  background: var(--rt-sheet);
+  cursor: pointer;
+}
+
+.rt-artist__choice:hover {
+  border-color: var(--rt-pencil);
+}
+
+.rt-artist__choice[data-selected="true"] {
+  border-color: var(--rt-ink);
+  box-shadow: inset 0 0 0 0.5px var(--rt-ink);
+}
+
+.rt-artist__choice input {
+  width: 16px;
+  height: 16px;
+  margin: 3px 0 0;
+  accent-color: var(--rt-ink);
+}
+
+.rt-artist__choice:has(input:focus-visible) {
+  outline: 1.5px solid var(--rt-ink);
+  outline-offset: 2px;
+}
+
+.rt-artist__facts {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  font: 400 11.5px/1.5 var(--rt-font-fact);
+  color: var(--rt-ink-2);
+}
+
+.rt-artist__name {
+  font: 500 19px/1.15 var(--rt-font-fact);
+  letter-spacing: -0.01em;
+  color: var(--rt-ink);
+  overflow-wrap: anywhere;
+}
+
+.rt-artist__meta {
+  color: var(--rt-pencil);
+}
+
+.rt-artist__description {
+  color: var(--rt-ink-2);
+}
+
+.rt-artist__hints {
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--rt-rule);
+}
+
+.rt-artist__warning {
+  margin-top: 14px;
+}
+
+@media (max-width: 1079.98px) {
+  .rt-artist__confirmed {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 639.98px) {
+  .rt-artist__row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .rt-artist__row .rt-button {
+    justify-content: center;
+  }
+
+  .rt-artist__list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

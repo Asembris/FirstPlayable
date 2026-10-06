@@ -30,8 +30,10 @@
  * the same choices locally, and publish a version-pinned read-only link or
  * download a self-contained offline playable.
  *
- * What it deliberately does not render: the phase 6 visual system. This shell is
- * functional and plain on purpose.
+ * Phase 6 sets all of it on the Rehearsal Table desk: the brief as the scene
+ * page's world strip, title, and cast; a step line that says where the
+ * project stands in the creator's terms; and the record ids kept in a
+ * disclosure rather than in the heading.
  */
 
 import Link from "next/link";
@@ -47,6 +49,7 @@ import { ReferenceRows } from "./ReferenceRows";
 import { RevisionPanel } from "./RevisionPanel";
 import { VersionCompare } from "./VersionCompare";
 import { ErrorPanel, getJson, type RequestFailure } from "./shared";
+import { DeskMessage, StudioDesk } from "./StudioDesk";
 
 type Loaded = {
   project: ProjectView;
@@ -69,6 +72,51 @@ type State =
 /** 401 and 404 are shown identically, so neither reveals that an id exists. */
 const NOT_FOR_THIS_BROWSER = new Set(["SESSION_REQUIRED", "NOT_FOUND"]);
 
+type Step = { href: string; label: string; status: string; done: boolean };
+
+/** Where the project stands, in the creator's words rather than the workflow's. */
+function stepsOf(
+  project: ProjectView,
+  playable: PlayableView | null,
+  publications: readonly PublicationSummary[],
+): Step[] {
+  const approved = project.approvals.length;
+  const live = publications.filter((publication) => publication.revoked_at === null).length;
+  return [
+    { href: "#brief", label: "Brief", status: "saved", done: true },
+    {
+      href: "#artist",
+      label: "Artist",
+      status: project.anchor === null ? "not chosen" : project.anchor.name,
+      done: project.anchor !== null,
+    },
+    {
+      href: "#influences",
+      label: "Influences",
+      status: approved === 0 ? "none approved" : `${approved} approved`,
+      done: approved > 0,
+    },
+    {
+      href: "#build",
+      label: "Build",
+      status:
+        playable?.state === "pending"
+          ? "awaiting review"
+          : project.active_version_id !== null
+            ? "current version"
+            : "not built",
+      done: project.active_version_id !== null,
+    },
+    {
+      // Sharing opens once a version is current; until then the way there is the build.
+      href: project.active_version_id === null ? "#build" : "#share",
+      label: "Share",
+      status: live === 0 ? "private" : `${live} live link${live === 1 ? "" : "s"}`,
+      done: live > 0,
+    },
+  ];
+}
+
 export function ProjectClient({ projectId }: { projectId: string }): React.JSX.Element {
   const [state, setState] = useState<State>({ status: "loading" });
 
@@ -90,97 +138,139 @@ export function ProjectClient({ projectId }: { projectId: string }): React.JSX.E
 
   if (state.status === "loading") {
     return (
-      <main className="studio">
-        <p className="studio__note" aria-live="polite">
+      <StudioDesk crumb="Your scene">
+        <p className="rt-studio__note rt-desk__loading" aria-live="polite">
           Loading this project…
         </p>
-      </main>
+      </StudioDesk>
     );
   }
 
   if (state.status === "unavailable") {
     return (
-      <main className="studio">
-        <h1 className="cover__title">This project is not available here</h1>
-        <p className="cover__lede" data-testid="project-unavailable">
-          Editing access to a FirstPlayable project lives in the browser that
-          created it. There is no account and no recovery.
-        </p>
-        <div className="studio__actions">
-          <Link className="button button--primary" href="/studio">
-            Create your own scene
-          </Link>
-          <Link className="button" href="/example">
-            Play saved example
-          </Link>
-        </div>
-      </main>
+      <StudioDesk crumb="Your scene">
+        <DeskMessage title="This project is not available here">
+          <p className="rt-studio__lede" data-testid="project-unavailable">
+            Editing access to a FirstPlayable project lives in the browser that
+            created it. There is no account and no recovery.
+          </p>
+          <div className="rt-studio__actions">
+            <Link className="rt-button rt-button--primary" href="/studio">
+              Create your own scene
+            </Link>
+            <Link className="rt-button" href="/difference">
+              Play saved example
+            </Link>
+          </div>
+        </DeskMessage>
+      </StudioDesk>
     );
   }
 
   if (state.status === "failed") {
     return (
-      <main className="studio">
-        <h1 className="cover__title">This project could not be loaded</h1>
-        <ErrorPanel
-          heading="Saving and loading are unavailable"
-          failure={state.failure}
-          onRetry={() => void load()}
-        />
-      </main>
+      <StudioDesk crumb="Your scene">
+        <DeskMessage title="This project could not be loaded">
+          <ErrorPanel
+            heading="Saving and loading are unavailable"
+            failure={state.failure}
+            onRetry={() => void load()}
+          />
+        </DeskMessage>
+      </StudioDesk>
     );
   }
 
   const { project, references, playable, versions, publications } = state.data;
   const previous = state.data.previous_playable ?? null;
+  // Which builds exist, so an approval can say truthfully whether any build
+  // carries it yet. Approving alone never changes a scene.
+  const builds = {
+    pending: playable?.state === "pending" ? playable.scene : null,
+    active:
+      playable?.state === "active"
+        ? playable.scene
+        : previous?.state === "active"
+          ? previous.scene
+          : null,
+  };
+  const { brief } = project;
+  const steps = stepsOf(project, playable ?? null, publications ?? []);
   return (
-    <main className="studio">
-      <header className="studio__header">
-        <p className="cover__eyebrow">Persisted project · revise, compare, share</p>
-        <h1 className="cover__title" data-testid="project-title">
+    <StudioDesk crumb={project.title}>
+      <header className="rt-desk__head rt-project" id="brief">
+        <p className="rt-strip rt-project__strip">
+          <span className="rt-label rt-strip__room" data-testid="project-room">
+            {brief.room.name}
+          </span>
+          <span className="rt-strip__desc">{brief.room.description}</span>
+        </p>
+        <h1 className="rt-desk__title rt-project__title" data-testid="project-title">
           {project.title}
         </h1>
-        <p className="studio__hint">
-          Project <span data-testid="project-id">{project.id}</span> · revision{" "}
-          <span data-testid="project-revision">{project.revision}</span> ·{" "}
-          <span data-testid="project-state">{project.workflow_state}</span>
-        </p>
+
+        <div className="rt-project__brief">
+          <section aria-labelledby="premise-heading">
+            <h2 className="rt-label rt-project__label" id="premise-heading">
+              Premise · your brief
+            </h2>
+            <p className="rt-project__premise" data-testid="project-premise">
+              {brief.premise}
+            </p>
+          </section>
+
+          <aside className="rt-project__cast" aria-labelledby="fixed-heading">
+            <h2 className="rt-label rt-project__label" id="fixed-heading">
+              In this scene · kept fixed
+            </h2>
+            <dl className="rt-cast__list">
+              <div>
+                <dt data-testid="project-character">{brief.character.name}</dt>
+                <dd>{brief.character.role}</dd>
+              </div>
+              <div>
+                <dt data-testid="project-object">{brief.object.name}</dt>
+                <dd>{brief.object.description}</dd>
+              </div>
+              <div>
+                <dt>You</dt>
+                <dd data-testid="project-role">{brief.player_role}</dd>
+              </div>
+              <div>
+                <dt>Tone</dt>
+                <dd>{brief.tone}</dd>
+              </div>
+            </dl>
+          </aside>
+        </div>
+
+        <nav className="rt-steps" aria-label="Where this scene stands">
+          <ol className="rt-steps__list">
+            {steps.map((step, index) => (
+              <li key={step.label} className="rt-steps__item" data-done={step.done}>
+                <a className="rt-steps__link" href={step.href}>
+                  <span className="rt-steps__num" aria-hidden="true">
+                    {step.done ? "✓" : String(index + 1).padStart(2, "0")}
+                  </span>
+                  <span className="rt-steps__label">{step.label}</span>
+                  <span className="rt-steps__status">{step.status}</span>
+                </a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+
+        <details className="rt-record-details rt-project__record">
+          <summary>Project record</summary>
+          <p>
+            Project <span className="rt-record-id" data-testid="project-id">{project.id}</span> ·
+            revision <span data-testid="project-revision">{project.revision}</span> · state{" "}
+            <span className="rt-record-id" data-testid="project-state">
+              {project.workflow_state}
+            </span>
+          </p>
+        </details>
       </header>
-
-      <section className="panel">
-        <h2 className="panel__heading">Premise</h2>
-        <p className="studio__prose" data-testid="project-premise">
-          {project.brief.premise}
-        </p>
-      </section>
-
-      <section className="panel">
-        <h2 className="panel__heading">Keep these fixed</h2>
-        <ul className="panel__list">
-          <li>
-            <span className="chip">Room</span>{" "}
-            <span data-testid="project-room">{project.brief.room.name}</span> —{" "}
-            {project.brief.room.description}
-          </li>
-          <li>
-            <span className="chip">You</span>{" "}
-            <span data-testid="project-role">{project.brief.player_role}</span>
-          </li>
-          <li>
-            <span className="chip">Character</span>{" "}
-            <span data-testid="project-character">{project.brief.character.name}</span> —{" "}
-            {project.brief.character.role}
-          </li>
-          <li>
-            <span className="chip">Object</span>{" "}
-            <span data-testid="project-object">{project.brief.object.name}</span> —{" "}
-            {project.brief.object.description}
-          </li>
-          <li>
-            <span className="chip">Tone</span> {project.brief.tone}
-          </li>
-        </ul>
-      </section>
 
       <AnchorPanel
         projectId={project.id}
@@ -193,12 +283,14 @@ export function ProjectClient({ projectId }: { projectId: string }): React.JSX.E
         projectId={project.id}
         project={project}
         references={references}
+        builds={builds}
         onChanged={() => void load()}
       />
 
       <ApprovedInfluences
         projectId={project.id}
         project={project}
+        builds={builds}
         onChanged={() => void load()}
       />
 
@@ -214,6 +306,7 @@ export function ProjectClient({ projectId }: { projectId: string }): React.JSX.E
         projectId={project.id}
         project={project}
         playable={playable ?? null}
+        previous={previous}
         onChanged={() => void load()}
       />
 
@@ -230,14 +323,14 @@ export function ProjectClient({ projectId }: { projectId: string }): React.JSX.E
         onChanged={() => void load()}
       />
 
-      <div className="studio__actions">
-        <Link className="button" href="/studio">
+      <div className="rt-studio__actions rt-desk__foot">
+        <Link className="rt-button" href="/studio">
           Start another brief
         </Link>
-        <Link className="button" href="/example">
+        <Link className="rt-button" href="/difference">
           Play saved example
         </Link>
       </div>
-    </main>
+    </StudioDesk>
   );
 }

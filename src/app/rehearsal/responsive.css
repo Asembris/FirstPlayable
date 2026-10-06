@@ -1,0 +1,357 @@
+/*
+ * Phase 6 · Rehearsal Table · responsive rules for the scene page.
+ *
+ *   ≥ 1280      full composition (tokens.css sets the 1440 and 1280 columns)
+ *   1080–1279   margin 280
+ *   < 1080      the margin (note, cast) moves below the rows
+ *   < 640       one column: changed rows stack WITHOUT / WITH inside one action
+ *               row, the note folds to a one-line summary that opens a bottom
+ *               sheet, and the version buttons are pinned to the bottom
+ *
+ * Never shrink the side-by-side split, never require horizontal pan or zoom,
+ * and never nest a scroll region inside the page.
+ */
+
+/* A page that ends in the margin note still ends on paper. */
+body:has(.rt) {
+  background: #f4f4f0;
+}
+
+/* Parts that exist for one width only. */
+.rt-seg--pinned,
+.rt-why,
+.rt-row__added {
+  display: none;
+}
+
+/* ------------------------------------------------------------ bottom sheet */
+
+.rt-note.rt-note--sheet {
+  position: static;
+  opacity: 1;
+  visibility: visible;
+}
+
+.rt-sheet {
+  position: fixed;
+  inset: auto 0 0 0;
+  margin: 0;
+  width: 100%;
+  max-width: 100%;
+  max-height: 85dvh;
+  box-sizing: border-box;
+  padding: 0 var(--rt-gutter) 28px;
+  border: 0;
+  border-top: 1.5px solid var(--rt-rev-ink);
+  background: var(--rt-paper);
+  color: var(--rt-ink);
+  overflow-y: auto;
+}
+
+.rt-sheet::backdrop {
+  background: rgba(20, 21, 24, 0.32);
+}
+
+.rt-sheet__bar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 0 8px;
+  background: var(--rt-paper);
+}
+
+/* ------------------------------------------------------------ < 1080 */
+
+@media (max-width: 1079.98px) {
+  .rt-note:not(.rt-note--sheet) {
+    position: static;
+    margin-top: 48px;
+  }
+
+  .rt-scene[data-view="play"][data-note="closed"] .rt-note:not(.rt-note--sheet) {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------------------ < 640 */
+
+@media (max-width: 639.98px) {
+  /* Keyboard focus and anchor navigation clear both pinned controls. */
+  html:has(.rt-scene) {
+    scroll-padding-top: 72px;
+    scroll-padding-bottom: 160px;
+  }
+
+  /* Band: each mode at its natural height; the inactive one is gone. */
+  .rt-band__play,
+  .rt-band__cmp {
+    position: static;
+  }
+
+  .rt-band__play {
+    overflow: visible;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .rt-scene[data-view="compare"] .rt-band__play,
+  .rt-scene[data-view="play"] .rt-band__cmp {
+    display: none;
+  }
+
+  /* Keep long speaker cues above the script, as in the shared player. */
+  .rt-script__line {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 3px;
+  }
+
+  .rt-script__cue {
+    font-size: 9.5px;
+  }
+
+  .rt-script__text {
+    font-size: 18px;
+  }
+
+  .rt-script__line--choice .rt-script__text {
+    font-size: 13px;
+  }
+
+  .rt-cmp__prefix {
+    font-size: 15px;
+  }
+
+  .rt-cmp__headline {
+    margin-top: 4px;
+    font-size: 32px;
+  }
+
+  .rt-cmp__count {
+    font-size: 13px;
+  }
+
+  /* Header rule: "What do you do?" in Play, the bare rule in Compare. */
+  .rt-head__play {
+    position: static;
+    padding-bottom: 8px;
+    font-size: 10px;
+  }
+
+  .rt-head__cmp,
+  .rt-scene[data-view="compare"] .rt-head__play {
+    display: none;
+  }
+
+  .rt-scene[data-view="compare"] .rt-head {
+    min-height: 0;
+    margin-top: 14px;
+  }
+
+  /* Rows: full-bleed, at least 52px, the whole row the hit target. */
+  .rt-rows {
+    margin: 0 calc(-1 * var(--rt-gutter));
+  }
+
+  .rt-row {
+    display: block;
+    min-height: var(--rt-row-mobile);
+    padding: 13px var(--rt-gutter) 12px;
+  }
+
+  .rt-row__single {
+    padding: 0;
+    gap: 3px;
+  }
+
+  .rt-row .rt-action-label {
+    font-size: 19px;
+  }
+
+  .rt-row .rt-requirement {
+    font-size: 12px;
+  }
+
+  .rt-row__num {
+    display: none;
+  }
+
+  .rt-mark {
+    left: 2px;
+    top: 8px;
+    width: 24px;
+    height: 32px;
+    font-size: 26px;
+  }
+
+  .rt-scene[data-view="play"] .rt-row__split {
+    display: none;
+  }
+
+  /* Compare: a changed row keeps one label, then a WITHOUT line and a WITH line. */
+  .rt-scene[data-view="compare"] .rt-row:not([data-kind="unchanged"]):not([data-kind="none"]) .rt-row__single {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .rt-scene[data-view="compare"] .rt-row:not([data-kind="unchanged"]) .rt-row__label {
+    color: var(--rt-ink);
+  }
+
+  .rt-scene[data-view="compare"] .rt-row__reason {
+    display: none;
+  }
+
+  .rt-row__split {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 6px;
+  }
+
+  .rt-cell,
+  .rt-cell--with {
+    padding: 0;
+    border: 0;
+  }
+
+  .rt-cell--with {
+    padding: 4px 6px;
+    margin: 0 -6px;
+  }
+
+  .rt-cell__body {
+    display: grid;
+    grid-template-columns: 70px minmax(0, 1fr);
+    gap: 8px;
+    align-items: baseline;
+  }
+
+  .rt-cell__tag {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+    font: 500 9.5px/1.3 var(--rt-font-fact);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--rt-pencil);
+  }
+
+  .rt-cell--with .rt-cell__tag {
+    color: var(--rt-rev-deep);
+  }
+
+  .rt-cell__label {
+    display: none;
+  }
+
+  /* An added row: stock across the full row, and one line instead of two. */
+  .rt-scene[data-view="compare"] .rt-row[data-kind="added"] {
+    background: var(--rt-rev-stock);
+  }
+
+  .rt-scene[data-view="compare"] .rt-row[data-kind="added"] .rt-row__split {
+    display: none;
+  }
+
+  .rt-scene[data-view="compare"] .rt-row[data-kind="added"] .rt-row__added {
+    display: block;
+    color: var(--rt-rev-deep);
+  }
+
+  /* The note folds into a one-line summary that opens the bottom sheet. */
+  .rt-note:not(.rt-note--sheet) {
+    display: none;
+  }
+
+  .rt-why {
+    display: block;
+    margin-top: 14px;
+  }
+
+  .rt-scene[data-view="play"] .rt-why {
+    display: none;
+  }
+
+  .rt-why__button {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+    min-height: 44px;
+    margin: 0;
+    padding: 6px 0;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .rt-why__title {
+    font-size: 9.5px;
+    color: var(--rt-rev-ink);
+  }
+
+  .rt-why__text {
+    font: 400 12.5px/1.45 var(--rt-font-ui);
+    color: var(--rt-ink-2);
+    text-decoration: underline dotted var(--rt-pencil);
+    text-underline-offset: 3px;
+  }
+
+  /* Footer: pinned to the bottom, with the two version buttons. */
+  .rt-foot {
+    position: sticky;
+    bottom: 0;
+    z-index: 4;
+    margin: 0 calc(-1 * var(--rt-gutter));
+    padding: 12px var(--rt-gutter) calc(14px + env(safe-area-inset-bottom));
+    background: var(--rt-paper);
+    border-top: 1px solid var(--rt-rule);
+  }
+
+  .rt-foot__play {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+
+  .rt-foot__play .rt-foot__note {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    font-size: 12px;
+  }
+
+  .rt-seg--pinned {
+    display: flex;
+  }
+
+  .rt-seg--pinned .rt-seg__option {
+    flex: 1;
+    min-height: 44px;
+    font-size: 14px;
+  }
+
+  .rt-foot__play .rt-button {
+    min-height: 46px;
+  }
+
+  .rt-foot__compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .rt-foot__compare .rt-button {
+    min-height: 46px;
+    font-size: 14px;
+  }
+
+  .rt-foot__compare .rt-foot__note {
+    display: none;
+  }
+}

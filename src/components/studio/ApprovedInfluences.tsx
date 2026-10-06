@@ -1,30 +1,32 @@
 "use client";
 
 /**
- * The approved-influence chips and the provenance drawer
- * (specification sections 3 and 13).
+ * The approved influences and their provenance drawer, on the Rehearsal Table.
  *
- * Two small chips, Discovery and Commitment. Clicking one opens a contextual
- * drawer, not a separate analytics screen. The drawer shows exactly the three
- * layers that exist in phase 3:
+ * One chip per approved slot, each with where it stands: "Not built yet",
+ * "Built · awaiting your review", or "In the current version". Opening a chip
+ * shows exactly three layers, each in its own material:
  *
- *   * **Qloo retrieved** — the reference, one supported context sentence, the
- *     original artist, and the capture date. The original response rank and the
- *     evidence field paths sit behind a second disclosure, as the specification
- *     asks.
- *   * **FirstPlayable proposed** — the abstraction and the interaction,
- *     explicitly labelled a FirstPlayable interpretation.
- *   * **Creator approved** — the exact frozen wording, with "Edited by you"
- *     when it differs from what was proposed.
+ *   * **Qloo retrieved** — the catalogue slip: the reference, one supported
+ *     context sentence, the artist, and the capture date. The original
+ *     response rank and the evidence field paths sit behind a second
+ *     disclosure.
+ *   * **FirstPlayable proposed** — the suggestion, in pencil, labelled a
+ *     FirstPlayable interpretation.
+ *   * **Creator approved** — the exact frozen wording in ink, marked "Edited
+ *     by you" when it differs from what was proposed.
  *
- * There is no fourth line. "Scene changed" belongs to phase 4, the server
- * sends no field for it, and this component writes none: a creator is never
- * shown a mechanical consequence that no compiler produced.
+ * There is no fourth line here. "The scene changed" is something only a build
+ * can observe, and it is shown on the review of that build, never on an
+ * approval.
  */
 
 import { useState } from "react";
 import type { AnchorView, ProjectView, ProvenanceView } from "@/domain/project";
 import type { ApprovedInfluence, Slot } from "@/domain/influence";
+import { BUILD_STATUS_LABEL, buildStatusOf } from "@/presentation/review";
+import { EditedMark } from "../rehearsal/CausalNote";
+import type { Builds } from "./ReferenceRows";
 import { InlineFailure, postJson, type RequestFailure } from "./shared";
 
 const SLOT_LABEL: Record<Slot, string> = {
@@ -35,12 +37,14 @@ const SLOT_LABEL: Record<Slot, string> = {
 export type ApprovedInfluencesProps = {
   projectId: string;
   project: ProjectView;
+  builds: Builds;
   onChanged: () => void;
 };
 
 export function ApprovedInfluences({
   projectId,
   project,
+  builds,
   onChanged,
 }: ApprovedInfluencesProps): React.JSX.Element {
   const [open, setOpen] = useState<string | null>(null);
@@ -66,35 +70,46 @@ export function ApprovedInfluences({
   }
 
   return (
-    <section className="panel" aria-labelledby="approved-heading">
-      <h2 className="panel__heading" id="approved-heading">
+    <section className="rt rt-studio rt-approved" aria-labelledby="approved-heading">
+      <p className="rt-label rt-studio__eyebrow">03 · Your decisions</p>
+      <h2 className="rt-studio__title rt-studio__title--small" id="approved-heading">
         Approved influences
       </h2>
 
       {project.approvals.length === 0 ? (
-        <p className="studio__note" data-testid="no-approvals">
+        <p className="rt-studio__lede" data-testid="no-approvals">
           None yet. Retrieved references and proposed interactions are not
           approvals — you approve each one explicitly.
         </p>
       ) : (
         <>
-          <ul className="influence-chips" data-testid="approved-chips">
-            {project.approvals.map((approval) => (
-              <li key={approval.approval_id}>
-                <button
-                  className="chip influence-chip"
-                  type="button"
-                  aria-expanded={open === approval.approval_id}
-                  data-testid={`approved-chip-${approval.slot}`}
-                  onClick={() =>
-                    setOpen(open === approval.approval_id ? null : approval.approval_id)
-                  }
-                >
-                  {SLOT_LABEL[approval.slot]}: {approval.reference_name}
-                  {approval.edited_by_creator ? " · edited" : ""}
-                </button>
-              </li>
-            ))}
+          <ul className="influence-chips rt-approved__list" data-testid="approved-chips">
+            {project.approvals.map((approval) => {
+              const status = buildStatusOf(approval, builds);
+              return (
+                <li key={approval.approval_id} className="rt-approved__item">
+                  <button
+                    className="chip influence-chip"
+                    type="button"
+                    aria-expanded={open === approval.approval_id}
+                    aria-controls={`provenance-${approval.slot}`}
+                    data-testid={`approved-chip-${approval.slot}`}
+                    onClick={() =>
+                      setOpen(open === approval.approval_id ? null : approval.approval_id)
+                    }
+                  >
+                    {SLOT_LABEL[approval.slot]}: {approval.reference_name}
+                    {approval.edited_by_creator ? " · edited" : ""}
+                  </button>
+                  <span
+                    className={`rt-chip${status === "current" ? "" : " rt-chip--dashed"}`}
+                    data-testid={`approved-build-${approval.slot}`}
+                  >
+                    {BUILD_STATUS_LABEL[status]}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
 
           {failure !== null && <InlineFailure failure={failure} testId="approval-failure" />}
@@ -114,9 +129,9 @@ export function ApprovedInfluences({
         </>
       )}
 
-      <p className="studio__hint">
-        One Discovery and one Commitment approval at most. A scene is not
-        generated yet: compilation arrives in phase 4.
+      <p className="rt-studio__note rt-approved__rule">
+        One Discovery and one Commitment approval at most. Approving changes no scene:
+        build below when you are ready, then review what the build did.
       </p>
     </section>
   );
@@ -136,7 +151,11 @@ function ProvenanceDrawer({
   onRemove: () => void;
 }): React.JSX.Element {
   return (
-    <div className="drawer" data-testid={`provenance-${approval.slot}`}>
+    <div
+      className="drawer"
+      id={`provenance-${approval.slot}`}
+      data-testid={`provenance-${approval.slot}`}
+    >
       <ol className="drawer__chain">
         <li className="drawer__layer">
           <p className="drawer__label">Qloo retrieved</p>
@@ -145,22 +164,19 @@ function ProvenanceDrawer({
               The original capture for this approval is no longer readable.
             </p>
           ) : (
-            <>
+            <div className="rt-drawer__slip">
               <p>
                 <strong>{chain.retrieved.reference_name}</strong>
-                {chain.retrieved.year !== null && (
-                  <span className="studio__hint"> ({chain.retrieved.year})</span>
-                )}{" "}
-                <span className="chip">
-                  {chain.retrieved.domain === "movie" ? "Movie" : "Videogame"}
-                </span>
+                {" · "}
+                {chain.retrieved.domain === "movie" ? "movie" : "videogame"}
+                {chain.retrieved.year !== null ? ` · ${chain.retrieved.year}` : ""}
               </p>
               {chain.retrieved.context !== null && (
-                <p className="studio__prose" data-testid={`provenance-context-${approval.slot}`}>
-                  {chain.retrieved.context}
+                <p data-testid={`provenance-context-${approval.slot}`}>
+                  “{chain.retrieved.context}”
                 </p>
               )}
-              <p className="studio__hint">
+              <p>
                 Retrieved for {anchor?.name ?? "the confirmed artist"} on{" "}
                 {chain.retrieved.captured_at.slice(0, 10)}
               </p>
@@ -177,32 +193,30 @@ function ProvenanceDrawer({
                   ))}
                 </ul>
               </details>
-            </>
+            </div>
           )}
         </li>
 
         <li className="drawer__layer">
           <p className="drawer__label">FirstPlayable proposed</p>
-          <p className="studio__prose">{approval.proposed_idea}</p>
+          <p className="rt-suggestion">{approval.proposed_idea}</p>
           <p className="studio__hint">
             {approval.proposed_relevance} — {chain?.proposed.attribution ?? "FirstPlayable interpretation"}.
           </p>
         </li>
 
-        <li className="drawer__layer">
-          <p className="drawer__label">
-            Creator approved
-            {approval.edited_by_creator && (
-              <span className="chip" data-testid={`edited-by-you-${approval.slot}`}>
-                Edited by you
-              </span>
-            )}
-          </p>
-          <p className="studio__prose" data-testid={`approved-text-${approval.slot}`}>
+        <li className="drawer__layer drawer__layer--decision">
+          <p className="drawer__label">Creator approved</p>
+          {approval.edited_by_creator && (
+            <p className="rt-drawer__edited">
+              <EditedMark testId={`edited-by-you-${approval.slot}`} />
+            </p>
+          )}
+          <p className="rt-decision" data-testid={`approved-text-${approval.slot}`}>
             {approval.approved_text}
           </p>
           <p className="studio__hint">
-            Intended effect: {approval.intended_effect} · {SLOT_LABEL[approval.slot]} slot ·
+            What should change in play: {approval.intended_effect} · {SLOT_LABEL[approval.slot]} ·
             approved {approval.approved_at.slice(0, 10)}
           </p>
           {approval.predecessor_id !== null && (
@@ -214,9 +228,9 @@ function ProvenanceDrawer({
         </li>
       </ol>
 
-      <div className="studio__actions">
+      <div className="rt-studio__actions">
         <button
-          className="button"
+          className="rt-button"
           type="button"
           data-testid={`remove-${approval.slot}`}
           disabled={busy}

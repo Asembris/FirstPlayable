@@ -1,14 +1,15 @@
 "use client";
 
 /**
- * The phase 2 studio shell: establish an owner session, submit one frozen
- * brief, and hand off to the project page.
+ * The brief: establish an owner session, submit one frozen brief, and hand off
+ * to the project page.
  *
- * This is deliberately not the phase 6 creative tool. It exists to prove four
- * things end to end on a real deployment: an anonymous owner session is
- * established, a valid brief persists, the project can be revisited by id, and
- * a database failure produces an honest finished state with the saved example
- * still reachable.
+ * It still proves the four Phase 2 things end to end on a real deployment: an
+ * anonymous owner session is established, a valid brief persists, the project
+ * can be revisited by id, and a database failure produces an honest finished
+ * state with the saved example still reachable. Phase 6 sets it on the
+ * Rehearsal Table desk as the first sheet of the prompt book: the creator's
+ * own words in serif ink, the fixed world beside them.
  *
  * Everything it knows about the database arrives through this application's own
  * same-origin API. There is no Supabase client here, no credential, and no
@@ -20,6 +21,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import type { Brief, Tone } from "@/domain/brief";
 import { ErrorPanel, postJson, type RequestFailure } from "./shared";
+import { StudioDesk } from "./StudioDesk";
 
 /**
  * Opaque world identifiers. They are addresses, not display text, so the shell
@@ -135,22 +137,22 @@ export function StudioClient(): React.JSX.Element {
   }
 
   return (
-    <main className="studio">
-      <header className="studio__header">
-        <p className="cover__eyebrow">FirstPlayable · Phase 2 persistent shell</p>
-        <h1 className="cover__title">Create your scene</h1>
-        <p className="cover__lede">
-          This saves one frozen brief against an anonymous owner session. Nothing
-          is generated yet: no references are retrieved and no model is called.
+    <StudioDesk crumb="Create your scene">
+      <header className="rt-desk__head">
+        <p className="rt-label rt-studio__eyebrow">01 · The brief</p>
+        <h1 className="rt-desk__title">Create your scene</h1>
+        <p className="rt-studio__lede">
+          Write one encounter. The room, the other character, and the object stay fixed while
+          you try cultural influences on it. Saving the brief generates nothing yet.
         </p>
       </header>
 
-      <section className="studio__status" aria-live="polite">
-        {session.status === "starting" && <p className="studio__note">Starting a session…</p>}
+      <section className="rt-desk__status" aria-live="polite">
+        {session.status === "starting" && <p className="rt-studio__note">Starting a session…</p>}
         {session.status === "ready" && (
-          <p className="studio__note" data-testid="session-ready">
-            Owner session active. Editing access lives in this browser only —
-            there is no account and no recovery. Clearing cookies loses it.
+          <p className="rt-studio__note" data-testid="session-ready">
+            Editing access lives in this browser only. There is no account and no recovery:
+            clearing cookies loses it.
           </p>
         )}
         {session.status === "failed" && (
@@ -163,124 +165,155 @@ export function StudioClient(): React.JSX.Element {
       </section>
 
       {session.status === "ready" && (
-        <form className="studio__form" onSubmit={submit}>
-          <fieldset className="studio__fieldset" disabled={submitting}>
-            <legend className="panel__heading">The encounter</legend>
+        <form className="rt-brief" onSubmit={submit}>
+          <fieldset className="rt-brief__set" disabled={submitting}>
+            <legend className="rt-label rt-brief__legend">The encounter</legend>
 
-            <label className="studio__label" htmlFor="title">
-              Title <span className="studio__hint">optional</span>
-            </label>
-            <input className="studio__input" id="title" maxLength={60} {...field("title")} />
+            <div className="rt-field">
+              <label className="rt-field__label" htmlFor="title">
+                Title <span className="rt-field__hint">optional</span>
+              </label>
+              <input
+                className="rt-field__input rt-field__input--title"
+                id="title"
+                maxLength={60}
+                {...field("title")}
+              />
+            </div>
 
-            <label className="studio__label" htmlFor="premise">
-              Premise <span className="studio__hint">40–600 characters</span>
-            </label>
-            <textarea
-              className="studio__input studio__input--area"
-              id="premise"
-              rows={4}
-              required
-              {...field("premise")}
-            />
+            <div className="rt-field">
+              <label className="rt-field__label" htmlFor="premise">
+                Premise <span className="rt-field__hint">40–600 characters</span>
+              </label>
+              <textarea
+                className="rt-field__input"
+                id="premise"
+                rows={5}
+                required
+                {...field("premise")}
+              />
+            </div>
 
-            <label className="studio__label" htmlFor="playerRole">
-              Your role
-            </label>
-            <input
-              className="studio__input"
-              id="playerRole"
-              maxLength={60}
-              required
-              {...field("playerRole")}
-            />
+            <div className="rt-field">
+              <label className="rt-field__label" htmlFor="playerRole">
+                Your role
+              </label>
+              <input
+                className="rt-field__input rt-field__input--line"
+                id="playerRole"
+                maxLength={60}
+                required
+                {...field("playerRole")}
+              />
+            </div>
 
-            <label className="studio__label" htmlFor="tone">
-              Tone
-            </label>
-            <select className="studio__input" id="tone" {...field("tone")}>
-              {TONES.map((tone) => (
-                <option key={tone} value={tone}>
-                  {tone}
-                </option>
-              ))}
-            </select>
+            <fieldset className="rt-field rt-brief__tone">
+              <legend className="rt-field__label">Tone</legend>
+              <div className="rt-tones">
+                {TONES.map((tone) => (
+                  <label key={tone} className="rt-tones__option">
+                    <input
+                      type="radio"
+                      name="tone"
+                      value={tone}
+                      checked={form.tone === tone}
+                      onChange={() => setForm((current) => ({ ...current, tone }))}
+                    />
+                    <span>{tone}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
           </fieldset>
 
-          <fieldset className="studio__fieldset" disabled={submitting}>
-            <legend className="panel__heading">Keep these fixed</legend>
+          <fieldset className="rt-brief__set rt-brief__set--fixed" disabled={submitting}>
+            <legend className="rt-label rt-brief__legend">Keep these fixed</legend>
+            <p className="rt-studio__note">
+              Every version of the scene keeps these exactly. An influence changes what you can
+              do, never who is in the room.
+            </p>
 
-            <label className="studio__label" htmlFor="roomName">
-              Room
-            </label>
-            <input
-              className="studio__input"
-              id="roomName"
-              maxLength={120}
-              required
-              {...field("roomName")}
-            />
-            <input
-              className="studio__input"
-              id="roomDescription"
-              aria-label="Room description"
-              maxLength={120}
-              required
-              {...field("roomDescription")}
-            />
+            <div className="rt-field">
+              <label className="rt-field__label" htmlFor="roomName">
+                Room
+              </label>
+              <input
+                className="rt-field__input rt-field__input--line"
+                id="roomName"
+                maxLength={120}
+                required
+                {...field("roomName")}
+              />
+              <input
+                className="rt-field__input rt-field__input--plain"
+                id="roomDescription"
+                aria-label="Room description"
+                maxLength={120}
+                required
+                {...field("roomDescription")}
+              />
+            </div>
 
-            <label className="studio__label" htmlFor="characterName">
-              The other character
-            </label>
-            <input
-              className="studio__input"
-              id="characterName"
-              maxLength={40}
-              required
-              {...field("characterName")}
-            />
-            <input
-              className="studio__input"
-              id="characterRole"
-              aria-label="Character role"
-              maxLength={100}
-              required
-              {...field("characterRole")}
-            />
+            <div className="rt-field">
+              <label className="rt-field__label" htmlFor="characterName">
+                The other character
+              </label>
+              <input
+                className="rt-field__input rt-field__input--line"
+                id="characterName"
+                maxLength={40}
+                required
+                {...field("characterName")}
+              />
+              <input
+                className="rt-field__input rt-field__input--plain"
+                id="characterRole"
+                aria-label="Character role"
+                maxLength={100}
+                required
+                {...field("characterRole")}
+              />
+            </div>
 
-            <label className="studio__label" htmlFor="objectName">
-              The important object
-            </label>
-            <input
-              className="studio__input"
-              id="objectName"
-              maxLength={60}
-              required
-              {...field("objectName")}
-            />
-            <input
-              className="studio__input"
-              id="objectDescription"
-              aria-label="Object description"
-              maxLength={180}
-              required
-              {...field("objectDescription")}
-            />
+            <div className="rt-field">
+              <label className="rt-field__label" htmlFor="objectName">
+                The important object
+              </label>
+              <input
+                className="rt-field__input rt-field__input--line"
+                id="objectName"
+                maxLength={60}
+                required
+                {...field("objectName")}
+              />
+              <input
+                className="rt-field__input rt-field__input--plain"
+                id="objectDescription"
+                aria-label="Object description"
+                maxLength={180}
+                required
+                {...field("objectDescription")}
+              />
+            </div>
           </fieldset>
 
           {failure !== null && (
-            <ErrorPanel heading="This brief was not saved" failure={failure} />
+            <div className="rt-brief__failure">
+              <ErrorPanel heading="This brief was not saved" failure={failure} />
+            </div>
           )}
 
-          <div className="studio__actions">
-            <button className="button button--primary" type="submit" disabled={submitting}>
+          <div className="rt-studio__actions rt-brief__actions">
+            <button className="rt-button rt-button--primary" type="submit" disabled={submitting}>
               {submitting ? "Saving…" : "Save this brief"}
             </button>
-            <Link className="button" href="/example">
+            <Link className="rt-button" href="/difference">
               Play saved example
             </Link>
+            <p className="rt-studio__note">Next, you choose an artist you love.</p>
           </div>
         </form>
       )}
-    </main>
+    </StudioDesk>
   );
 }

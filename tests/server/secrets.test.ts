@@ -77,6 +77,7 @@ describe("nothing secret is tracked", () => {
 
     expect(upload).toContain(".env");
     expect(upload).toContain(".env.*");
+    expect(upload).toContain("phase6-handoff/");
     expect(upload.indexOf("!.env.example")).toBeGreaterThan(upload.indexOf(".env.*"));
     for (const rule of rules(".gitignore")) {
       expect(upload, `.vercelignore must repeat the .gitignore rule ${rule}`).toContain(rule);

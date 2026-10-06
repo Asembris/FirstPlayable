@@ -109,7 +109,7 @@ export function deleteJson<T>(path: string): Promise<RequestResult<T>> {
 
 /**
  * The inline failure line used beside a step, where a whole panel would be
- * too much. It is still a finished state: a code, a sentence, and a request id.
+ * too much. Lead with the sentence; keep the code and request id in its record.
  */
 export function InlineFailure({
   failure,
@@ -119,12 +119,13 @@ export function InlineFailure({
   testId?: string;
 }): React.JSX.Element {
   return (
-    <p className="studio__error-message" role="alert" data-testid={testId ?? "inline-failure"}>
-      {failure.message}{" "}
-      <span className="studio__hint">
-        ({failure.code} · request {failure.request_id})
-      </span>
-    </p>
+    <div className="rt-failure-line" role="alert" data-testid={testId ?? "inline-failure"}>
+      <p>{failure.message}</p>
+      <details className="rt-record-details">
+        <summary>Request details</summary>
+        <p className="rt-failure__meta">{failure.code} · request {failure.request_id}</p>
+      </details>
+    </div>
   );
 }
 
@@ -138,27 +139,37 @@ export function ErrorPanel({
   onRetry?: () => void;
 }): React.JSX.Element {
   return (
-    <div className="studio__error" role="alert" data-testid="error-panel">
-      <p className="studio__error-heading">{heading}</p>
-      <p className="studio__error-message">{failure.message}</p>
-      <p className="studio__error-meta">
-        <span data-testid="error-code">{failure.code}</span>
-        {" · request "}
-        <span data-testid="error-request-id">{failure.request_id}</span>
+    <div className="rt-failure" role="alert" data-testid="error-panel">
+      <p className="rt-failure__heading">{heading}</p>
+      <p className="rt-failure__message">
+        {failure.code === "PERSISTENCE_UNAVAILABLE"
+          ? "Saving is temporarily unavailable. You can still play the saved example."
+          : failure.message}
       </p>
-      <div className="studio__actions">
+      <details className="rt-record-details">
+        <summary>Request details</summary>
+        <p className="rt-failure__meta">
+          <span data-testid="error-code">{failure.code}</span>
+          {" · request "}
+          <span data-testid="error-request-id">{failure.request_id}</span>
+        </p>
+      </details>
+      <div className="rt-studio__actions">
         {failure.retryable && onRetry !== undefined && (
-          <button className="button" type="button" onClick={onRetry}>
+          <button className="rt-button" type="button" onClick={onRetry}>
             Try again
           </button>
         )}
-        <Link className="button button--primary" href="/example" data-testid="error-example-link">
+        <Link
+          className="rt-button rt-button--primary"
+          href="/difference"
+          data-testid="error-example-link"
+        >
           Play saved example
         </Link>
       </div>
-      <p className="studio__hint">
-        The saved example is a static pre-generated asset. It plays without the
-        database and without any model call.
+      <p className="rt-studio__note">
+        The saved example was generated from a real build. It is ready to play.
       </p>
     </div>
   );
