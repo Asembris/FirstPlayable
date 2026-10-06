@@ -15,8 +15,10 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import type { Id } from "../../domain/scene";
 import { CANONICAL_PAIR } from "../../presentation/canonical-pair";
 import {
+  causalSummary,
   compareAt,
   lineNumber,
+  lowerFirst,
   numberWord,
   playRows,
   runChoices,
@@ -39,6 +41,27 @@ const SAVED_LABEL = "Saved example · generated from a real build";
 
 /** The pause before the saved example splits into Compare on first entry. */
 const AUTO_SPLIT_MS = 1100;
+
+/** Below this width the note folds into a one-line summary and a bottom sheet. */
+const MOBILE_QUERY = "(max-width: 639.98px)";
+
+/** P / C switch Play / Compare; W / O switch With / Without. */
+const SHORTCUTS: Readonly<Record<string, "play" | "compare" | "with" | "without">> = {
+  p: "play",
+  c: "compare",
+  w: "with",
+  o: "without",
+};
+
+function typingInto(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  return (
+    target.isContentEditable ||
+    target.tagName === "INPUT" ||
+    target.tagName === "TEXTAREA" ||
+    target.tagName === "SELECT"
+  );
+}
 
 function sceneOf(side: Side) {
   return side === "with" ? pair.withScene : pair.withoutScene;
@@ -176,6 +199,7 @@ export function RehearsalScene(props: RehearsalSceneProps): React.ReactElement {
   const [notice, setNotice] = useState("");
   const uid = useId();
   const tabRefs = useRef<Record<SceneView, HTMLButtonElement | null>>({ play: null, compare: null });
+  const sheetRef = useRef<HTMLDialogElement | null>(null);
   const userSwitch = useRef(false);
 
   const scene = sceneOf(side);
@@ -244,6 +268,16 @@ export function RehearsalScene(props: RehearsalSceneProps): React.ReactElement {
     }
   }, [view]);
 
+  const openSheet = useCallback(() => {
+    const sheet = sheetRef.current;
+    if (sheet !== null && !sheet.open) sheet.showModal();
+  }, []);
+
+  const toggleNote = useCallback(() => {
+    if (window.matchMedia(MOBILE_QUERY).matches) openSheet();
+    else setNoteOpen((open) => !open);
+  }, [openSheet]);
+
   const take = useCallback(
     (id: Id) => {
       const row = rows.find((candidate) => candidate.id === id);
@@ -296,6 +330,26 @@ export function RehearsalScene(props: RehearsalSceneProps): React.ReactElement {
     [comparison.prefix, switchView],
   );
 
+  // Single-key shortcuts, ignored while typing, with a modifier, or under a dialog.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent): void => {
+      if (event.altKey || event.ctrlKey || event.metaKey || event.repeat) return;
+      if (typingInto(event.target) || sheetRef.current?.open === true) return;
+      const command = SHORTCUTS[event.key.toLowerCase()];
+      if (command === undefined) return;
+      if (command === "play" || command === "compare") {
+        switchView(command, true);
+      } else if (view === "play") {
+        switchSide(command);
+      } else {
+        return;
+      }
+      event.preventDefault();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [switchSide, switchView, view]);
+
   const modes = (
     <div className="rt-modes" role="group" aria-label="View">
       {(["play", "compare"] as const).map((candidate) => (
@@ -307,6 +361,7 @@ export function RehearsalScene(props: RehearsalSceneProps): React.ReactElement {
           type="button"
           className="rt-modes__tab"
           aria-pressed={view === candidate}
+          aria-keyshortcuts={candidate === "play" ? "P" : "C"}
           data-testid={`rt-tab-${candidate}`}
           onClick={() => switchView(candidate, true)}
         >
@@ -316,15 +371,17 @@ export function RehearsalScene(props: RehearsalSceneProps): React.ReactElement {
     </div>
   );
 
-  const versions = (
-    <div className="rt-seg" role="group" aria-label="Version" inert={compareView}>
+  /** The With / Without control: in the top bar on desktop, pinned to the bottom on mobile. */
+  const versionControl = (testPrefix: string, className: string) => (
+    <div className={`rt-seg ${className}`} role="group" aria-label="Version" inert={compareView}>
       {(["with", "without"] as const).map((candidate) => (
         <button
           key={candidate}
           type="button"
           className="rt-seg__option"
           aria-pressed={side === candidate}
-          data-testid={`rt-version-${candidate}`}
+          aria-keyshortcuts={candidate === "with" ? "W" : "O"}
+          data-testid={`${testPrefix}-${candidate}`}
           onClick={() => switchSide(candidate)}
         >
           {candidate === "with" ? `With ${pair.influenceName}` : "Without"}
@@ -355,7 +412,7 @@ export function RehearsalScene(props: RehearsalSceneProps): React.ReactElement {
       modes={modes}
       status={
         <>
-          {versions}
+          {versionControl("rt-version", "rt-seg--topbar")}
           <span className="rt-chip" data-testid="rt-saved-chip">
             {SAVED_LABEL}
           </span>
@@ -473,13 +530,13 @@ export function RehearsalScene(props: RehearsalSceneProps): React.ReactElement {
                       tabIndex={playable && markInPlay ? undefined : -1}
                       data-testid={`rt-mark-${row.id}`}
                       onClick={() => {
-                        if (!compareView) setNoteOpen((open) => !open);
+                        if (!compareView) toggleNote();
                       }}
                     >
                       <span aria-hidden="true">*</span>
                     </button>
                   ) : null}
-                  <div className="rt-row__single" aria-hidden={compareView && changed ? true : undefined}>
+                  <div className="rt-row__single">
                     <span id={labelId} className="rt-action-label rt-row__label">
                       {label}
                     </span>
@@ -488,6 +545,11 @@ export function RehearsalScene(props: RehearsalSceneProps): React.ReactElement {
                         {row.play.reason}
                       </span>
                     )}
+                    {kind === "added" && row.compare !== null ? (
+                      <span className="rt-requirement rt-row__added">
+                        Added with {pair.influenceName} · without: {lowerFirst(row.compare.without.note)}
+                      </span>
+                    ) : null}
                   </div>
                   {changed && row.compare !== null ? (
                     <div
@@ -519,6 +581,7 @@ export function RehearsalScene(props: RehearsalSceneProps): React.ReactElement {
       foot={
         <>
           <div className="rt-foot__play" inert={compareView}>
+            {versionControl("rt-version-pinned", "rt-seg--pinned")}
             <button type="button" className="rt-button" data-testid="rt-restart" onClick={restart}>
               {ended ? "Play it again" : "Start over"}
             </button>
@@ -552,11 +615,55 @@ export function RehearsalScene(props: RehearsalSceneProps): React.ReactElement {
         </>
       }
       note={
-        <CausalNote
-          pair={pair}
-          lines={compareView ? changedLines : markedLines}
-          hidden={!noteVisible}
-        />
+        <>
+          <CausalNote
+            pair={pair}
+            lines={compareView ? changedLines : markedLines}
+            hidden={!noteVisible}
+          />
+          <div className="rt-why" inert={!compareView}>
+            <button
+              type="button"
+              className="rt-why__button"
+              aria-haspopup="dialog"
+              data-testid="rt-why-summary"
+              onClick={openSheet}
+            >
+              <span className="rt-label rt-why__title">
+                Why this changed <span aria-hidden="true">↓</span>
+              </span>
+              <span className="rt-why__text">{causalSummary(pair)}</span>
+            </button>
+          </div>
+          <dialog
+            ref={sheetRef}
+            className="rt-sheet"
+            aria-label="Why this changed"
+            data-testid="rt-sheet"
+            onClick={(event) => {
+              // A tap on the backdrop (the dialog itself, not its content) closes it.
+              if (event.target === event.currentTarget) event.currentTarget.close();
+            }}
+          >
+            <div className="rt-sheet__bar">
+              <button
+                type="button"
+                className="rt-button"
+                data-testid="rt-sheet-close"
+                onClick={() => sheetRef.current?.close()}
+              >
+                Close
+              </button>
+            </div>
+            <CausalNote
+              pair={pair}
+              lines={compareView ? changedLines : markedLines}
+              id="rt-note-sheet"
+              testId="rt-note-sheet"
+              variant="sheet"
+            />
+          </dialog>
+        </>
       }
     />
   );

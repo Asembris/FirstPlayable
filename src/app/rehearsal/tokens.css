@@ -112,8 +112,9 @@
   }
 }
 
+/* Selection is not an observed change, so it never borrows the revision stock. */
 .rt ::selection {
-  background: var(--rt-rev-stock);
+  background: var(--rt-rule);
 }
 
 /* Focus ring: 1.5px ink, offset 2. */

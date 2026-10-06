@@ -236,7 +236,7 @@
     visibility 0s linear 0s;
 }
 
-.rt-scene[data-view="play"][data-note="closed"] .rt-note {
+.rt-scene[data-view="play"][data-note="closed"] .rt-note:not(.rt-note--sheet) {
   opacity: 0;
   visibility: hidden;
   transition:

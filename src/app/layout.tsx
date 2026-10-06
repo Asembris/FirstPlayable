@@ -12,6 +12,7 @@ import "./rehearsal/tokens.css";
 import "./rehearsal/scene.css";
 import "./rehearsal/table.css";
 import "./rehearsal/compare.css";
+import "./rehearsal/responsive.css";
 import "./rehearsal/landing.css";
 
 export const metadata: Metadata = {

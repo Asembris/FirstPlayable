@@ -32,6 +32,8 @@ export type CausalNoteProps = {
   readonly id?: string;
   readonly hidden?: boolean;
   readonly testId?: string;
+  /** "sheet": the mobile bottom-sheet copy, always shown in full. */
+  readonly variant?: "margin" | "sheet";
 };
 
 export function CausalNote(props: CausalNoteProps): React.ReactElement {
@@ -44,7 +46,7 @@ export function CausalNote(props: CausalNoteProps): React.ReactElement {
   return (
     <section
       id={props.id ?? "rt-note"}
-      className="rt-note"
+      className={props.variant === "sheet" ? "rt-note rt-note--sheet" : "rt-note"}
       aria-labelledby={headingId}
       data-testid={props.testId ?? "rt-note"}
       aria-hidden={props.hidden === true ? true : undefined}
