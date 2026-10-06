@@ -36,6 +36,7 @@ import { pathToFileURL } from "node:url";
 import type { CompilationStatus } from "../src/domain/compile";
 import type { RevisionDiffView } from "../src/domain/revision";
 import type { Scene } from "../src/domain/scene";
+import { shortVersion } from "../src/presentation/share";
 import { mechanicalSignature } from "../src/engine/diff";
 import { sha256Hex } from "../src/engine/hash";
 import { revisionDiffView } from "../src/server/revision/diff";
@@ -1023,7 +1024,7 @@ async function phase4BrowserFlow(base: string): Promise<void> {
     record(
       "the deployed build is refused until an interaction is approved",
       (await page.getByTestId("compile-needs-approval").count()) === 1 &&
-        (await page.getByTestId("compile-start").count()) === 0,
+        (await page.getByTestId("compile-start").isDisabled()),
       "the panel asks for an approval before offering a build",
     );
 
@@ -1047,10 +1048,10 @@ async function phase4BrowserFlow(base: string): Promise<void> {
 
     // ------------------------------------------------------------- the build
     await page.getByTestId("compile-start").click();
-    await page.getByTestId("compile-stages").waitFor({ timeout: 30_000 });
+    await page.getByTestId("compile-stages").waitFor({ state: "attached", timeout: 30_000 });
     await page.getByTestId("pending-review").waitFor({ timeout: 300_000 });
 
-    const stageText = await page.getByTestId("compile-stages").innerText();
+    const stageText = (await page.getByTestId("compile-stages").textContent()) ?? "";
     record(
       "every deployed stage reached committed, in the locked wording",
       /Writing encounter/.test(stageText) &&
@@ -2062,7 +2063,7 @@ async function phase5Flow(base: string): Promise<void> {
       const playRequests = requests.slice(beforePlay);
       record(
         "a fresh browser with no session plays the shared version to an ending, read-only",
-        loadedVersion === v2.version_id && ended && playRequests.length === 0,
+        loadedVersion === shortVersion(v2.version_id) && ended && playRequests.length === 0,
         `ended ${ended}, ${playRequests.length} requests during play`,
       );
       const actionable = (await page.locator("button, a, input, select, textarea").allInnerTexts())
