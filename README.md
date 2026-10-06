@@ -90,7 +90,8 @@ as creative confidence.
 
 ## Judge demo path
 
-About a minute, no account, nothing generated live.
+Steps 1–5 are the saved proof: about a minute, no account, and nothing
+generated live. Step 6 is optional and uses the live creation path.
 
 | # | Do this | What it shows |
 |---|---|---|
@@ -99,7 +100,7 @@ About a minute, no account, nothing generated live.
 | 3 | Read the changed rows | Without Moon, *Return the letter* is open. With Moon, it is locked, and two new choices exist |
 | 4 | Open a mark to read the causal note | The four stored layers: Qloo returned → proposed → creator approved → scene changed |
 | 5 | Press **Continue without**, or play on with Moon | Both sides are fully playable; with Moon, both requirements unlock Return, which ends the scene |
-| 6 | Go back and press **Create your scene** | The real path: brief → artist → influences → build → review. It makes live Qloo and model calls |
+| 6 | *Optional, live:* go back and press **Create your scene** | The real path: brief → artist → influences → build → review. It makes live Qloo and model calls |
 
 Keyboard: <kbd>P</kbd> / <kbd>C</kbd> switch Play and Compare, <kbd>W</kbd> /
 <kbd>O</kbd> switch versions; single-key shortcuts can be turned off.
