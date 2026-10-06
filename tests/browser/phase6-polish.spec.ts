@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { installPhase3Api, PROJECT_ID as P3, MOVIES } from "./support/phase3-api";
 import { installPhase4Api, PROJECT_ID } from "./support/phase4-api";
 import { installPhase5Api, READ_TOKEN } from "./support/phase5-api";
 
@@ -67,4 +68,38 @@ test("polish: public source notes are secondary and open from the keyboard witho
   await expect(sources.locator(".rt-public__chains")).toBeVisible();
   await expect(sources).toContainText("Decision · the creator approved");
   expect(api.calls.length).toBe(before);
+});
+
+test("polish: approval chips and their source disclosure use ink focus rings", async ({ page }) => {
+  await installPhase3Api(page, { anchorConfirmed: true, referencesReady: true, proposalsReady: true });
+  await page.goto(`/studio/${P3}`);
+  await page.getByTestId(`approve-${MOVIES[2]!.reference_id}`).click();
+  const chip = page.getByTestId("approved-chip-discovery");
+  await chip.focus();
+  expect(await chip.evaluate(el => getComputedStyle(el).outlineColor)).toBe("rgb(20, 21, 24)");
+  await page.keyboard.press("Enter");
+  const summary = page.getByTestId("provenance-detail-discovery");
+  await summary.focus();
+  expect(await summary.evaluate(el => getComputedStyle(el).outlineColor)).toBe("rgb(20, 21, 24)");
+  await page.keyboard.press("Enter");
+  await expect(summary.locator("..")).toHaveAttribute("open", "");
+});
+
+test("polish: view and version controls offer 44px targets", async ({ page }) => {
+  await page.goto("/difference?view=play");
+  for (const id of ["rt-tab-play", "rt-tab-compare", "rt-version-with", "rt-version-without", "rt-restart"]) {
+    expect((await page.getByTestId(id).boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  }
+});
+
+test("polish: mobile provenance focus clears the pinned footer", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/difference?view=compare");
+  const summary = page.getByTestId("rt-why-summary");
+  await summary.focus();
+  const note = (await summary.boundingBox())!;
+  const footer = (await page.getByTestId("rt-foot").boundingBox())!;
+  expect(note.y).toBeGreaterThanOrEqual(56);
+  expect(note.y + note.height).toBeLessThanOrEqual(footer.y);
 });

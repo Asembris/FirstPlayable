@@ -78,6 +78,12 @@ body:has(.rt) {
 /* ------------------------------------------------------------ < 640 */
 
 @media (max-width: 639.98px) {
+  /* Keyboard focus and anchor navigation clear both pinned controls. */
+  html:has(.rt-scene) {
+    scroll-padding-top: 72px;
+    scroll-padding-bottom: 160px;
+  }
+
   /* Band: each mode at its natural height; the inactive one is gone. */
   .rt-band__play,
   .rt-band__cmp {
@@ -174,8 +180,8 @@ body:has(.rt) {
   .rt-mark {
     left: 2px;
     top: 8px;
-    width: 22px;
-    height: 28px;
+    width: 24px;
+    height: 32px;
     font-size: 26px;
   }
 

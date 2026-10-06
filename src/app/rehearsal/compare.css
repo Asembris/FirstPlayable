@@ -23,6 +23,11 @@
 }
 
 .rt-modes__tab {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  min-width: 44px;
+  justify-content: center;
   border: 0;
   border-bottom: 1.5px solid transparent;
   background: transparent;

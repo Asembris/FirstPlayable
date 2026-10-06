@@ -131,6 +131,10 @@
   background: var(--rt-sheet);
 }
 
+.rt-player .button.choice:active:not(:disabled) {
+  background: var(--rt-rule);
+}
+
 .rt-player .button.choice:focus-visible {
   outline: 1.5px solid var(--rt-ink);
   outline-offset: 2px;

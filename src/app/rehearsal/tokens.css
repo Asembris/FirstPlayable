@@ -121,7 +121,10 @@
 }
 
 /* Focus ring: 1.5px ink, offset 2. */
-.rt :focus-visible {
+.rt :focus-visible,
+.rt .button:focus-visible,
+.rt .influence-chip:focus-visible,
+.rt .disclosure summary:focus-visible {
   outline: 1.5px solid var(--rt-ink);
   outline-offset: 2px;
 }
@@ -170,6 +173,7 @@
   align-items: center;
   justify-content: center;
   font: 500 13px/1.2 var(--rt-font-ui);
+  min-height: 44px;
   padding: 9px 14px;
   border: 1px solid var(--rt-ink);
   border-radius: var(--rt-radius);
@@ -191,6 +195,21 @@
 
 .rt-button--primary:hover {
   background: var(--rt-ink-2);
+}
+
+.rt-button:active:not(:disabled) {
+  background: var(--rt-rule);
+}
+
+.rt-button--primary:active:not(:disabled) {
+  background: var(--rt-ink-2);
+}
+
+.rt-button:disabled {
+  background: var(--rt-rule);
+  border-color: var(--rt-rule);
+  color: var(--rt-ink-2);
+  cursor: not-allowed;
 }
 
 .rt-wordmark {
