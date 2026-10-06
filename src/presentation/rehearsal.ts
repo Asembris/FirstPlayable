@@ -24,6 +24,19 @@ import type { Availability, CanonicalPair } from "./canonical-pair";
 
 export type Side = "with" | "without";
 
+/**
+ * Any "with this influence / without it" pair: the saved canonical pair, or a
+ * candidate build read against the same build recomposed without one module.
+ */
+export type ScenePair = {
+  readonly withScene: Scene;
+  readonly withoutScene: Scene;
+  /** The influence's display name: "Moon". */
+  readonly influenceName: string;
+  /** The comparison point to fall back to. */
+  readonly recordedPrefix: readonly Id[];
+};
+
 /* ------------------------------------------------------------- wording */
 
 const NUMBER_WORDS = [
@@ -245,7 +258,7 @@ export type Comparison = {
  * not a choice the visitor made.
  */
 export function comparisonPoint(
-  pair: CanonicalPair,
+  pair: ScenePair,
   choices: readonly Id[],
 ): { prefix: readonly Id[]; mine: boolean; fellBack: boolean } {
   const recorded =
@@ -261,7 +274,7 @@ export function comparisonPoint(
 }
 
 function cellNote(
-  pair: CanonicalPair,
+  pair: ScenePair,
   scene: Scene,
   state: State,
   actionId: Id,
@@ -278,7 +291,7 @@ function cellNote(
   return ending === null ? "Open" : `Open · ends the scene: ${ending.title}`;
 }
 
-export function compareAt(pair: CanonicalPair, choices: readonly Id[]): Comparison {
+export function compareAt(pair: ScenePair, choices: readonly Id[]): Comparison {
   const point = comparisonPoint(pair, choices);
   // `observeReplayPrefix(before, after)` reads before = with the influence.
   const observed = observeReplayPrefix(pair.withScene, pair.withoutScene, point.prefix);
@@ -353,20 +366,35 @@ function availabilityWord(status: Availability): string {
  */
 export function consequenceOf(pair: CanonicalPair): Phrase | null {
   const witness = pair.causal.witness;
-  if (witness === null) return null;
-  const comparison = compareAt(pair, witness.prefix);
-  const label =
-    viewOf(pair.withScene).actionById.get(witness.actionId)?.action.label ?? "";
+  return witness === null ? null : consequenceAt(pair, witness.actionId, witness.prefix);
+}
+
+/**
+ * The observed change at one action after one prefix, in player words. The
+ * availability on each side is read from the engine's own replay of the two
+ * scenes, never from a stored sentence. Null when the action did not change.
+ */
+export function consequenceAt(
+  pair: ScenePair,
+  actionId: Id,
+  prefix: readonly Id[],
+): Phrase | null {
+  const comparison = compareAt(pair, prefix);
+  const row = comparison.rows.find((candidate) => candidate.id === actionId);
+  if (row === undefined || row.kind === "unchanged") return null;
+  const label = row.label;
   const phrase: (string | { em: string })[] = [
-    `After the same ${numberWord(witness.prefix.length)} choices, `,
+    prefix.length === 0
+      ? "At the start of the scene, "
+      : `After the same ${numberWord(prefix.length)} choice${prefix.length === 1 ? "" : "s"}, `,
     { em: label },
-    ` is ${availabilityWord(witness.with)} with ${pair.influenceName} and ${availabilityWord(witness.without)} without it.`,
+    ` is ${availabilityWord(row.with.status)} with ${pair.influenceName} and ${availabilityWord(row.without.status)} without it.`,
   ];
 
-  const added = comparison.rows.filter((row) => row.kind === "added").map((row) => row.id);
+  const added = comparison.rows.filter((r) => r.kind === "added").map((r) => r.id);
   if (added.length > 0) {
-    const run = runChoices(pair.withScene, witness.prefix);
-    const needs = unmetGates(pair.withScene, run.state, witness.actionId)
+    const run = runChoices(pair.withScene, prefix);
+    const needs = unmetGates(pair.withScene, run.state, actionId)
       .map((entry) => setterOf(pair.withScene, entry.gate.id)?.id)
       .filter((id): id is Id => id !== undefined);
     const needsAllAdded =
@@ -385,6 +413,11 @@ export function consequenceOf(pair: CanonicalPair): Phrase | null {
     }
   }
   return phrase;
+}
+
+/** Every unmet requirement's own stored blocked text, verbatim, in gate order. */
+export function blockedTextsOf(scene: Scene, state: State, actionId: Id): string[] {
+  return unmetGates(scene, state, actionId).map((entry) => entry.gate.blocked_text);
 }
 
 /** The one-line "why" used on mobile and wherever the full note is folded. */
