@@ -1895,3 +1895,85 @@ the Phase 5 preview section, not as a defect.
 **Phase 5 is complete and locked in production.** Phase 6 — creative-tool
 polish and the canonical judge experience — is the next authorized phase and
 **has not started**.
+
+---
+
+# Phase 6 — creative-tool polish and the canonical judge experience
+
+## Phase 6 — production closure — 6 October 2026
+
+**Frozen production commit:** `f15ed67dc7557ff5c2a4dc9e64776c5b310aa14c`, the
+merge of pull request #10 (`fix/phase-6-production-hardening`) into `main`,
+which follows pull request #9 (`feat/phase-6-rehearsal-table`, merged as
+`e906577`). **Production:** `https://firstplayable.vercel.app`, the existing
+Vercel project and domain. Production is **frozen for submission**; the
+commits recorded after it are documentation only, and none is deployed.
+
+The Phase 5 records above are unchanged.
+
+### What Phase 6 delivered
+
+| Area | Delivered |
+|---|---|
+| Canonical judge experience | The saved Moon pair recorded in `docs/PHASE6_CANONICAL_PAIR.md`, bundled from `docs/phase6-canonical-pair/` and played at `/difference` with no database, model, or Qloo call |
+| Landing | Two judge paths, "Play the difference" and "Create your scene", with the saved-build truth label |
+| Play and Compare | The same choices on both versions as aligned action rows: 3 changed, 3 unchanged; the four-layer causal note drawn from the stored rows |
+| Studio | Brief, artist confirmation, influence approval and edit-before-approval, build and pending review as intended versus observed, one-idea revision, version comparison, and sharing as choose, preview, publish |
+| Public share | A mobile-first, play-only page at `/play/:token` |
+| Accessibility | Keyboard operation, AA contrast on meaningful text, reduced motion, and single-key shortcuts that can be turned off (WCAG 2.1.4) |
+| Production hardening | The deployed verifier aligned with the Phase 6 build and version records; the local design handoff excluded from deployment inputs |
+
+Phase 6 changed no file under `src/engine/`, `src/domain/`, `src/server/`, or
+`supabase/` (`git diff --stat f2048d5 f15ed67` over those paths is empty). The
+engine and validator, the compiler and controller, the revision and
+publication semantics, the migrations, and the $0.60 cumulative model-spend cap
+are exactly those of Phase 5.
+
+### Final verification at the frozen commit
+
+| Gate | Result |
+|---|---|
+| Deployed verifier against production (`npm run verify:deployment`) | **PASS — 118 / 118** |
+| Production judge path, end to end | **PASS** |
+| `npm test` | **PASS — 761** |
+| `npm run test:e2e` | **PASS — 133** |
+
+Compared with the Phase 5 closure, unit tests grew from 711 to 761 and browser
+tests from 64 to 133.
+
+### Specification items not delivered, and not claimed
+
+* The specification's §14.B **model-selected comparator** — an independent
+  no-Qloo selection compiled through the same module path — was not built. The
+  product's comparison is the §14.A ablation, labelled "Without this
+  influence". No comparative quality claim is made.
+* `docs/DEMO_SCRIPT.md` (Phase 6) and `docs/RELEASE_CHECKLIST.md` (Phase 7) are
+  not in this repository.
+
+### Not recorded in this file
+
+The Vercel deployment id of the frozen build, the timestamps of the final
+verifier run, and the OpenAI spend of that run are not recorded here. This
+closure records only the facts listed above.
+
+### Known limitations carried forward
+
+* The canonical pair's caveats in `docs/PHASE6_CANONICAL_PAIR.md` stand: two
+  requirements rather than one, two stored copy seams, and the "other name"
+  question offered from the start. The stored versions were not rewritten.
+* The Phase 5 limitations listed in "Phase 5 — production closure" are
+  unchanged by this record.
+* One passing production run is evidence that the deployment works, not a
+  reliability measurement.
+
+## Phase 6 — complete
+
+| Gate | Result |
+|---|---|
+| Canonical pair recorded and independently re-verified | **PASS** — `docs/PHASE6_CANONICAL_PAIR.md` |
+| Deployed verifier against production at the frozen commit | **PASS** — 118 / 118 |
+| Production judge path, end to end | **PASS** |
+| Offline gates | **PASS** — 761 unit, 133 browser |
+
+**Phase 6 is complete, and production is frozen for submission at
+`f15ed67`.**
