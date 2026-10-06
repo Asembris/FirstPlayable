@@ -48,9 +48,14 @@
 
 .rt-stages__list .chip,
 .rt-stages__state {
-  font: 500 10.5px/1.2 var(--rt-font-fact);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font: 500 13.5px/1.4 var(--rt-font-ui);
+  color: var(--rt-ink);
+}
+
+/* The stored code, kept beside the words as a reference, never as the message. */
+.rt-stages__code,
+.rt-stages__state [data-testid="compile-failure-code"] {
+  font: 400 11px/1.4 var(--rt-font-fact);
   color: var(--rt-pencil);
 }
 

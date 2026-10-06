@@ -38,7 +38,7 @@ import type {
 import type { ApprovedInfluence } from "@/domain/influence";
 import type { ProjectView } from "@/domain/project";
 import { numberWord } from "@/presentation/rehearsal";
-import { allEndingsReachable, observationsOf } from "@/presentation/review";
+import { allEndingsReachable, BUILD_STATE_TEXT, observationsOf } from "@/presentation/review";
 import type { Observation } from "@/presentation/review";
 import { ScenePlayer } from "../player/ScenePlayer";
 import { PhraseText } from "../rehearsal/CausalNote";
@@ -289,7 +289,12 @@ export function CompilePanel({
           <p className="rt-studio__note" data-testid="compile-last-good">
             {status.last_good_version_id === null
               ? "No earlier version has been activated, so nothing was replaced. Your brief and approvals are unchanged."
-              : `Your active version ${status.last_good_version_id} is untouched and still plays.`}
+              : (
+                <>
+                  Your current version is untouched and still plays · version{" "}
+                  <span className="rt-record-id">{status.last_good_version_id}</span>
+                </>
+              )}
           </p>
           <div className="rt-studio__actions">
             <Link className="rt-button" href="/difference">
@@ -388,8 +393,9 @@ function StageList({
   return (
     <div className="rt-stages" aria-live="polite">
       <p className="rt-stages__state" data-testid="compile-state">
-        {status.state}
+        {BUILD_STATE_TEXT[status.state]}
         {busy && status.next_stage !== null ? ` · ${status.next_stage_label}…` : ""}
+        <span className="rt-stages__code"> · {status.state}</span>
       </p>
       <ul className="rt-stages__list" data-testid="compile-stages">
         {status.stages.map((stage) => (

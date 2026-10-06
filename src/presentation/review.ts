@@ -14,7 +14,7 @@
  * play. Every status below is read from those facts, never inferred.
  */
 
-import type { PlayableView } from "../domain/compile";
+import type { CompilationState, PlayableView } from "../domain/compile";
 import type { ApprovedInfluence } from "../domain/influence";
 import type { Id, Scene, Slot } from "../domain/scene";
 import { orderedSlots, removeModule } from "../engine/compose";
@@ -161,3 +161,14 @@ export function observationsOf(
 export function allEndingsReachable(playable: PlayableView): boolean {
   return playable.validation.reachable_endings.length === playable.scene.core.endings.length;
 }
+
+/** A compilation state in the creator's words; the stored code stays beside it. */
+export const BUILD_STATE_TEXT: Readonly<Record<CompilationState, string>> = {
+  AWAITING_APPROVAL: "Waiting for an approved interpretation",
+  BASE_READY: "The encounter is written",
+  MODULES_READY: "The influences are built",
+  VALIDATING: "Checking every choice",
+  REVIEW_PLAYABLE: "Ready for your review",
+  READY: "Current",
+  FAILED: "This build did not finish",
+};
