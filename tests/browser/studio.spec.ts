@@ -101,7 +101,9 @@ test("a project address in a browser with no owner session says nothing about it
 
 test("the landing page offers both paths and claims no generation", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("link", { name: "Play saved example" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Create your scene" })).toBeVisible();
-  await expect(page.getByText("No references have been retrieved")).toBeVisible();
+  // The Phase 6 landing: the saved path is a real saved build that plays
+  // instantly, and nothing on it is generated live.
+  await expect(page.getByRole("link", { name: /Play the difference/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Create your scene/ })).toBeVisible();
+  await expect(page.getByText("Plays instantly · nothing is generated live")).toBeVisible();
 });
