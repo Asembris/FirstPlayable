@@ -1,10 +1,17 @@
 # FirstPlayable — build status
 
-**Completed phases:** Phase 1, Phase 2, Phase 3, Phase 4 and **Phase 5**,
-which is deployed to production and locked (5 October 2026). See "Phase 5 —
+**Completed phases:** Phase 1 through **Phase 6**. Phase 6 — creative-tool
+polish and the canonical judge experience — is **complete**, and production is
+**frozen for submission** at commit
+`f15ed67dc7557ff5c2a4dc9e64776c5b310aa14c` (6 October 2026). See "Phase 6 —
 production closure" at the end of this file.
-**Next authorized phase:** Phase 6 — creative-tool polish and the canonical
-judge experience. **Not started.**
+
+**Production:** `https://firstplayable.vercel.app` · deployed verifier
+**118 / 118** · unit tests **761** · browser tests **133** · judge path verified
+end to end.
+
+Phase 5 was deployed to production and locked on 5 October 2026; its record,
+"Phase 5 — production closure", precedes the Phase 6 record.
 
 Phase 4 passed its binary gate on 4 October 2026 at code commit `2c12321`,
 after three failed attempts recorded in full below and in
