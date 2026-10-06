@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96" role="img" aria-labelledby="t">
+<title id="t">FirstPlayable</title>
+<rect x=".5" y=".5" width="95" height="95" rx="3" fill="#F4F4F0" stroke="#D9D9D3"/>
+<line x1="28" y1="24" x2="82" y2="24" stroke="#141518" stroke-width="2.5"/>
+<line x1="34" y1="36" x2="64" y2="36" stroke="#8B8E94" stroke-width="4" stroke-linecap="round"/>
+<line x1="28" y1="47" x2="82" y2="47" stroke="#D9D9D3" stroke-width="1.5"/>
+<rect x="56" y="48" width="26" height="24" fill="#F9E1E8"/>
+<line x1="34" y1="60" x2="49" y2="60" stroke="#141518" stroke-width="4" stroke-linecap="round"/>
+<line x1="62" y1="60" x2="76" y2="60" stroke="#8C0F3B" stroke-width="4" stroke-linecap="round"/>
+<line x1="28" y1="72" x2="82" y2="72" stroke="#D9D9D3" stroke-width="1.5"/>
+<g stroke="#B0154C" stroke-width="2.8" stroke-linecap="round">
+<line x1="16" y1="53" x2="16" y2="67"/>
+<line x1="9.94" y1="56.5" x2="22.06" y2="63.5"/>
+<line x1="9.94" y1="63.5" x2="22.06" y2="56.5"/>
+</g>
+</svg>
