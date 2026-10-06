@@ -156,7 +156,7 @@ export function ReferenceRows({
 
       {retrieving && (
         <p className="rt-studio__note" aria-live="polite" data-testid="finding-references">
-          Finding films and video games related to your artist…
+          Finding two groups of related references: one for movies, one for video games.
         </p>
       )}
 
