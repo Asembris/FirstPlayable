@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="FirstPlayable">
   <rect x="8" y="12" width="48" height="16" fill="#141518"/>
   <rect x="8" y="34" width="21" height="18" fill="#141518"/>
-  <rect x="35" y="34" width="21" height="18" fill="#B0154C"/>
+  <rect x="37" y="36" width="17" height="14" fill="none" stroke="#141518" stroke-width="4"/>
 </svg>

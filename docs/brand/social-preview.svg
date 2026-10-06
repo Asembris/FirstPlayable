@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640" role="img" aria-label="FirstPlayable — Choose the influences. Play the consequences.">
+  <rect width="1280" height="640" fill="#F4F4F0"/>
+  <g transform="translate(112 192) scale(4)">
+    <rect x="8" y="12" width="48" height="16" fill="#141518"/>
+    <rect x="8" y="34" width="21" height="18" fill="#141518"/>
+    <rect x="35" y="34" width="21" height="18" fill="#B0154C"/>
+  </g>
+  <text x="432" y="318" font-family="Georgia,'Times New Roman',Times,serif" font-size="96" fill="#141518">FirstPlayable</text>
+  <text x="436" y="384" font-family="Georgia,'Times New Roman',Times,serif" font-size="34" font-style="italic" fill="#3A3D43">Choose the influences. Play the consequences.</text>
+  <rect x="0" y="616" width="1280" height="24" fill="#141518"/>
+  <rect x="644" y="616" width="636" height="24" fill="#B0154C"/>
+</svg>

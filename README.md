@@ -1,6 +1,9 @@
 <div align="center">
 
-<img src="docs/readme/mark.svg" alt="" width="72" height="72" />
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/brand/firstplayable-mark-dark.svg" />
+  <img src="docs/readme/mark.svg" alt="" width="72" height="72" />
+</picture>
 
 # FirstPlayable
 
