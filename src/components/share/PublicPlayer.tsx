@@ -19,8 +19,8 @@
  * Phase 6 sets it as the Rehearsal Table's public player, designed for a phone
  * first: the room strip, the title, and the scene as a play script with ruled
  * action rows. No tabs, no version control, no marks. Only when the creator
- * chose to include it, the approved source chain follows the scene, set in the
- * four causal materials; its fourth line is the engine's own witness sentence.
+ * chose to include it, the approved source chain follows the scene as a
+ * secondary disclosure in the four causal materials.
  * A revoked or unknown link produces one clean unavailable screen that reveals
  * nothing about whether the link ever existed.
  */
@@ -134,8 +134,7 @@ export function PublicPlayer({ token }: { token: string }): React.JSX.Element {
         {snapshot.title}
       </h1>
       <p className="rt-public__meta">
-        One fixed version · shared {whenLabel(state.publishedAt)} · every choice runs in your
-        browser
+        One fixed version · shared {whenLabel(state.publishedAt)}
       </p>
 
       <div className="rt-player rt-public__player">
@@ -148,59 +147,61 @@ export function PublicPlayer({ token }: { token: string }): React.JSX.Element {
           data-testid="public-provenance"
           aria-labelledby="public-sources-heading"
         >
-          <h2 className="rt-label rt-public__sources-heading" id="public-sources-heading">
-            Where these ideas came from
-          </h2>
-          <ul className="rt-public__chains">
-            {snapshot.provenance.map((line) => (
-              <li
-                key={line.approval_id}
-                className="rt-public__chain"
-                data-testid={`public-provenance-${line.slot}`}
-              >
-                {line.retrieved === null ? null : (
+          <details className="rt-public__source-record">
+            <summary>
+              <h2 className="rt-label rt-public__sources-heading" id="public-sources-heading">
+                Where these ideas came from
+              </h2>
+            </summary>
+            <ul className="rt-public__chains">
+              {snapshot.provenance.map((line) => (
+                <li
+                  key={line.approval_id}
+                  className="rt-public__chain"
+                  data-testid={`public-provenance-${line.slot}`}
+                >
+                  {line.retrieved === null ? null : (
+                    <div className="rt-public__layer">
+                      <p className="rt-label rt-public__layer-label">Source · Qloo returned</p>
+                      <p className="rt-public__slip">
+                        {line.retrieved.reference_name} ·{" "}
+                        {DOMAIN_NAME[line.retrieved.domain] ?? line.retrieved.domain}
+                      </p>
+                    </div>
+                  )}
+                  {line.proposed === null ? null : (
+                    <div className="rt-public__layer">
+                      <p className="rt-label rt-public__layer-label">
+                        Suggestion · FirstPlayable proposed
+                      </p>
+                      <p className="rt-suggestion">{line.proposed}</p>
+                    </div>
+                  )}
                   <div className="rt-public__layer">
-                    <p className="rt-label rt-public__layer-label">Source · Qloo returned</p>
-                    <p className="rt-public__slip">
-                      {line.retrieved.reference_name} ·{" "}
-                      {DOMAIN_NAME[line.retrieved.domain] ?? line.retrieved.domain}
+                    <p className="rt-label rt-public__layer-label rt-public__layer-label--ink">
+                      Decision · the creator approved
+                      {line.approved.edited_by_creator ? ", after editing it" : ""}
                     </p>
+                    <p className="rt-decision">{line.approved.text}</p>
                   </div>
-                )}
-                {line.proposed === null ? null : (
-                  <div className="rt-public__layer">
-                    <p className="rt-label rt-public__layer-label">
-                      Suggestion · FirstPlayable proposed
-                    </p>
-                    <p className="rt-suggestion">{line.proposed}</p>
-                  </div>
-                )}
-                <div className="rt-public__layer">
-                  <p className="rt-label rt-public__layer-label rt-public__layer-label--ink">
-                    Decision · the creator approved
-                    {line.approved.edited_by_creator ? ", after editing it" : ""}
-                  </p>
-                  <p className="rt-decision">{line.approved.text}</p>
-                </div>
-                {line.scene_changed === null ? null : (
-                  <div className="rt-public__layer">
-                    <p className="rt-label rt-public__layer-label">
-                      Consequence · the engine observed
-                    </p>
-                    <p className="rt-public__observed">
-                      {labelActionIds(line.scene_changed, [snapshot.scene])}
-                    </p>
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-          <p className="rt-studio__note">
-            The last line of each chain is the engine&rsquo;s own observation from
-            replaying this version against the same version without that
-            influence. It says what changed, not that it is better or that it
-            could only have been reached this way.
-          </p>
+                  {line.scene_changed === null ? null : (
+                    <div className="rt-public__layer">
+                      <p className="rt-label rt-public__layer-label">
+                        Consequence · the engine observed
+                      </p>
+                      <p className="rt-public__observed">
+                        {labelActionIds(line.scene_changed, [snapshot.scene])}
+                      </p>
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+            <p className="rt-studio__note">
+              The last line compares this scene with the same scene without that
+              influence. It records a difference, not a judgement of quality.
+            </p>
+          </details>
         </section>
       ) : null}
 
@@ -221,7 +222,7 @@ export function PublicPlayer({ token }: { token: string }): React.JSX.Element {
             <span className="rt-record-id" data-testid="public-version-id">
               {shortVersion(snapshot.version_id)}
             </span>
-            . Playing it makes no request after this page has loaded.
+            . Later edits do not change the scene you play here.
           </p>
         </details>
       </footer>

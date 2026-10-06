@@ -71,14 +71,25 @@
 }
 
 .rt-public__sources {
-  margin-top: 56px;
+  margin-top: 40px;
+}
+
+.rt-public__source-record > summary {
+  min-height: 44px;
+  padding: 14px 0;
+  border-top: 1px solid var(--rt-rule);
+  color: var(--rt-pencil);
+  cursor: pointer;
+}
+
+.rt-public__source-record[open] > summary {
+  border-bottom: 1px solid var(--rt-rule);
 }
 
 .rt-public__sources-heading {
+  display: inline;
   margin: 0;
-  padding-bottom: 9px;
-  border-bottom: 1.5px solid var(--rt-ink);
-  color: var(--rt-ink);
+  color: var(--rt-pencil);
 }
 
 .rt-public__chains {
@@ -122,7 +133,7 @@
   color: var(--rt-ink);
 }
 
-.rt-public__sources > .rt-studio__note {
+.rt-public__source-record > .rt-studio__note {
   margin-top: 14px;
 }
 

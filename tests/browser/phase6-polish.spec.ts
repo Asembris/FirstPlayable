@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { installPhase4Api, PROJECT_ID } from "./support/phase4-api";
+import { installPhase5Api, READ_TOKEN } from "./support/phase5-api";
 
 for (const width of [1280, 1100, 1024, 768, 640]) {
   test(`polish: Play and Compare remain clickable and aligned at ${width}px`, async ({ page }) => {
@@ -49,4 +50,21 @@ test("polish: an unavailable studio leads with recovery and keeps request detail
   await page.getByText("Request details", { exact: true }).click();
   await expect(page.getByTestId("error-code")).toHaveText("PERSISTENCE_UNAVAILABLE");
   await expect(page.getByTestId("error-request-id")).toBeVisible();
+});
+
+test("polish: public source notes are secondary and open from the keyboard without a request", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const api = await installPhase5Api(page, { published: true });
+  await page.goto(`/play/${READ_TOKEN}`);
+  const sources = page.getByTestId("public-provenance");
+  await expect(sources).toBeVisible();
+  await expect(sources.locator(".rt-public__chains")).toBeHidden();
+  const before = api.calls.length;
+  await page.getByTestId("public-choice-core.inspect").click();
+  const summary = sources.locator("summary");
+  await summary.focus();
+  await page.keyboard.press("Enter");
+  await expect(sources.locator(".rt-public__chains")).toBeVisible();
+  await expect(sources).toContainText("Decision · the creator approved");
+  expect(api.calls.length).toBe(before);
 });
