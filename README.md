@@ -263,103 +263,150 @@ previously active version active and playable.
 Gameplay is local: a complete playthrough, every ending, and a reset make
 **zero** requests.
 
-## Requirements
+## Verification and production evidence
 
-Node `22.22.0` (see `.nvmrc`; `engines` requires `>=22.12.0`). Dependencies are
-pinned exactly in `package.json` and locked by `package-lock.json`.
+Production at [firstplayable.vercel.app](https://firstplayable.vercel.app) is
+built from the frozen commit
+[`f15ed67`](https://github.com/Asembris/FirstPlayable/commit/f15ed67dc7557ff5c2a4dc9e64776c5b310aa14c).
 
-Copy [`.env.example`](.env.example) to `.env` for the persistent studio. Every
-variable there is **server only**: there is no `NEXT_PUBLIC_` variable in this
-repository and the browser never connects to Supabase directly.
+| Gate | Result |
+|---|---|
+| Deployed verifier against production (`npm run verify:deployment`) | **118 / 118 PASS** |
+| Judge path on production, end to end | **Verified** |
+| Unit tests (`npm test`, Vitest) | **761 PASS** |
+| Browser tests (`npm run test:e2e`, Playwright) | **133 PASS** |
+| CI on every pull request and push to `main` | Typecheck, unit tests, fixtures, build, secret scan, browser gate — with no repository secret |
+
+The deployed verifier drives the real application over HTTP and in a real
+browser. Among its checks:
+
+| Area | What it establishes on the live deployment |
+|---|---|
+| Ownership and security | A fresh non-owner session is refused (`404`), no session is refused (`401`); mutation-security refusals hold |
+| Qloo workflow | Artist confirmation, retrieval, proposals, and creator decisions over HTTP and in a browser |
+| Compilation | Build, review, activation, and a playthrough that makes zero requests |
+| Revision | Edit, replace, ending-copy preview and apply, a forged apply refused, remove; every stored diff equals the engine's recomputation |
+| Sharing | Publish → read from a fresh browser → revoke → the next read is `404`; no private data in the public payload |
+| Export | Owner-only; plays from `file://` offline with zero requests |
+| Isolation | The browser reaches only its own origin — never OpenAI, Qloo, or Supabase; no credential shape or provider host in client chunks |
+
+The canonical Moon pair was re-verified independently after it was stored: same
+project and parent link, identical `world` / `core` / `ports` hashes, only the
+Discovery module differs, the stored diff equals the recomputed diff, both
+versions validate, all three endings stay reachable with no soft-lock in each.
+The full table is in [`docs/PHASE6_CANONICAL_PAIR.md`](docs/PHASE6_CANONICAL_PAIR.md).
+
+## Tech stack
+
+| Concern | Choice |
+|---|---|
+| Application | Next.js 16 (App Router), React 19, TypeScript 7 |
+| Contracts | Zod 4 — types are derived from the schemas; there is no second validator |
+| Persistence | Supabase Postgres: eight tables, atomic SQL functions, compare-and-swap writes |
+| Cultural data | Qloo Hackathon API: artist search and two `v2/insights` requests |
+| Model | OpenAI `gpt-4o-mini-2024-07-18`, Structured Outputs, pinned |
+| Hosting | Vercel |
+| Tests | Vitest, Playwright (Chromium) |
+| Runtime | Node `22.22.0` (`.nvmrc`); dependencies pinned exactly and locked |
+
+No agent framework, vector store, queue, or second service: one bounded
+controller and eight tables.
+
+## Quickstart
+
+The engine, the saved examples, the tests, and the production build need **no
+account, no credential, and no network access**.
+
+```bash
+npm ci
+```
+
+```bash
+npm run dev
+```
+
+Then open `http://localhost:3000/difference` for the saved Moon pair, or
+`/example` for the hand-authored Phase 1 fixture.
+
+The persistent studio needs credentials. Copy [`.env.example`](.env.example) to
+`.env`; every variable is server only.
 
 | Variable | Needed for |
 |---|---|
-| `SUPABASE_URL`, `SUPABASE_SECRET_KEY` | the persistent studio and `npm run smoke:supabase` |
-| `SUPABASE_ACCESS_TOKEN` | the Supabase CLI only; never read by the application |
-| `QLOO_API_KEY`, `QLOO_API_BASE_URL` | artist search and the two first-hop reference requests |
-| `OPENAI_API_KEY`, `OPENAI_CHAT_MODEL` | the bounded proposal stage and the base and module compilation stages |
-| `QLOO_*` safety knobs (optional) | tighten the launch gap, the lease ceiling, or the local allowance |
-| `MODEL_COST_CAP_MICROS` (optional) | lower the cumulative OpenAI spend cap below its compiled-in $0.60 |
+| `SUPABASE_URL`, `SUPABASE_SECRET_KEY` | The persistent studio and `npm run smoke:supabase` |
+| `SUPABASE_ACCESS_TOKEN` | The Supabase CLI only; never read by the application |
+| `QLOO_API_KEY`, `QLOO_API_BASE_URL` | Artist search and the two first-hop reference requests |
+| `OPENAI_API_KEY`, `OPENAI_CHAT_MODEL` | The proposal stage and the base and module compilers |
+| `QLOO_*` safety knobs (optional) | Tighten the launch gap, the lease ceiling, or the local allowance |
+| `MODEL_COST_CAP_MICROS` (optional) | Lower the cumulative spend cap below its compiled-in $0.60 |
 
 ## Commands
 
 | Command | What it does |
 |---|---|
-| `npm run dev` | Start the local development server (`/example` plays with no configuration). |
-| `npm run build` | Production build. Needs no database. |
-| `npm start` | Serve the production build. |
-| `npm run typecheck` | `tsc --noEmit` over the whole repository. |
-| `npm test` | Vitest: contracts, engine, sessions, ownership, route security, operations, the spend budget, model adapter, Qloo normalization and transport, cache and launch policy, the proposal boundary, creator decisions, influence isolation, the base and module compilers, the bounded controller, scene versions, the committed SQL surface, secrets. Offline. |
-| `npm run test:e2e` | Playwright: play, reset, version switch, the honest database-outage state, the whole influence-approval workflow, and the build, review and activation flow. Offline. |
-| `npx playwright install chromium` | One-time browser download needed before the first `test:e2e` run. |
-| `npm run check:fixtures` | Validate every fixture and print the canonical Phase 1 evidence. |
-| `npm run check:secrets` | Scan tracked files and built assets for credential shapes. Run after `npm run build`. |
+| `npm run dev` | Local development server |
+| `npm run build` / `npm start` | Production build (no database needed) and serve it |
+| `npm run typecheck` | `tsc --noEmit` over the repository |
+| `npm test` | Vitest: contracts, engine, Qloo normalization and transport, proposal boundary, creator decisions, influence isolation, compilers, controller, revision, publication, export, route security, SQL surface. Offline |
+| `npm run test:e2e` | Playwright: the judge path, studio, approval, build and review, revision, sharing, contrast, keyboard, reduced motion, mobile. Offline; run `npx playwright install chromium` once first |
+| `npm run check:fixtures` | Validate every fixture and print the canonical Phase 1 evidence |
+| `npm run check:secrets` | Scan tracked files and built assets for credential shapes; run after `npm run build` |
 
-### Opt-in commands that contact real services
-
-Each refuses to run without its guard, and none is a dependency of `npm test`
-or `npm run build`.
+**Opt-in commands that contact real services.** Each refuses to run without its
+guard, and none is a dependency of `npm test` or `npm run build`.
 
 | Command | Guard |
 |---|---|
 | `npm run smoke:supabase` | `RUN_SUPABASE_SMOKE=1` |
-| `npm run smoke:openai` | `RUN_OPENAI_SMOKE=1` — spends real tokens on one tiny call |
-| `npm run smoke:qloo` | `RUN_QLOO_SMOKE=1` — three real Qloo calls when uncached, zero when cached. `QLOO_SMOKE_ARTIST` picks the artist. |
-| `npm run smoke:proposal` | `RUN_PROPOSAL_SMOKE=1` — one real model call, and one real approval through the application path |
-| `npm run smoke:compile` | `RUN_PHASE4_SMOKE=1` — the whole compilation acceptance through the real route handlers: around twelve real model calls, and real scene versions written |
+| `npm run smoke:openai` | `RUN_OPENAI_SMOKE=1` — one tiny real call |
+| `npm run smoke:qloo` | `RUN_QLOO_SMOKE=1` — three real Qloo calls when uncached, zero when cached |
+| `npm run smoke:proposal` | `RUN_PROPOSAL_SMOKE=1` — one real model call and one real approval |
+| `npm run smoke:compile` | `RUN_PHASE4_SMOKE=1` — full compilation through the real route handlers; writes real versions |
 | `npm run verify:deployment` | `RUN_DEPLOY_VERIFY=1` and `DEPLOY_URL=https://…` |
 
-A normal uncached creation costs **three** Qloo calls: one search and two first
-hops. Repeating a supported retrieval costs **zero**, and compilation,
-activation and playthrough cost **zero** — measured, not assumed. No smoke is
-looped, and neither the proposal nor the compile smoke is ever re-rolled
-because its prose reads weakly.
+## Limitations and honest boundaries
 
-Model spend is bounded by a hard **cumulative $0.60** cap held in one Postgres
-row, enforced against an estimate computed from the usage the provider reports.
-It does not reset: reaching it is an honest exhausted-budget state, never a
-paid fallback, a second provider, or a different model.
+- **A deliberately small form.** One room, one character, one object, a closed
+  action vocabulary, two influence slots, three endings. It is a pitch tool,
+  not a game engine.
+- **The comparison is an ablation, not a contest.** "Without this influence"
+  answers *what did this approved influence contribute here?* It is not
+  evidence that Qloo produces better games. The specification's optional
+  no-Qloo, model-selected comparator was **not built**, so no comparative
+  quality claim is made.
+- **The validator proves structure, not taste.** It does not judge writing,
+  faithfulness to the reference, originality, or emotional effect.
+- **Isolation is dataflow isolation.** A model could still arrive at a similar
+  idea from the brief alone; no test claims otherwise.
+- **The saved pair has known seams**, recorded rather than hidden: the Moon
+  module added two requirements, not one; the base text calls the envelope
+  "unmarked" before Nia mentions the other name; and the "other name" question
+  is offered from the start. Changing any of them would mean a new compile and
+  a new pair.
+- **Ending wording is generated, then chosen.** A creator applies previewed
+  text; they cannot type an arbitrary ending.
+- **Anonymous ownership.** A project belongs to one `HttpOnly` session cookie,
+  stored only as a hash. There is no account and no recovery: losing the cookie
+  loses editing access.
+- **Finite budget.** Model spend is capped at a cumulative $0.60 that does not
+  reset. Reaching it shows an exhausted-budget state; there is no paid
+  fallback. Qloo usage is bounded by a database-backed limiter.
+- **Evidence of working, not of reliability.** Production verification is a
+  passing end-to-end run, not an uptime or load measurement. Third-party
+  outages produce a finished error state, not a guarantee of availability.
 
-## Layout
+## Supporting evidence
 
-```text
-src/domain/           Zod contracts for the brief, the scene, and the project
-src/engine/           pure interpreter, composer, validator, diff, canonical hashing
-src/components/player trusted React player for the offline slice
-src/components/studio  the studio: brief, artist confirmation, reference rows, provenance, build and review
-src/app/              Next.js App Router pages and the seventeen API routes
-src/server/db/        owner-scoped repositories and the one server-only Supabase client
-src/server/security/  sessions, origin checks, body caps, error redaction
-src/server/model/     the pinned OpenAI Structured Outputs adapter
-src/server/qloo/      the three-operation adapter, normalization, cache, launch limiter
-src/server/influence/ the context firewall, the proposal stage, approvals, provenance
-src/server/compile/   the isolated payload builders, both compilers, and the bounded controller
-src/server/api/       route handlers, testable as plain Request handlers
-supabase/migrations/  the eight tables, their access posture, and the atomic functions
-fixtures/             hand-authored design fixtures, and redacted real Qloo captures
-scripts/              fixture verification, secret scan, opt-in live smoke commands
-tests/                Vitest suites and the Playwright suite
-docs/                 specification, build status, deployment preflight, phase evidence
-```
+| Document | Contents |
+|---|---|
+| [`docs/FIRSTPLAYABLE_BUILD_SPEC.md`](docs/FIRSTPLAYABLE_BUILD_SPEC.md) | The authoritative specification: scene schema, validation, Qloo layer, isolation, revision semantics, non-goals |
+| [`docs/BUILD_STATUS.md`](docs/BUILD_STATUS.md) | The append-only build and verification record for every phase, including failures |
+| [`docs/PHASE6_CANONICAL_PAIR.md`](docs/PHASE6_CANONICAL_PAIR.md) | The saved Moon pair: identifiers, provenance, diff, independent re-verification, caveats, and the rejected candidates |
+| [`docs/phase6-canonical-pair/`](docs/phase6-canonical-pair/) | The three stored rows the judge path is built from |
+| [`docs/PHASE3_QLOO_EVIDENCE.md`](docs/PHASE3_QLOO_EVIDENCE.md) | The exact Qloo requests, field mappings, live captures, cache policy, proposal boundary, isolation sentinels |
+| [`docs/PHASE4_EVIDENCE.md`](docs/PHASE4_EVIDENCE.md) | Compilation evidence, including every failed attempt |
+| [`docs/DEPLOYMENT_PREFLIGHT.md`](docs/DEPLOYMENT_PREFLIGHT.md) | External accounts, migrations, deployments, and deployed verification runs |
 
-The engine under `src/engine/` and the contracts under `src/domain/` have no
-React, Next.js, or server dependency, and read no configuration. The browser
-player, the tests, the validator, and the fixture script all execute that same
-implementation.
-
-## Ownership, and what it does not promise
-
-A project is owned by one anonymous session held in an `HttpOnly` cookie. There
-is no account, no password, and no recovery: **losing that cookie loses editing
-access.** Only a hash of the cookie's secret is stored. A compiled scene is
-visible only to the browser that owns the project unless its owner publishes a
-version: a share link reads that one version, read-only, and nothing else of
-the project. There is no account recovery.
-
-The browser never calls Qloo, OpenAI, or Supabase. Every external request is
-made server-side, behind this application's own owner-scoped routes, and no
-`NEXT_PUBLIC_` variant of any credential exists.
-
-## Licence
+## License
 
 MIT. See [`LICENSE`](LICENSE).
