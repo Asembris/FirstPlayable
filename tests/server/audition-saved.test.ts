@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import record from '../../fixtures/audition/canonical.json';
-import frozen from '../../fixtures/audition/selection.json';
+import record from '../../fixtures/qloo/audition/canonical.json';
+import frozen from '../../fixtures/qloo/audition/selection.json';
 import { savedAuditionResult } from '../../src/presentation/saved-audition';
 import { domainAuditionView } from '../../src/domain/audition-result';
 import { CompScoreCaptureSchema } from '../../src/domain/audition';

@@ -1,5 +1,5 @@
 /** Real Qloo captures are bundled server-side. Replay makes no provider call. */
-import record from '../../fixtures/audition/canonical.json';
+import record from '../../fixtures/qloo/audition/canonical.json';
 import { CompScoreCaptureSchema } from '../domain/audition';
 import { domainAuditionView } from '../domain/audition-result';
 import type { ConfirmedEntityView, ScoreResponse } from '../domain/audition-view';

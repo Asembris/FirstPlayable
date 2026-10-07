@@ -1,0 +1,1916 @@
+{
+  "title": "The Last Signal",
+  "concept": "A small exploration game: decode a signal from an abandoned orbital station, deliver its final message, and piece together who sent it.",
+  "selection": "Creator-selected comps for isolation, first contact, exploration and a journey through space. These are creative references, not Qloo project-fit claims.",
+  "comps": [
+    {
+      "entity_id": "6BBB34F4-9345-4459-82AE-10991FA35CD2",
+      "name": "Moon",
+      "domain": "movie",
+      "year": 2009,
+      "disambiguation": "2009",
+      "original_rank": 1,
+      "slot_id": "s1",
+      "search_capture_id": "62855f32-d455-4e62-9773-fbcb2719ec04",
+      "search": {
+        "kind": "comp_search",
+        "domain": "movie",
+        "query": "Moon",
+        "normalized_query": "moon",
+        "request_fingerprint": "audition-search|qloo-audition-1|2986dcd6b3b1d4f6c5ae96cca9411c4517f1a68ac75f0ffc6fdbec73282ac801",
+        "normalizer_version": "qloo-audition-1",
+        "retrieved_at": "2026-10-07T12:15:37.997Z",
+        "candidates": [
+          {
+            "entity_id": "6BBB34F4-9345-4459-82AE-10991FA35CD2",
+            "name": "Moon",
+            "domain": "movie",
+            "year": 2009,
+            "disambiguation": "2009",
+            "original_rank": 1
+          },
+          {
+            "entity_id": "A05E8A4F-EC69-4799-BB04-A82122DF8A5E",
+            "name": "Moon",
+            "domain": "movie",
+            "year": 2024,
+            "disambiguation": "2024",
+            "original_rank": 2
+          },
+          {
+            "entity_id": "2955F3C4-36AB-49F3-A818-3597F35EF46C",
+            "name": "Moonlight",
+            "domain": "movie",
+            "year": 2016,
+            "disambiguation": "2016",
+            "original_rank": 3
+          },
+          {
+            "entity_id": "79A98408-6B84-4416-99B4-A4B3563BEAFB",
+            "name": "Moonrise Kingdom",
+            "domain": "movie",
+            "year": 2012,
+            "disambiguation": "2012",
+            "original_rank": 4
+          },
+          {
+            "entity_id": "F265B3E1-0B53-4E67-996A-45F8F6DF54C0",
+            "name": "Moonstruck",
+            "domain": "movie",
+            "year": 1987,
+            "disambiguation": "1987",
+            "original_rank": 5
+          }
+        ]
+      }
+    },
+    {
+      "entity_id": "C7EC4CA9-1CCC-4991-B738-55F075441B3F",
+      "name": "Arrival",
+      "domain": "movie",
+      "year": 2016,
+      "disambiguation": "2016",
+      "original_rank": 1,
+      "slot_id": "s2",
+      "search_capture_id": "ee28e52c-adbb-414e-87f8-54e95b0bc01d",
+      "search": {
+        "kind": "comp_search",
+        "domain": "movie",
+        "query": "Arrival",
+        "normalized_query": "arrival",
+        "request_fingerprint": "audition-search|qloo-audition-1|26b213731f057efa9b5910ff110e16b9e25e3d03c5fbedfd6074cdc51dfb93b9",
+        "normalizer_version": "qloo-audition-1",
+        "retrieved_at": "2026-10-07T12:15:38.474Z",
+        "candidates": [
+          {
+            "entity_id": "C7EC4CA9-1CCC-4991-B738-55F075441B3F",
+            "name": "Arrival",
+            "domain": "movie",
+            "year": 2016,
+            "disambiguation": "2016",
+            "original_rank": 1
+          },
+          {
+            "entity_id": "D712CCE4-BA8F-4863-9529-C10E65F73DC3",
+            "name": "The Arrival",
+            "domain": "movie",
+            "year": 1996,
+            "disambiguation": "1996",
+            "original_rank": 2
+          },
+          {
+            "entity_id": "5399B84E-E8F7-4BF4-B0B0-CE534B838A9E",
+            "name": "The Arrival",
+            "domain": "movie",
+            "year": 2023,
+            "disambiguation": "2023",
+            "original_rank": 3
+          },
+          {
+            "entity_id": "E40427CC-EE52-47B1-900A-5574FBA3AF60",
+            "name": "Alien Arrival the Hidden Past",
+            "domain": "movie",
+            "year": 2026,
+            "disambiguation": "2026",
+            "original_rank": 4
+          },
+          {
+            "entity_id": "7A4134D0-1E97-471E-B828-18F687E0C8F8",
+            "name": "The Enigma of Arrival",
+            "domain": "movie",
+            "year": 2018,
+            "disambiguation": "2018",
+            "original_rank": 5
+          }
+        ]
+      }
+    },
+    {
+      "entity_id": "057DA9D9-399B-437E-8BCA-A80E499125EF",
+      "name": "Interstellar",
+      "domain": "movie",
+      "year": 2014,
+      "disambiguation": "2014",
+      "original_rank": 1,
+      "slot_id": "s3",
+      "search_capture_id": "f09db2e5-66c5-4340-b4e4-231aeabc5759",
+      "search": {
+        "kind": "comp_search",
+        "domain": "movie",
+        "query": "Interstellar",
+        "normalized_query": "interstellar",
+        "request_fingerprint": "audition-search|qloo-audition-1|d3fdf1049a472c553f71b4a61f9a1f38ba49b4f49ffef8f4548d52ffbafd61d0",
+        "normalizer_version": "qloo-audition-1",
+        "retrieved_at": "2026-10-07T12:15:38.937Z",
+        "candidates": [
+          {
+            "entity_id": "057DA9D9-399B-437E-8BCA-A80E499125EF",
+            "name": "Interstellar",
+            "domain": "movie",
+            "year": 2014,
+            "disambiguation": "2014",
+            "original_rank": 1
+          },
+          {
+            "entity_id": "B78D795F-8932-4BC9-BFDE-8A68C684D578",
+            "name": "Interstellar: Nolan's Odyssey",
+            "domain": "movie",
+            "year": 2014,
+            "disambiguation": "2014",
+            "original_rank": 2
+          },
+          {
+            "entity_id": "0A62BAA1-A0D4-4F0B-86CE-A889DD1AA697",
+            "name": "Interstellar Wars",
+            "domain": "movie",
+            "year": 2016,
+            "disambiguation": "2016",
+            "original_rank": 3
+          },
+          {
+            "entity_id": "019C713C-C0DA-4719-9228-47A4E4EA5258",
+            "name": "Interstellar Civil War: Shadows of the Empire",
+            "domain": "movie",
+            "year": 2017,
+            "disambiguation": "2017",
+            "original_rank": 4
+          },
+          {
+            "entity_id": "3D3B05AA-A859-41CB-973A-A4AAA52196FB",
+            "name": "The Science of Interstellar",
+            "domain": "movie",
+            "year": 2014,
+            "disambiguation": "2014",
+            "original_rank": 5
+          }
+        ]
+      }
+    },
+    {
+      "entity_id": "EA0D6B19-199B-439B-809D-B60B4412E405",
+      "name": "Outer Wilds",
+      "domain": "videogame",
+      "year": 2019,
+      "disambiguation": "2019-05-28, Mobius Digital, LLC",
+      "original_rank": 1,
+      "slot_id": "s4",
+      "search_capture_id": "3365b96b-05bf-4a4d-a94d-06b1f27b7ba0",
+      "search": {
+        "kind": "comp_search",
+        "domain": "videogame",
+        "query": "Outer Wilds",
+        "normalized_query": "outer wilds",
+        "request_fingerprint": "audition-search|qloo-audition-1|2993e250b6a62808999a7d0ed443c061e302275fdd041a38058c4163a82b4d27",
+        "normalizer_version": "qloo-audition-1",
+        "retrieved_at": "2026-10-07T12:15:39.478Z",
+        "candidates": [
+          {
+            "entity_id": "EA0D6B19-199B-439B-809D-B60B4412E405",
+            "name": "Outer Wilds",
+            "domain": "videogame",
+            "year": 2019,
+            "disambiguation": "2019-05-28, Mobius Digital, LLC",
+            "original_rank": 1
+          },
+          {
+            "entity_id": "6309B601-E181-4089-A3B4-4577F0EF5444",
+            "name": "Outer Wilds: Echoes of the Eye",
+            "domain": "videogame",
+            "year": 2021,
+            "disambiguation": "2021-09-28, Mobius Digital, LLC",
+            "original_rank": 2
+          },
+          {
+            "entity_id": "8B23E4DA-F56B-4682-B961-3C3FF1F03223",
+            "name": "Outer Wilds: Archaeologist Edition",
+            "domain": "videogame",
+            "year": 2023,
+            "disambiguation": "2023-12-07, Mobius Digital, LLC",
+            "original_rank": 3
+          },
+          {
+            "entity_id": "B32A4BFE-C5FA-4BB3-AC83-4A4EDBD57FE7",
+            "name": "The Outer Worlds",
+            "domain": "videogame",
+            "year": 2019,
+            "disambiguation": "2019-10-25, Obsidian Entertainment",
+            "original_rank": 4
+          },
+          {
+            "entity_id": "9C81A4D5-76F9-4926-AE49-14564EF10929",
+            "name": "The Outer Side",
+            "domain": "videogame",
+            "year": 2025,
+            "disambiguation": "2025-01-21, Aquatic Games",
+            "original_rank": 5
+          }
+        ]
+      }
+    },
+    {
+      "entity_id": "B061B95F-B940-4871-B80A-C12365E7A2A1",
+      "name": "Death Stranding",
+      "domain": "videogame",
+      "year": 2019,
+      "disambiguation": "2019-11-08, Kojima Productions",
+      "original_rank": 1,
+      "slot_id": "s5",
+      "search_capture_id": "2bbf4be1-52e2-46cb-bff3-2e79165ec08b",
+      "search": {
+        "kind": "comp_search",
+        "domain": "videogame",
+        "query": "Death Stranding",
+        "normalized_query": "death stranding",
+        "request_fingerprint": "audition-search|qloo-audition-1|668d4b563d6f6067e1a41f4e30313cf96d2540ef64b6e0457f9f08d4a21e628d",
+        "normalizer_version": "qloo-audition-1",
+        "retrieved_at": "2026-10-07T12:15:39.942Z",
+        "candidates": [
+          {
+            "entity_id": "B061B95F-B940-4871-B80A-C12365E7A2A1",
+            "name": "Death Stranding",
+            "domain": "videogame",
+            "year": 2019,
+            "disambiguation": "2019-11-08, Kojima Productions",
+            "original_rank": 1
+          },
+          {
+            "entity_id": "2C034199-1D23-4BBE-83A9-CDA472B69CD2",
+            "name": "Death Stranding: Director's Cut",
+            "domain": "videogame",
+            "year": 2021,
+            "disambiguation": "2021-09-24, Kojima Productions",
+            "original_rank": 2
+          },
+          {
+            "entity_id": "367762A6-E2BA-4095-914E-6C99E78F39E8",
+            "name": "Death Stranding 2: On The Beach",
+            "domain": "videogame",
+            "year": 1998,
+            "disambiguation": "1998-11-23, Kojima Productions",
+            "original_rank": 3
+          },
+          {
+            "entity_id": "F1D0A5B6-F682-4058-B3C3-B21D3C972DF5",
+            "name": "Death Roads: Tournament Prologue",
+            "domain": "videogame",
+            "year": 2023,
+            "disambiguation": "2023-06-06, The Knights of Unity",
+            "original_rank": 4
+          },
+          {
+            "entity_id": "653BEA22-AD1C-47DB-8CFE-3D4E69EFBC11",
+            "name": "End Of Death: Prison",
+            "domain": "videogame",
+            "year": 2024,
+            "disambiguation": "2024-09-20, Nava Dev",
+            "original_rank": 5
+          }
+        ]
+      }
+    },
+    {
+      "entity_id": "DB003E13-0C9F-4011-B928-43ADC2A59F26",
+      "name": "Mass Effect",
+      "domain": "videogame",
+      "year": 2007,
+      "disambiguation": "2007-11-20, BioWare",
+      "original_rank": 1,
+      "slot_id": "s6",
+      "search_capture_id": "1d2fa81a-02ef-4f0a-912e-ab1b6977231c",
+      "search": {
+        "kind": "comp_search",
+        "domain": "videogame",
+        "query": "Mass Effect",
+        "normalized_query": "mass effect",
+        "request_fingerprint": "audition-search|qloo-audition-1|655296b044c444c3880ed98cd6acdb00ea73539f7e2741bb412f647c1cf6ac1e",
+        "normalizer_version": "qloo-audition-1",
+        "retrieved_at": "2026-10-07T12:15:40.414Z",
+        "candidates": [
+          {
+            "entity_id": "DB003E13-0C9F-4011-B928-43ADC2A59F26",
+            "name": "Mass Effect",
+            "domain": "videogame",
+            "year": 2007,
+            "disambiguation": "2007-11-20, BioWare",
+            "original_rank": 1
+          },
+          {
+            "entity_id": "82D73A47-AFD0-42CB-81FC-907CB508662C",
+            "name": "Mass Effect 3: Citadel",
+            "domain": "videogame",
+            "year": 2013,
+            "disambiguation": "2013-03-05, BioWare",
+            "original_rank": 2
+          },
+          {
+            "entity_id": "54FAC5DD-F89C-4891-8CC1-57580200AFA6",
+            "name": "Mass Effect: Andromeda",
+            "domain": "videogame",
+            "year": 2017,
+            "disambiguation": "2017-03-21, BioWare",
+            "original_rank": 3
+          },
+          {
+            "entity_id": "0B9D33B0-5881-434F-AED7-B4F83EC1CA43",
+            "name": "Mass Effect Trilogy",
+            "domain": "videogame",
+            "year": 2012,
+            "disambiguation": "2012-12-04, BioWare",
+            "original_rank": 4
+          },
+          {
+            "entity_id": "8B63E812-B486-4070-BCF8-AC978AE51A1E",
+            "name": "Mass Effect 3",
+            "domain": "videogame",
+            "year": 2012,
+            "disambiguation": "2012-03-06, BioWare",
+            "original_rank": 5
+          }
+        ]
+      }
+    }
+  ],
+  "audiences": [
+    {
+      "entity_id": "70CAE5BF-2F4C-445C-A3E5-4EDACFC3591C",
+      "name": "Radiohead",
+      "short_description": "Radiohead is an English rock band known for their innovative and experimental approach to music.",
+      "disambiguation": "Radiohead",
+      "identity_hints": [
+        "facebook",
+        "instagram",
+        "lastfm",
+        "musicbrainz",
+        "spotify",
+        "twitter",
+        "wikidata"
+      ],
+      "original_rank": 1,
+      "slot_id": "s7",
+      "search_capture_id": "13017e67-cb6e-41ef-9188-20369f46cfcb",
+      "search": {
+        "query": "Radiohead",
+        "normalized_query": "radiohead",
+        "request_fingerprint": "search|qloo-norm-1|da9b9183ab1e9196704a5cca60156395adac12c55f71ffd0d2ac226f7f5a043e",
+        "normalizer_version": "qloo-norm-1",
+        "retrieved_at": "2026-10-07T12:15:40.875Z",
+        "candidates": [
+          {
+            "entity_id": "70CAE5BF-2F4C-445C-A3E5-4EDACFC3591C",
+            "name": "Radiohead",
+            "short_description": "Radiohead is an English rock band known for their innovative and experimental approach to music.",
+            "disambiguation": "Radiohead",
+            "identity_hints": [
+              "facebook",
+              "instagram",
+              "lastfm",
+              "musicbrainz",
+              "spotify",
+              "twitter",
+              "wikidata"
+            ],
+            "original_rank": 1
+          },
+          {
+            "entity_id": "99ECEFED-B982-40C2-A2ED-EB042E9545FA",
+            "name": "Radiohead Tribute",
+            "short_description": "A tribute band dedicated to performing the music of Radiohead.",
+            "disambiguation": "Radiohead Tribute",
+            "identity_hints": [],
+            "original_rank": 2
+          },
+          {
+            "entity_id": "BF711411-5659-4CEF-BC46-ADEAACEB52EA",
+            "name": "Dub Tribute To Radiohead",
+            "short_description": "A group performing dub reggae covers of Radiohead songs.",
+            "disambiguation": "Dub Tribute To Radiohead",
+            "identity_hints": [],
+            "original_rank": 3
+          },
+          {
+            "entity_id": "A754373E-0D89-4FD7-85B4-6F22F413D1D1",
+            "name": "The Bluegrass Tribute to Radiohead",
+            "short_description": "A bluegrass tribute band performing covers of Radiohead songs.",
+            "disambiguation": "The Bluegrass Tribute to Radiohead",
+            "identity_hints": [],
+            "original_rank": 4
+          },
+          {
+            "entity_id": "93D30F68-DA61-4CB3-A672-1C7983C79086",
+            "name": "Thom Yorke and Johnny Greenwood (Radiohead)",
+            "short_description": "Thom Yorke and Johnny Greenwood are key members of Radiohead, known for innovative alternative and experimental rock music.",
+            "disambiguation": "Thom Yorke and Johnny Greenwood (Radiohead)",
+            "identity_hints": [],
+            "original_rank": 5
+          }
+        ]
+      }
+    },
+    {
+      "entity_id": "C915A918-39C5-47A3-A101-D9FA1DECBD9C",
+      "name": "Kendrick Lamar",
+      "short_description": "An influential American rapper and songwriter known for his profound lyricism and storytelling.",
+      "disambiguation": "Kendrick Lamar",
+      "identity_hints": [
+        "facebook",
+        "instagram",
+        "lastfm",
+        "musicbrainz",
+        "spotify",
+        "twitter",
+        "wikidata"
+      ],
+      "original_rank": 1,
+      "slot_id": "s8",
+      "search_capture_id": "6e133970-76e8-4e4a-91a7-637d208a4eca",
+      "search": {
+        "query": "Kendrick Lamar",
+        "normalized_query": "kendrick lamar",
+        "request_fingerprint": "search|qloo-norm-1|e51eb10b5b1b2afeedd74f1fd0b09979c147f1d15537546c3b78fd3331256f5b",
+        "normalizer_version": "qloo-norm-1",
+        "retrieved_at": "2026-10-07T12:15:41.374Z",
+        "candidates": [
+          {
+            "entity_id": "C915A918-39C5-47A3-A101-D9FA1DECBD9C",
+            "name": "Kendrick Lamar",
+            "short_description": "An influential American rapper and songwriter known for his profound lyricism and storytelling.",
+            "disambiguation": "Kendrick Lamar",
+            "identity_hints": [
+              "facebook",
+              "instagram",
+              "lastfm",
+              "musicbrainz",
+              "spotify",
+              "twitter",
+              "wikidata"
+            ],
+            "original_rank": 1
+          },
+          {
+            "entity_id": "B8874D35-B38E-4932-AE48-BAA86948C8B8",
+            "name": "Kendrick Lamar, SZA",
+            "short_description": "American hip hop and R&B artists known for their profound lyrics and innovative music.",
+            "disambiguation": "Kendrick Lamar, SZA",
+            "identity_hints": [],
+            "original_rank": 2
+          },
+          {
+            "entity_id": "2B4A9D52-242D-440D-898E-1A7ADB5DE79A",
+            "name": "Kendrick Lamar, Travis Scott",
+            "short_description": "American rapper and songwriter known for his profound lyrics and storytelling.",
+            "disambiguation": "Kendrick Lamar, Travis Scott",
+            "identity_hints": [],
+            "original_rank": 3
+          },
+          {
+            "entity_id": "B16BCD64-A57E-4496-9419-368B0F3D63FF",
+            "name": "Kendrick Lamar, Zacari",
+            "short_description": "American rapper and songwriter known for his profound lyrics and storytelling.",
+            "disambiguation": "Kendrick Lamar, Zacari",
+            "identity_hints": [],
+            "original_rank": 4
+          },
+          {
+            "entity_id": "83052D30-913B-4546-AEB6-1C4EC966E95D",
+            "name": "Kendrick Lamar, U2",
+            "short_description": "American rapper and songwriter known for his profound lyrics and storytelling.",
+            "disambiguation": "Kendrick Lamar, U2",
+            "identity_hints": [],
+            "original_rank": 5
+          }
+        ]
+      }
+    }
+  ],
+  "captures": [
+    {
+      "kind": "comp_scores",
+      "domain": "movie",
+      "audience_entity_id": "70CAE5BF-2F4C-445C-A3E5-4EDACFC3591C",
+      "requested_entity_ids": [
+        "057DA9D9-399B-437E-8BCA-A80E499125EF",
+        "6BBB34F4-9345-4459-82AE-10991FA35CD2",
+        "C7EC4CA9-1CCC-4991-B738-55F075441B3F"
+      ],
+      "request_fingerprint": "audition-scores|qloo-audition-1|a960b1e4574c3b884bc3def0ae5bc4ff605d9392b6b562d20a427809c1709b4c",
+      "normalizer_version": "qloo-audition-1",
+      "retrieved_at": "2026-10-07T12:15:41.886Z",
+      "scores": [
+        {
+          "entity_id": "6BBB34F4-9345-4459-82AE-10991FA35CD2",
+          "name": "Moon",
+          "affinity": 0.9277100856231865
+        },
+        {
+          "entity_id": "C7EC4CA9-1CCC-4991-B738-55F075441B3F",
+          "name": "Arrival",
+          "affinity": 0.8355442500541155
+        },
+        {
+          "entity_id": "057DA9D9-399B-437E-8BCA-A80E499125EF",
+          "name": "Interstellar",
+          "affinity": 0.8118546029570369
+        }
+      ],
+      "missing_entity_ids": [],
+      "capture_id": "98bb5931-f045-4f7b-a850-0a356cf18986",
+      "cache": "live"
+    },
+    {
+      "kind": "comp_scores",
+      "domain": "movie",
+      "audience_entity_id": "C915A918-39C5-47A3-A101-D9FA1DECBD9C",
+      "requested_entity_ids": [
+        "057DA9D9-399B-437E-8BCA-A80E499125EF",
+        "6BBB34F4-9345-4459-82AE-10991FA35CD2",
+        "C7EC4CA9-1CCC-4991-B738-55F075441B3F"
+      ],
+      "request_fingerprint": "audition-scores|qloo-audition-1|ef5eff52518e6a520752a19b7830e1fcf2aaa3c186fb6fa1baf44de14b59f5cd",
+      "normalizer_version": "qloo-audition-1",
+      "retrieved_at": "2026-10-07T12:15:42.397Z",
+      "scores": [
+        {
+          "entity_id": "C7EC4CA9-1CCC-4991-B738-55F075441B3F",
+          "name": "Arrival",
+          "affinity": 0.8226596028849298
+        },
+        {
+          "entity_id": "057DA9D9-399B-437E-8BCA-A80E499125EF",
+          "name": "Interstellar",
+          "affinity": 0.7558787030186511
+        },
+        {
+          "entity_id": "6BBB34F4-9345-4459-82AE-10991FA35CD2",
+          "name": "Moon",
+          "affinity": 0.7220932085293376
+        }
+      ],
+      "missing_entity_ids": [],
+      "capture_id": "1b9485cd-bd8c-42c9-bd3e-ad6bd1051f48",
+      "cache": "live"
+    },
+    {
+      "kind": "comp_scores",
+      "domain": "videogame",
+      "audience_entity_id": "70CAE5BF-2F4C-445C-A3E5-4EDACFC3591C",
+      "requested_entity_ids": [
+        "B061B95F-B940-4871-B80A-C12365E7A2A1",
+        "DB003E13-0C9F-4011-B928-43ADC2A59F26",
+        "EA0D6B19-199B-439B-809D-B60B4412E405"
+      ],
+      "request_fingerprint": "audition-scores|qloo-audition-1|7211cb39febada70d709fd8703a39923b9330aaa501a933c0089beb3741728c9",
+      "normalizer_version": "qloo-audition-1",
+      "retrieved_at": "2026-10-07T12:15:42.882Z",
+      "scores": [
+        {
+          "entity_id": "DB003E13-0C9F-4011-B928-43ADC2A59F26",
+          "name": "Mass Effect",
+          "affinity": 0.8809011942786064
+        },
+        {
+          "entity_id": "EA0D6B19-199B-439B-809D-B60B4412E405",
+          "name": "Outer Wilds",
+          "affinity": 0.6703367393438057
+        },
+        {
+          "entity_id": "B061B95F-B940-4871-B80A-C12365E7A2A1",
+          "name": "Death Stranding",
+          "affinity": 0.537879723429959
+        }
+      ],
+      "missing_entity_ids": [],
+      "capture_id": "053eefaa-139b-4bb6-b62b-75dacced9996",
+      "cache": "live"
+    },
+    {
+      "kind": "comp_scores",
+      "domain": "videogame",
+      "audience_entity_id": "C915A918-39C5-47A3-A101-D9FA1DECBD9C",
+      "requested_entity_ids": [
+        "B061B95F-B940-4871-B80A-C12365E7A2A1",
+        "DB003E13-0C9F-4011-B928-43ADC2A59F26",
+        "EA0D6B19-199B-439B-809D-B60B4412E405"
+      ],
+      "request_fingerprint": "audition-scores|qloo-audition-1|55811369017dba259754d3d4e960e499ab33f390ccd9699fce4f553c5f11f147",
+      "normalizer_version": "qloo-audition-1",
+      "retrieved_at": "2026-10-07T12:15:43.366Z",
+      "scores": [
+        {
+          "entity_id": "B061B95F-B940-4871-B80A-C12365E7A2A1",
+          "name": "Death Stranding",
+          "affinity": 0.6392810706221489
+        },
+        {
+          "entity_id": "DB003E13-0C9F-4011-B928-43ADC2A59F26",
+          "name": "Mass Effect",
+          "affinity": 0.612591001814321
+        },
+        {
+          "entity_id": "EA0D6B19-199B-439B-809D-B60B4412E405",
+          "name": "Outer Wilds",
+          "affinity": 0.5180356788147933
+        }
+      ],
+      "missing_entity_ids": [],
+      "capture_id": "f4c2e318-ad2f-43f4-9794-738eb12c7ef5",
+      "cache": "live"
+    }
+  ],
+  "raw": [
+    {
+      "request": "https://hackathon.api.qloo.com/search?query=Moon&types=urn%3Aentity%3Amovie&take=5",
+      "retrieved_at": "2026-10-07T12:15:37.988Z",
+      "sha256": "ed977ff7236e39f4886e9dd8f5aa90b5fdd610cd93df759fd382adcfaea56832",
+      "response": {
+        "results": [
+          {
+            "name": "Moon",
+            "entity_id": "6BBB34F4-9345-4459-82AE-10991FA35CD2",
+            "types": [
+              "urn:entity:movie"
+            ],
+            "disambiguation": "2009",
+            "properties": {
+              "release_year": 2009,
+              "release_date": "2009-07-10",
+              "external": {
+                "imdb": {
+                  "id": "tt1182345",
+                  "user_rating": 7.8,
+                  "user_rating_count": 398755
+                },
+                "metacritic": {
+                  "critic_rating": 67,
+                  "id": "moon",
+                  "user_rating": 8.3
+                },
+                "rottentomatoes": {
+                  "critic_rating": "90.0",
+                  "critic_rating_count": "191",
+                  "id": "10009075-moon",
+                  "user_rating": "89.0",
+                  "user_rating_count": "100000"
+                },
+                "wikidata": {
+                  "id": "q26751"
+                }
+              }
+            }
+          },
+          {
+            "name": "Moon",
+            "entity_id": "A05E8A4F-EC69-4799-BB04-A82122DF8A5E",
+            "types": [
+              "urn:entity:movie"
+            ],
+            "disambiguation": "2024",
+            "properties": {
+              "release_year": 2024,
+              "release_date": "2024-10-31",
+              "external": {
+                "imdb": {
+                  "id": "tt29141179",
+                  "user_rating": 6.5,
+                  "user_rating_count": 1227
+                },
+                "wikidata": {
+                  "id": "q127327216"
+                }
+              }
+            }
+          },
+          {
+            "name": "Moonlight",
+            "entity_id": "2955F3C4-36AB-49F3-A818-3597F35EF46C",
+            "types": [
+              "urn:entity:movie"
+            ],
+            "disambiguation": "2016",
+            "properties": {
+              "release_year": 2016,
+              "release_date": "2016-11-18",
+              "external": {
+                "facebook": {
+                  "id": "moonlightmov"
+                },
+                "imdb": {
+                  "id": "tt4975722",
+                  "user_rating": 7.4,
+                  "user_rating_count": 356226
+                },
+                "instagram": {
+                  "id": "moonlightmov"
+                },
+                "metacritic": {
+                  "critic_rating": 99,
+                  "id": "moonlight-2016",
+                  "user_rating": 7.1
+                },
+                "twitter": {
+                  "id": "moonlightmov"
+                },
+                "wikidata": {
+                  "id": "q21527875"
+                }
+              }
+            }
+          },
+          {
+            "name": "Moonrise Kingdom",
+            "entity_id": "79A98408-6B84-4416-99B4-A4B3563BEAFB",
+            "types": [
+              "urn:entity:movie"
+            ],
+            "disambiguation": "2012",
+            "properties": {
+              "release_year": 2012,
+              "release_date": "2012-06-29",
+              "external": {
+                "facebook": {
+                  "id": "moonrisekingdom"
+                },
+                "imdb": {
+                  "id": "tt1748122",
+                  "user_rating": 7.7,
+                  "user_rating_count": 385251
+                },
+                "metacritic": {
+                  "critic_rating": 84,
+                  "id": "moonrise-kingdom",
+                  "user_rating": 8.1
+                },
+                "rottentomatoes": {
+                  "critic_rating": "98.0",
+                  "critic_rating_count": "81",
+                  "id": "moonrise_kingdom",
+                  "user_rating": "86.0",
+                  "user_rating_count": "100000"
+                },
+                "wikidata": {
+                  "id": "q217112"
+                }
+              }
+            }
+          },
+          {
+            "name": "Moonstruck",
+            "entity_id": "F265B3E1-0B53-4E67-996A-45F8F6DF54C0",
+            "types": [
+              "urn:entity:movie"
+            ],
+            "disambiguation": "1987",
+            "properties": {
+              "release_year": 1987,
+              "release_date": "1988-01-15",
+              "external": {
+                "imdb": {
+                  "id": "tt0093565",
+                  "user_rating": 7.2,
+                  "user_rating_count": 79579
+                },
+                "metacritic": {
+                  "critic_rating": 83,
+                  "id": "moonstruck",
+                  "user_rating": 8.2
+                },
+                "wikidata": {
+                  "id": "q1336107"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "request": "https://hackathon.api.qloo.com/search?query=Arrival&types=urn%3Aentity%3Amovie&take=5",
+      "retrieved_at": "2026-10-07T12:15:38.472Z",
+      "sha256": "738d33551f22a9be50f5b1f7c8a855723e22684fd51b264be4a072ae26981b45",
+      "response": {
+        "results": [
+          {
+            "name": "Arrival",
+            "entity_id": "C7EC4CA9-1CCC-4991-B738-55F075441B3F",
+            "types": [
+              "urn:entity:movie"
+            ],
+            "disambiguation": "2016",
+            "properties": {
+              "release_year": 2016,
+              "release_date": "2016-11-11",
+              "external": {
+                "facebook": {
+                  "id": "arrivalmovie"
+                },
+                "imdb": {
+                  "id": "tt2543164",
+                  "user_rating": 7.9,
+                  "user_rating_count": 881027
+                },
+                "instagram": {
+                  "id": "arrivalmovie"
+                },
+                "metacritic": {
+                  "critic_rating": 81,
+                  "id": "arrival",
+                  "user_rating": 8.2
+                },
+                "rottentomatoes": {
+                  "critic_rating": "100.0",
+                  "critic_rating_count": "1",
+                  "id": "story_of_your_life",
+                  "user_rating": "82.0",
+                  "user_rating_count": "50000"
+                },
+                "twitter": {
+                  "id": "arrivalmovie"
+                },
+                "wikidata": {
+                  "id": "q20382729"
+                }
+              }
+            }
+          },
+          {
+            "name": "The Arrival",
+            "entity_id": "D712CCE4-BA8F-4863-9529-C10E65F73DC3",
+            "types": [
+              "urn:entity:movie"
+            ],
+            "disambiguation": "1996",
+            "properties": {
+              "release_year": 1996,
+              "release_date": "1996-05-31",
+              "external": {
+                "imdb": {
+                  "id": "tt0115571",
+                  "user_rating": 6.2,
+                  "user_rating_count": 42450
+                },
+                "wikidata": {
+                  "id": "q540318"
+                }
+              }
+            }
+          },
+          {
+            "name": "The Arrival",
+            "entity_id": "5399B84E-E8F7-4BF4-B0B0-CE534B838A9E",
+            "types": [
+              "urn:entity:movie"
+            ],
+            "disambiguation": "2023",
+            "properties": {
+              "release_year": 2023,
+              "release_date": "2024-09-17",
+              "external": {
+                "imdb": {
+                  "id": "tt18350208",
+                  "user_rating": 5.6,
+                  "user_rating_count": 28
+                }
+              }
+            }
+          },
+          {
+            "name": "Alien Arrival the Hidden Past",
+            "entity_id": "E40427CC-EE52-47B1-900A-5574FBA3AF60",
+            "types": [
+              "urn:entity:movie"
+            ],
+            "disambiguation": "2026",
+            "properties": {
+              "release_year": 2026,
+              "release_date": "2026-04-01",
+              "external": {
+                "imdb": {
+                  "id": "tt38779928",
+                  "user_rating_count": 0
+                }
+              }
+            }
+          },
+          {
+            "name": "The Enigma of Arrival",
+            "entity_id": "7A4134D0-1E97-471E-B828-18F687E0C8F8",
+            "types": [
+              "urn:entity:movie"
+            ],
+            "disambiguation": "2018",
+            "properties": {
+              "release_year": 2018,
+              "release_date": "2020-07-31",
+              "external": {
+                "imdb": {
+                  "id": "tt9081510",
+                  "user_rating": 5.3,
+                  "user_rating_count": 125
+                },
+                "rottentomatoes": {
+                  "critic_rating": "100.0",
+                  "critic_rating_count": "5",
+                  "id": "the_enigma_of_arrival"
+                },
+                "wikidata": {
+                  "id": "q89897000"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "request": "https://hackathon.api.qloo.com/search?query=Interstellar&types=urn%3Aentity%3Amovie&take=5",
+      "retrieved_at": "2026-10-07T12:15:38.936Z",
+      "sha256": "7be06c1efaf49896b6af4b9a9b7750eeb16785897f6d169494ba7c3398c2ea8f",
+      "response": {
+        "results": [
+          {
+            "name": "Interstellar",
+            "entity_id": "057DA9D9-399B-437E-8BCA-A80E499125EF",
+            "types": [
+              "urn:entity:movie"
+            ],
+            "disambiguation": "2014",
+            "properties": {
+              "release_year": 2014,
+              "release_date": "2014-11-07",
+              "external": {
+                "facebook": {
+                  "id": "interstellarmovie"
+                },
+                "imdb": {
+                  "id": "tt0816692",
+                  "user_rating": 8.7,
+                  "user_rating_count": 2612273
+                },
+                "instagram": {
+                  "id": "interstellarmovie"
+                },
+                "metacritic": {
+                  "critic_rating": 74,
+                  "id": "interstellar",
+                  "user_rating": 8.5
+                },
+                "twitter": {
+                  "id": "interstellar"
+                },
+                "wikidata": {
+                  "id": "q13417189"
+                }
+              }
+            }
+          },
+          {
+            "name": "Interstellar: Nolan's Odyssey",
+            "entity_id": "B78D795F-8932-4BC9-BFDE-8A68C684D578",
+            "types": [
+              "urn:entity:movie"
+            ],
+            "disambiguation": "2014",
+            "properties": {
+              "release_year": 2014,
+              "release_date": "2014-11-05",
+              "external": {
+                "imdb": {
+                  "id": "tt4172224",
+                  "user_rating": 7.1,
+                  "user_rating_count": 265
+                }
+              }
+            }
+          },
+          {
+            "name": "Interstellar Wars",
+            "entity_id": "0A62BAA1-A0D4-4F0B-86CE-A889DD1AA697",
+            "types": [
+              "urn:entity:movie"
+            ],
+            "disambiguation": "2016",
+            "properties": {
+              "release_year": 2016,
+              "release_date": "2016-03-12",
+              "external": {
+                "imdb": {
+                  "id": "tt5083736",
+                  "user_rating": 1.7,
+                  "user_rating_count": 476
+                },
+                "rottentomatoes": {
+                  "critic_rating": "100.0",
+                  "critic_rating_count": "5",
+                  "id": "interstellar_wars",
+                  "user_rating": "40.0",
+                  "user_rating_count": "5"
+                },
+                "wikidata": {
+                  "id": "q42895876"
+                }
+              }
+            }
+          },
+          {
+            "name": "Interstellar Civil War: Shadows of the Empire",
+            "entity_id": "019C713C-C0DA-4719-9228-47A4E4EA5258",
+            "types": [
+              "urn:entity:movie"
+            ],
+            "disambiguation": "2017",
+            "properties": {
+              "release_year": 2017,
+              "release_date": "2017-03-17",
+              "external": {
+                "imdb": {
+                  "id": "tt5056352",
+                  "user_rating": 6.4,
+                  "user_rating_count": 87
+                },
+                "rottentomatoes": {
+                  "id": "interstellar_civil_war_shadows_of_the_empire",
+                  "user_rating_count": "0"
+                }
+              }
+            }
+          },
+          {
+            "name": "The Science of Interstellar",
+            "entity_id": "3D3B05AA-A859-41CB-973A-A4AAA52196FB",
+            "types": [
+              "urn:entity:movie"
+            ],
+            "disambiguation": "2014",
+            "properties": {
+              "release_year": 2014,
+              "release_date": "2015-03-31",
+              "external": {
+                "imdb": {
+                  "id": "tt4415360",
+                  "user_rating": 7.1,
+                  "user_rating_count": 716
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "request": "https://hackathon.api.qloo.com/search?query=Outer%20Wilds&types=urn%3Aentity%3Avideogame&take=5",
+      "retrieved_at": "2026-10-07T12:15:39.477Z",
+      "sha256": "a31b98428000cecb9e26b12206d03505a8e031eb0ac59cb4c9f7d357fe488a8b",
+      "response": {
+        "results": [
+          {
+            "name": "Outer Wilds",
+            "entity_id": "EA0D6B19-199B-439B-809D-B60B4412E405",
+            "types": [
+              "urn:entity:videogame"
+            ],
+            "disambiguation": "2019-05-28, Mobius Digital, LLC",
+            "properties": {
+              "release_year": 2019,
+              "release_date": "2019-05-28",
+              "short_description": "Explore a solar system trapped in an endless 22-minute time loop to uncover its mysteries before time resets.",
+              "external": {
+                "igdb": {
+                  "id": "outer-wilds"
+                },
+                "metacritic": {
+                  "critic_rating": 85,
+                  "id": "1400744100"
+                },
+                "steam": {
+                  "id": "753640"
+                },
+                "twitch": {
+                  "id": "outer wilds"
+                },
+                "wikidata": {
+                  "id": "q19631660"
+                }
+              }
+            }
+          },
+          {
+            "name": "Outer Wilds: Echoes of the Eye",
+            "entity_id": "6309B601-E181-4089-A3B4-4577F0EF5444",
+            "types": [
+              "urn:entity:videogame"
+            ],
+            "disambiguation": "2021-09-28, Mobius Digital, LLC",
+            "properties": {
+              "release_year": 2021,
+              "release_date": "2021-09-28",
+              "short_description": "A new recruit explores a mysterious solar system, uncovering secrets while facing the dangers of an endless time loop.",
+              "external": {
+                "igdb": {
+                  "id": "outer-wilds-echoes-of-the-eye"
+                },
+                "metacritic": {
+                  "critic_rating": 82,
+                  "id": "1400632068"
+                },
+                "steam": {
+                  "id": "1622100"
+                },
+                "wikidata": {
+                  "id": "q108827615"
+                }
+              }
+            }
+          },
+          {
+            "name": "Outer Wilds: Archaeologist Edition",
+            "entity_id": "8B23E4DA-F56B-4682-B961-3C3FF1F03223",
+            "types": [
+              "urn:entity:videogame"
+            ],
+            "disambiguation": "2023-12-07, Mobius Digital, LLC",
+            "properties": {
+              "release_year": 2023,
+              "release_date": "2023-12-07",
+              "short_description": "A space explorer uncovers the mysteries of a solar system trapped in a time loop, seeking to stop the impending supernova.",
+              "external": {
+                "metacritic": {
+                  "critic_rating": 75,
+                  "id": "1400740370"
+                }
+              }
+            }
+          },
+          {
+            "name": "The Outer Worlds",
+            "entity_id": "B32A4BFE-C5FA-4BB3-AC83-4A4EDBD57FE7",
+            "types": [
+              "urn:entity:videogame"
+            ],
+            "disambiguation": "2019-10-25, Obsidian Entertainment",
+            "properties": {
+              "release_year": 2019,
+              "release_date": "2019-10-25",
+              "short_description": "Awakening decades late on a colonist ship, you navigate a corporate-run space colony's factions and choices to uncover a conspiracy that threatens the Halcyon colony.",
+              "external": {
+                "igdb": {
+                  "id": "the-outer-worlds"
+                },
+                "metacritic": {
+                  "critic_rating": 85,
+                  "id": "1400575175"
+                },
+                "steam": {
+                  "id": "578650"
+                },
+                "twitch": {
+                  "id": "the outer worlds"
+                },
+                "wikidata": {
+                  "id": "q59535090"
+                }
+              }
+            }
+          },
+          {
+            "name": "The Outer Side",
+            "entity_id": "9C81A4D5-76F9-4926-AE49-14564EF10929",
+            "types": [
+              "urn:entity:videogame"
+            ],
+            "disambiguation": "2025-01-21, Aquatic Games",
+            "properties": {
+              "release_year": 2025,
+              "release_date": "2025-01-21",
+              "short_description": "In a desolate black-and-white world, players must harness their abilities to combat threats and locate lost explorers.",
+              "external": {
+                "metacritic": {
+                  "id": "1400809149"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "request": "https://hackathon.api.qloo.com/search?query=Death%20Stranding&types=urn%3Aentity%3Avideogame&take=5",
+      "retrieved_at": "2026-10-07T12:15:39.941Z",
+      "sha256": "2b38290d6ef0fbf0ad1f0e7f23d191e324486f9fe0265a8c13929e20842df940",
+      "response": {
+        "results": [
+          {
+            "name": "Death Stranding",
+            "entity_id": "B061B95F-B940-4871-B80A-C12365E7A2A1",
+            "types": [
+              "urn:entity:videogame"
+            ],
+            "disambiguation": "2019-11-08, Kojima Productions",
+            "properties": {
+              "release_year": 2019,
+              "release_date": "2019-11-08",
+              "short_description": "Sam Bridges must traverse a transformed, post-apocalyptic America to reconnect isolated cities and uncover the mystery behind the Death Stranding.",
+              "external": {
+                "igdb": {
+                  "id": "death-stranding"
+                },
+                "metacritic": {
+                  "critic_rating": 82,
+                  "id": "1400580863"
+                },
+                "steam": {
+                  "id": "1190460"
+                },
+                "twitch": {
+                  "id": "death stranding"
+                },
+                "twitter": {
+                  "id": "deathstranding_"
+                },
+                "wikidata": {
+                  "id": "q24666782"
+                }
+              }
+            }
+          },
+          {
+            "name": "Death Stranding: Director's Cut",
+            "entity_id": "2C034199-1D23-4BBE-83A9-CDA472B69CD2",
+            "types": [
+              "urn:entity:videogame"
+            ],
+            "disambiguation": "2021-09-24, Kojima Productions",
+            "properties": {
+              "release_year": 2021,
+              "release_date": "2021-09-24",
+              "short_description": "A porter traverses a fractured, post-apocalyptic America to reconnect isolated cities while contending with supernatural threats and unraveling the mystery of the Death Stranding.",
+              "external": {
+                "igdb": {
+                  "id": "death-stranding-directors-cut"
+                },
+                "metacritic": {
+                  "critic_rating": 85,
+                  "id": "1400730332",
+                  "user_rating": "8"
+                },
+                "steam": {
+                  "id": "1850570"
+                },
+                "twitch": {
+                  "id": "death-stranding-directors-cut"
+                },
+                "wikidata": {
+                  "id": "q107218167"
+                }
+              }
+            }
+          },
+          {
+            "name": "Death Stranding 2: On The Beach",
+            "entity_id": "367762A6-E2BA-4095-914E-6C99E78F39E8",
+            "types": [
+              "urn:entity:videogame"
+            ],
+            "disambiguation": "1998-11-23, Kojima Productions",
+            "properties": {
+              "release_year": 1998,
+              "release_date": "1998-11-23",
+              "external": {
+                "igdb": {
+                  "id": "death-stranding-2-on-the-beach"
+                },
+                "metacritic": {
+                  "id": "1400693983"
+                },
+                "twitch": {
+                  "id": "death-stranding-2"
+                },
+                "wikidata": {
+                  "id": "q115641709"
+                }
+              }
+            }
+          },
+          {
+            "name": "Death Roads: Tournament Prologue",
+            "entity_id": "F1D0A5B6-F682-4058-B3C3-B21D3C972DF5",
+            "types": [
+              "urn:entity:videogame"
+            ],
+            "disambiguation": "2023-06-06, The Knights of Unity",
+            "properties": {
+              "release_year": 2023,
+              "release_date": "2023-06-06",
+              "short_description": "A skilled driver battles through deadly races, using deckbuilding and roguelite elements to conquer tactical challenges and upgrade their vehicle.",
+              "external": {
+                "metacritic": {
+                  "id": "1400711613"
+                }
+              }
+            }
+          },
+          {
+            "name": "End Of Death: Prison",
+            "entity_id": "653BEA22-AD1C-47DB-8CFE-3D4E69EFBC11",
+            "types": [
+              "urn:entity:videogame"
+            ],
+            "disambiguation": "2024-09-20, Nava Dev",
+            "properties": {
+              "release_year": 2024,
+              "release_date": "2024-09-20",
+              "short_description": "Survivors battle hordes of zombies in a post-apocalyptic world, uncovering the truth behind a deadly outbreak.",
+              "external": {
+                "metacritic": {
+                  "id": "1400789021"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "request": "https://hackathon.api.qloo.com/search?query=Mass%20Effect&types=urn%3Aentity%3Avideogame&take=5",
+      "retrieved_at": "2026-10-07T12:15:40.413Z",
+      "sha256": "475639d85dc8ef98817fcde86b693d63ee972d6fba4b1666a56d4f8130788b22",
+      "response": {
+        "results": [
+          {
+            "name": "Mass Effect",
+            "entity_id": "DB003E13-0C9F-4011-B928-43ADC2A59F26",
+            "types": [
+              "urn:entity:videogame"
+            ],
+            "disambiguation": "2007-11-20, BioWare",
+            "properties": {
+              "release_year": 2007,
+              "release_date": "2007-11-20",
+              "short_description": "As humanity's first galactic envoy, you uncover a looming existential threat and must persuade others and gather allies to prevent the extinction of civilization.",
+              "external": {
+                "igdb": {
+                  "id": "mass-effect"
+                },
+                "metacritic": {
+                  "critic_rating": 91,
+                  "id": "1400037400"
+                },
+                "steam": {
+                  "id": "17460"
+                },
+                "twitch": {
+                  "id": "mass effect"
+                },
+                "wikidata": {
+                  "id": "q275960"
+                }
+              }
+            }
+          },
+          {
+            "name": "Mass Effect 3: Citadel",
+            "entity_id": "82D73A47-AFD0-42CB-81FC-907CB508662C",
+            "types": [
+              "urn:entity:videogame"
+            ],
+            "disambiguation": "2013-03-05, BioWare",
+            "properties": {
+              "release_year": 2013,
+              "release_date": "2013-03-05",
+              "short_description": "A commander and their team uncover a conspiracy while battling through the glamorous Citadel and secretive Council Archives.",
+              "external": {
+                "metacritic": {
+                  "critic_rating": 84,
+                  "id": "1400095011"
+                },
+                "wikidata": {
+                  "id": "q51929681"
+                }
+              }
+            }
+          },
+          {
+            "name": "Mass Effect: Andromeda",
+            "entity_id": "54FAC5DD-F89C-4891-8CC1-57580200AFA6",
+            "types": [
+              "urn:entity:videogame"
+            ],
+            "disambiguation": "2017-03-21, BioWare",
+            "properties": {
+              "release_year": 2017,
+              "release_date": "2017-03-21",
+              "short_description": "After a 600‑year voyage, humanity's Pathfinder searches the Andromeda galaxy for a new home but finds hostile worlds and enemies that threaten the colonists' survival.",
+              "external": {
+                "igdb": {
+                  "id": "mass-effect-andromeda--1"
+                },
+                "metacritic": {
+                  "critic_rating": 71,
+                  "id": "1400476172"
+                },
+                "steam": {
+                  "id": "1238000"
+                },
+                "twitch": {
+                  "id": "mass effect: andromeda"
+                },
+                "twitter": {
+                  "id": "masseffect"
+                },
+                "wikidata": {
+                  "id": "q20113552"
+                }
+              }
+            }
+          },
+          {
+            "name": "Mass Effect Trilogy",
+            "entity_id": "0B9D33B0-5881-434F-AED7-B4F83EC1CA43",
+            "types": [
+              "urn:entity:videogame"
+            ],
+            "disambiguation": "2012-12-04, BioWare",
+            "properties": {
+              "release_year": 2012,
+              "release_date": "2012-12-04",
+              "short_description": "A galactic commander unites allies across the stars to stop an ancient extinction-level threat while player choices shape the fate of civilizations.",
+              "external": {
+                "metacritic": {
+                  "critic_rating": 0,
+                  "id": "1400179843"
+                },
+                "wikidata": {
+                  "id": "q16267378"
+                }
+              }
+            }
+          },
+          {
+            "name": "Mass Effect 3",
+            "entity_id": "8B63E812-B486-4070-BCF8-AC978AE51A1E",
+            "types": [
+              "urn:entity:videogame"
+            ],
+            "disambiguation": "2012-03-06, BioWare",
+            "properties": {
+              "release_year": 2012,
+              "release_date": "2012-03-06",
+              "short_description": "Commander Shepard must unite galactic civilizations to repel a machine invasion and lead a final assault to save Earth.",
+              "external": {
+                "igdb": {
+                  "id": "mass-effect-3"
+                },
+                "metacritic": {
+                  "critic_rating": 93,
+                  "id": "1400094978"
+                },
+                "steam": {
+                  "id": "1238020"
+                },
+                "twitch": {
+                  "id": "mass effect 3"
+                },
+                "wikidata": {
+                  "id": "q753511"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "request": "https://hackathon.api.qloo.com/search?query=Radiohead&types=urn%3Aentity%3Aartist&take=5",
+      "retrieved_at": "2026-10-07T12:15:40.874Z",
+      "sha256": "2f936d6fdeed093611cb6bdd4061b3e9e8175a9e3fe5a6deb814cd4cb4a510ae",
+      "response": {
+        "results": [
+          {
+            "name": "Radiohead",
+            "entity_id": "70CAE5BF-2F4C-445C-A3E5-4EDACFC3591C",
+            "types": [
+              "urn:entity:artist"
+            ],
+            "disambiguation": "Radiohead",
+            "properties": {
+              "short_description": "Radiohead is an English rock band known for their innovative and experimental approach to music.",
+              "external": {
+                "facebook": {
+                  "id": "radiohead"
+                },
+                "instagram": {
+                  "id": "radiohead"
+                },
+                "lastfm": {
+                  "id": "radiohead",
+                  "listeners": 7062529,
+                  "scrobbles": 1000284364
+                },
+                "musicbrainz": {
+                  "id": "a74b1b7f-71a5-4011-9441-d0b5e4122711"
+                },
+                "spotify": {
+                  "id": "4Z8W4fKeB5YxbusRsdQVPb"
+                },
+                "twitter": {
+                  "id": "radiohead"
+                },
+                "wikidata": {
+                  "id": "q44190"
+                }
+              }
+            }
+          },
+          {
+            "name": "Radiohead Tribute",
+            "entity_id": "99ECEFED-B982-40C2-A2ED-EB042E9545FA",
+            "types": [
+              "urn:entity:artist"
+            ],
+            "disambiguation": "Radiohead Tribute",
+            "properties": {
+              "short_description": "A tribute band dedicated to performing the music of Radiohead.",
+              "external": {
+                "lastfm": {},
+                "musicbrainz": {},
+                "spotify": {}
+              }
+            }
+          },
+          {
+            "name": "Dub Tribute To Radiohead",
+            "entity_id": "BF711411-5659-4CEF-BC46-ADEAACEB52EA",
+            "types": [
+              "urn:entity:artist"
+            ],
+            "disambiguation": "Dub Tribute To Radiohead",
+            "properties": {
+              "short_description": "A group performing dub reggae covers of Radiohead songs.",
+              "external": {
+                "lastfm": {},
+                "musicbrainz": {},
+                "spotify": {}
+              }
+            }
+          },
+          {
+            "name": "The Bluegrass Tribute to Radiohead",
+            "entity_id": "A754373E-0D89-4FD7-85B4-6F22F413D1D1",
+            "types": [
+              "urn:entity:artist"
+            ],
+            "disambiguation": "The Bluegrass Tribute to Radiohead",
+            "properties": {
+              "short_description": "A bluegrass tribute band performing covers of Radiohead songs.",
+              "external": {
+                "lastfm": {},
+                "musicbrainz": {},
+                "spotify": {}
+              }
+            }
+          },
+          {
+            "name": "Thom Yorke and Johnny Greenwood (Radiohead)",
+            "entity_id": "93D30F68-DA61-4CB3-A672-1C7983C79086",
+            "types": [
+              "urn:entity:artist"
+            ],
+            "disambiguation": "Thom Yorke and Johnny Greenwood (Radiohead)",
+            "properties": {
+              "short_description": "Thom Yorke and Johnny Greenwood are key members of Radiohead, known for innovative alternative and experimental rock music.",
+              "external": {
+                "lastfm": {},
+                "musicbrainz": {},
+                "spotify": {}
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "request": "https://hackathon.api.qloo.com/search?query=Kendrick%20Lamar&types=urn%3Aentity%3Aartist&take=5",
+      "retrieved_at": "2026-10-07T12:15:41.373Z",
+      "sha256": "a960b31ed0627ddf3e2f1488226484d80ca53fc0770fc8463e9735840eb0d42f",
+      "response": {
+        "results": [
+          {
+            "name": "Kendrick Lamar",
+            "entity_id": "C915A918-39C5-47A3-A101-D9FA1DECBD9C",
+            "types": [
+              "urn:entity:artist"
+            ],
+            "disambiguation": "Kendrick Lamar",
+            "properties": {
+              "short_description": "An influential American rapper and songwriter known for his profound lyricism and storytelling.",
+              "external": {
+                "facebook": {
+                  "id": "kendricklamar"
+                },
+                "instagram": {
+                  "id": "jojoruski"
+                },
+                "lastfm": {
+                  "id": "kendrick%20lamar",
+                  "listeners": 4334329,
+                  "scrobbles": 781780966
+                },
+                "musicbrainz": {
+                  "id": "381086ea-f511-4aba-bdf9-71c753dc5077"
+                },
+                "spotify": {
+                  "id": "2YZyLoL8N0Wb9xBt1NhZWg"
+                },
+                "twitter": {
+                  "id": "kendricklamar"
+                },
+                "wikidata": {
+                  "id": "q130798"
+                }
+              }
+            }
+          },
+          {
+            "name": "Kendrick Lamar, SZA",
+            "entity_id": "B8874D35-B38E-4932-AE48-BAA86948C8B8",
+            "types": [
+              "urn:entity:artist"
+            ],
+            "disambiguation": "Kendrick Lamar, SZA",
+            "properties": {
+              "short_description": "American hip hop and R&B artists known for their profound lyrics and innovative music.",
+              "external": {
+                "lastfm": {},
+                "musicbrainz": {},
+                "spotify": {}
+              }
+            }
+          },
+          {
+            "name": "Kendrick Lamar, Travis Scott",
+            "entity_id": "2B4A9D52-242D-440D-898E-1A7ADB5DE79A",
+            "types": [
+              "urn:entity:artist"
+            ],
+            "disambiguation": "Kendrick Lamar, Travis Scott",
+            "properties": {
+              "short_description": "American rapper and songwriter known for his profound lyrics and storytelling.",
+              "external": {
+                "lastfm": {},
+                "musicbrainz": {},
+                "spotify": {}
+              }
+            }
+          },
+          {
+            "name": "Kendrick Lamar, Zacari",
+            "entity_id": "B16BCD64-A57E-4496-9419-368B0F3D63FF",
+            "types": [
+              "urn:entity:artist"
+            ],
+            "disambiguation": "Kendrick Lamar, Zacari",
+            "properties": {
+              "short_description": "American rapper and songwriter known for his profound lyrics and storytelling.",
+              "external": {
+                "lastfm": {},
+                "musicbrainz": {},
+                "spotify": {}
+              }
+            }
+          },
+          {
+            "name": "Kendrick Lamar, U2",
+            "entity_id": "83052D30-913B-4546-AEB6-1C4EC966E95D",
+            "types": [
+              "urn:entity:artist"
+            ],
+            "disambiguation": "Kendrick Lamar, U2",
+            "properties": {
+              "short_description": "American rapper and songwriter known for his profound lyrics and storytelling.",
+              "external": {
+                "lastfm": {},
+                "musicbrainz": {},
+                "spotify": {}
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "request": "https://hackathon.api.qloo.com/v2/insights?filter.type=urn%3Aentity%3Amovie&signal.interests.entities=70CAE5BF-2F4C-445C-A3E5-4EDACFC3591C&filter.results.entities=057DA9D9-399B-437E-8BCA-A80E499125EF%2C6BBB34F4-9345-4459-82AE-10991FA35CD2%2CC7EC4CA9-1CCC-4991-B738-55F075441B3F&take=3",
+      "retrieved_at": "2026-10-07T12:15:41.884Z",
+      "sha256": "1d45d317d266eb93251e912ce790fdb868b3ca2a649c04b462f95f4e37fbebaf",
+      "response": {
+        "success": true,
+        "results": {
+          "entities": [
+            {
+              "name": "Moon",
+              "entity_id": "6BBB34F4-9345-4459-82AE-10991FA35CD2",
+              "type": "urn:entity",
+              "subtype": "urn:entity:movie",
+              "query": {
+                "affinity": 0.9277100856231865,
+                "measurements": {
+                  "audience_growth": 0
+                }
+              }
+            },
+            {
+              "name": "Arrival",
+              "entity_id": "C7EC4CA9-1CCC-4991-B738-55F075441B3F",
+              "type": "urn:entity",
+              "subtype": "urn:entity:movie",
+              "query": {
+                "affinity": 0.8355442500541155,
+                "measurements": {
+                  "audience_growth": 0
+                }
+              }
+            },
+            {
+              "name": "Interstellar",
+              "entity_id": "057DA9D9-399B-437E-8BCA-A80E499125EF",
+              "type": "urn:entity",
+              "subtype": "urn:entity:movie",
+              "query": {
+                "affinity": 0.8118546029570369,
+                "measurements": {
+                  "audience_growth": 0
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": "https://hackathon.api.qloo.com/v2/insights?filter.type=urn%3Aentity%3Amovie&signal.interests.entities=C915A918-39C5-47A3-A101-D9FA1DECBD9C&filter.results.entities=057DA9D9-399B-437E-8BCA-A80E499125EF%2C6BBB34F4-9345-4459-82AE-10991FA35CD2%2CC7EC4CA9-1CCC-4991-B738-55F075441B3F&take=3",
+      "retrieved_at": "2026-10-07T12:15:42.395Z",
+      "sha256": "0a0112986475d28e8e6bc22363a61902a208c2550ada2df2f3f66c9f745d9fe7",
+      "response": {
+        "success": true,
+        "results": {
+          "entities": [
+            {
+              "name": "Arrival",
+              "entity_id": "C7EC4CA9-1CCC-4991-B738-55F075441B3F",
+              "type": "urn:entity",
+              "subtype": "urn:entity:movie",
+              "query": {
+                "affinity": 0.8226596028849298,
+                "measurements": {
+                  "audience_growth": 0
+                }
+              }
+            },
+            {
+              "name": "Interstellar",
+              "entity_id": "057DA9D9-399B-437E-8BCA-A80E499125EF",
+              "type": "urn:entity",
+              "subtype": "urn:entity:movie",
+              "query": {
+                "affinity": 0.7558787030186511,
+                "measurements": {
+                  "audience_growth": 0
+                }
+              }
+            },
+            {
+              "name": "Moon",
+              "entity_id": "6BBB34F4-9345-4459-82AE-10991FA35CD2",
+              "type": "urn:entity",
+              "subtype": "urn:entity:movie",
+              "query": {
+                "affinity": 0.7220932085293376,
+                "measurements": {
+                  "audience_growth": 0
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": "https://hackathon.api.qloo.com/v2/insights?filter.type=urn%3Aentity%3Avideogame&signal.interests.entities=70CAE5BF-2F4C-445C-A3E5-4EDACFC3591C&filter.results.entities=B061B95F-B940-4871-B80A-C12365E7A2A1%2CDB003E13-0C9F-4011-B928-43ADC2A59F26%2CEA0D6B19-199B-439B-809D-B60B4412E405&take=3",
+      "retrieved_at": "2026-10-07T12:15:42.882Z",
+      "sha256": "d4079fbd752fca9673026cc6bf0efd0b778994f741dad6383dbb404db7cf43f8",
+      "response": {
+        "success": true,
+        "results": {
+          "entities": [
+            {
+              "name": "Mass Effect",
+              "entity_id": "DB003E13-0C9F-4011-B928-43ADC2A59F26",
+              "type": "urn:entity",
+              "subtype": "urn:entity:videogame",
+              "query": {
+                "affinity": 0.8809011942786064
+              }
+            },
+            {
+              "name": "Outer Wilds",
+              "entity_id": "EA0D6B19-199B-439B-809D-B60B4412E405",
+              "type": "urn:entity",
+              "subtype": "urn:entity:videogame",
+              "query": {
+                "affinity": 0.6703367393438057
+              }
+            },
+            {
+              "name": "Death Stranding",
+              "entity_id": "B061B95F-B940-4871-B80A-C12365E7A2A1",
+              "type": "urn:entity",
+              "subtype": "urn:entity:videogame",
+              "query": {
+                "affinity": 0.537879723429959
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": "https://hackathon.api.qloo.com/v2/insights?filter.type=urn%3Aentity%3Avideogame&signal.interests.entities=C915A918-39C5-47A3-A101-D9FA1DECBD9C&filter.results.entities=B061B95F-B940-4871-B80A-C12365E7A2A1%2CDB003E13-0C9F-4011-B928-43ADC2A59F26%2CEA0D6B19-199B-439B-809D-B60B4412E405&take=3",
+      "retrieved_at": "2026-10-07T12:15:43.365Z",
+      "sha256": "3c6b9503dc0a258e91ef00d390907a267c7e9f90b675e951cdaca51f3a1caf9c",
+      "response": {
+        "success": true,
+        "results": {
+          "entities": [
+            {
+              "name": "Death Stranding",
+              "entity_id": "B061B95F-B940-4871-B80A-C12365E7A2A1",
+              "type": "urn:entity",
+              "subtype": "urn:entity:videogame",
+              "query": {
+                "affinity": 0.6392810706221489
+              }
+            },
+            {
+              "name": "Mass Effect",
+              "entity_id": "DB003E13-0C9F-4011-B928-43ADC2A59F26",
+              "type": "urn:entity",
+              "subtype": "urn:entity:videogame",
+              "query": {
+                "affinity": 0.612591001814321
+              }
+            },
+            {
+              "name": "Outer Wilds",
+              "entity_id": "EA0D6B19-199B-439B-809D-B60B4412E405",
+              "type": "urn:entity",
+              "subtype": "urn:entity:videogame",
+              "query": {
+                "affinity": 0.5180356788147933
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "provider_calls": 12,
+  "captured_at": "2026-10-07T12:15:43.366Z",
+  "redaction": "Only original provider fields consumed by identity/affinity normalization are retained. Images, tags, marketing and unrelated descriptive metadata are omitted. Original wire-body hashes remain provenance only."
+}
