@@ -124,7 +124,7 @@ function parseRpc<T>(
   return parsed.data;
 }
 
-class SupabaseGateway implements DataGateway {
+export class SupabaseGateway implements DataGateway {
   readonly #client: SupabaseClient;
 
   constructor(client: SupabaseClient) {
@@ -313,11 +313,16 @@ class SupabaseGateway implements DataGateway {
   // Qloo captures
   // -------------------------------------------------------------------------
 
-  async findQlooCaptureByFingerprint(fingerprint: string): Promise<QlooCaptureRow | null> {
-    const { data, error } = await this.#client
+  async findQlooCaptureByFingerprint(fingerprint: string, freshAt?: string): Promise<QlooCaptureRow | null> {
+    let query = this.#client
       .from("qloo_captures")
       .select(QLOO_CAPTURE_COLUMNS)
-      .eq("request_fingerprint", fingerprint)
+      .eq("request_fingerprint", fingerprint);
+    if (freshAt !== undefined) query = query.gt("cache_expires_at", freshAt);
+    const { data, error } = await query
+      .order("captured_at", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(1)
       .maybeSingle();
     if (error !== null) persistenceFailure("findQlooCaptureByFingerprint", error.message);
     if (data === null) return null;
@@ -326,16 +331,14 @@ class SupabaseGateway implements DataGateway {
 
   async findQlooCapturesByFingerprints(
     fingerprints: readonly string[],
+    freshAt?: string,
   ): Promise<QlooCaptureRow[]> {
-    if (fingerprints.length === 0) return [];
-    const { data, error } = await this.#client
-      .from("qloo_captures")
-      .select(QLOO_CAPTURE_COLUMNS)
-      .in("request_fingerprint", [...fingerprints]);
-    if (error !== null) persistenceFailure("findQlooCapturesByFingerprints", error.message);
-    return (data ?? []).map((row) =>
-      parseRpc("findQlooCapturesByFingerprints", QlooCaptureRowSchema, row),
-    );
+    // Limit each request in SQL: an arbitrarily long history for one fingerprint
+    // must not exhaust PostgREST's row cap and hide another fingerprint.
+    const rows = await Promise.all([...new Set(fingerprints)].map((fingerprint) =>
+      this.findQlooCaptureByFingerprint(fingerprint, freshAt),
+    ));
+    return rows.filter((row): row is QlooCaptureRow => row !== null);
   }
 
   async findLatestQlooCapture(
@@ -348,6 +351,7 @@ class SupabaseGateway implements DataGateway {
       .eq("artist_entity_id", artistEntityId)
       .eq("domain", domain)
       .order("captured_at", { ascending: false })
+      .order("id", { ascending: false })
       .limit(1)
       .maybeSingle();
     if (error !== null) persistenceFailure("findLatestQlooCapture", error.message);
@@ -368,32 +372,25 @@ class SupabaseGateway implements DataGateway {
   }
 
   /**
-   * Immutable insert.
-   *
-   * `ignoreDuplicates` matters here: the table's own trigger rejects `UPDATE`,
-   * so a merging upsert would fail. Two instances that retrieved the same
-   * artist concurrently both end up reading the one row that won.
+   * Append-only: concurrent retrievals may share a fingerprint but each gets
+   * its own ID. Return the INSERT result, never a fingerprint read-back that
+   * could attach another retrieval's ID to this retrieval's payload.
    */
   async insertQlooCapture(input: InsertQlooCaptureInput): Promise<QlooCaptureRow> {
-    const { error } = await this.#client.from("qloo_captures").upsert(
-      {
-        kind: input.kind,
-        request_fingerprint: input.requestFingerprint,
-        normalized_query: input.normalizedQuery,
-        artist_entity_id: input.artistEntityId,
-        domain: input.domain,
-        results: input.results,
-        quota_diagnostics: input.quotaDiagnostics ?? null,
-        normalizer_version: input.normalizerVersion,
-        cache_expires_at: input.cacheExpiresAt,
-      },
-      { onConflict: "request_fingerprint", ignoreDuplicates: true },
-    );
+    const { data, error } = await this.#client.from("qloo_captures").insert({
+      kind: input.kind,
+      request_fingerprint: input.requestFingerprint,
+      normalized_query: input.normalizedQuery,
+      artist_entity_id: input.artistEntityId,
+      domain: input.domain,
+      results: input.results,
+      quota_diagnostics: input.quotaDiagnostics ?? null,
+      normalizer_version: input.normalizerVersion,
+      ...(input.capturedAt === undefined ? {} : { captured_at: input.capturedAt }),
+      cache_expires_at: input.cacheExpiresAt,
+    }).select(QLOO_CAPTURE_COLUMNS).single();
     if (error !== null) persistenceFailure("insertQlooCapture", error.message);
-
-    const row = await this.findQlooCaptureByFingerprint(input.requestFingerprint);
-    if (row === null) persistenceFailure("insertQlooCapture", "the inserted capture was not readable");
-    return row;
+    return parseRpc("insertQlooCapture", QlooCaptureRowSchema, data);
   }
 
   // -------------------------------------------------------------------------

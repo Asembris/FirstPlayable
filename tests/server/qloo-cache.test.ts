@@ -289,16 +289,51 @@ describe("the stale fallback", () => {
 });
 
 describe("capture immutability", () => {
-  it("returns the first writer's row when two instances race the same key", async () => {
+  it("keeps distinct immutable evidence when two instances race the same key", async () => {
     const gateway = new MemoryGateway();
     gateway.setClock(() => T0);
     const capture = referenceCapture("movie");
 
     const [first, second] = await Promise.all([
       writeReferenceCapture(gateway, capture, null, T0),
-      writeReferenceCapture(gateway, capture, null, T0),
+      writeReferenceCapture(gateway, { ...capture, candidates: [] }, null, T0),
     ]);
-    expect(first.capture_id).toBe(second.capture_id);
-    expect(gateway.captures.size).toBe(1);
+    expect(first.capture_id).not.toBe(second.capture_id);
+    expect(gateway.captures.size).toBe(2);
+    const frozen = await readCapturesByIds(gateway, [first.capture_id!, second.capture_id!]);
+    expect(frozen.map((row) => row.candidates.length)).toEqual([10, 0]);
+    const newest = await gateway.findQlooCaptureByFingerprint(capture.request_fingerprint);
+    // Identical retrieval times use the same deterministic UUID tie-break in both gateways.
+    expect(newest?.id).toBe([first.capture_id!, second.capture_id!].sort().at(-1));
   });
+});
+
+
+it("refreshes first-hop evidence without changing frozen IDs and selects the newest stale fallback", async () => {
+  const gateway = new MemoryGateway();
+  gateway.setClock(() => T0);
+  const capture = referenceCapture("movie");
+  const old = await writeReferenceCapture(gateway, capture, null, T0);
+  const oldRows = await gateway.findQlooCapturesByIds([old.capture_id!]);
+  const now = at(CACHE_TTL_SECONDS.firstHop + 60);
+  const fresh = await writeReferenceCapture(gateway, { ...capture, retrieved_at: now.toISOString() }, null, now);
+  expect(fresh.capture_id).not.toBe(old.capture_id);
+  expect(await gateway.findQlooCapturesByIds([old.capture_id!])).toEqual(oldRows);
+  expect((await readReferenceCache(gateway, capture.request_fingerprint, now))?.capture_id).toBe(fresh.capture_id);
+  expect((await readReferenceCaches(gateway, [capture.request_fingerprint], now)).get(capture.request_fingerprint)?.capture_id).toBe(fresh.capture_id);
+  const stale = await readStaleReferenceFallback(gateway, {
+    artistEntityId: RADIOHEAD_ENTITY_ID, domain: "movie", consented: true,
+    now: new Date(now.getTime() + (CACHE_TTL_SECONDS.firstHop + 60) * 1000),
+  });
+  expect(stale?.capture.capture_id).toBe(fresh.capture_id);
+  expect(stale?.capture.cache).toBe("stale");
+});
+
+it("selects the newest still-fresh row when a newer empty search has already expired", async () => {
+  const gateway = new MemoryGateway();
+  const snapshot = searchSnapshot();
+  const old = await writeArtistSearchCapture(gateway, snapshot, null, T0);
+  const empty = await writeArtistSearchCapture(gateway, { ...snapshot, candidates: [], retrieved_at: at(60).toISOString() }, null, at(60));
+  expect((await gateway.findQlooCaptureByFingerprint(snapshot.request_fingerprint))?.id).toBe(empty.capture_id);
+  expect((await readArtistSearchCache(gateway, snapshot.request_fingerprint, at(700)))?.capture_id).toBe(old.capture_id);
 });
