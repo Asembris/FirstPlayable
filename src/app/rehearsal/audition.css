@@ -257,3 +257,9 @@
 }
 .rt-audition__summary { font-family: var(--rt-font-fact); font-size: 12px; margin: 6px 0 12px; }
 .rt-audition__movement { display: block; font-family: var(--rt-font-fact); font-size: 11px; color: var(--rt-ink-2); margin-top: 4px; }
+/* Saved example on wide screens: the question beside the concept, so the payoff starts higher. */
+@media (min-width: 1024px) {
+  .rt-audition__intro[data-saved="true"] { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px; align-items: end; margin-bottom: 16px; }
+  .rt-audition__intro[data-saved="true"] .rt-audition__mode { margin-bottom: 0; }
+  .rt-audition__intro[data-saved="true"] .rt-audition__concept { padding-bottom: 0; }
+}

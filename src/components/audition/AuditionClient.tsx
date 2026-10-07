@@ -113,6 +113,8 @@ export function AuditionClient({ savedResult, example, startLive = false }: { sa
 
   return (
     <main className="rt rt-audition" data-testid="audition">
+      <div className="rt-audition__intro" data-saved={!live}>
+      <div>
       <header className="rt-audition__head">
         <span className="rt-wordmark">FirstPlayable</span>
         <h1 className="rt-audition__title">Choose the comps. Switch the audience. See what changes.</h1>
@@ -125,15 +127,17 @@ export function AuditionClient({ savedResult, example, startLive = false }: { sa
         <button className="rt-button" type="button" aria-pressed={!live} onClick={() => { setLive(false); setFailure(null); }}>Saved example</button>
         <button className="rt-button" type="button" data-testid="try-own" aria-pressed={live} onClick={() => { if (!live) { setSession('pending'); setLive(true); } }}>Try your own</button>
       </nav>
-      {!live && <>
+      </div>
+      {!live && (
         <section className="rt-audition__concept" aria-label="Game concept">
           <span className="rt-label">Saved example · synthetic demonstration data · no live calls</span>
           <h2 className="rt-audition__h2">{example.title}</h2>
           <p>{example.concept}</p>
           <p className="rt-audition__note">Comps chosen for isolation, first contact and exploration. Titles, artists and affinities here are invented in Qloo’s response shape, not Qloo data. Try your own for live Qloo scores.</p>
         </section>
-        <AuditionResults result={savedResult} savedAt={example.captured_at} />
-      </>}
+      )}
+      </div>
+      {!live && <AuditionResults result={savedResult} savedAt={example.captured_at} />}
       {live && <>
       {session === 'pending' && <p role="status">Preparing your session…</p>}
       {session === 'failed' && <button className="rt-button" type="button" data-testid="session-retry" onClick={() => { setFailure(null); setSession('pending'); setSessionAttempt((v) => v + 1); }}>Retry session</button>}
