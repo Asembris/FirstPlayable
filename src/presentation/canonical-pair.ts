@@ -64,6 +64,7 @@ const WithoutVersionSchema = z.object({
 });
 
 const ProvenanceFileSchema = z.object({
+  capture: z.object({ artist_entity_id: z.string() }),
   decision: z.object({
     proposal_snapshot: z.object({
       proposal: z.object({ intended_interaction: z.string() }),
@@ -80,8 +81,21 @@ const ProvenanceFileSchema = z.object({
 
 export type Availability = "enabled" | "locked" | "hidden";
 
+/**
+ * The confirmed artist of the saved example. The provenance file stores only
+ * the artist's Qloo entity id; the name is the one recorded for that id in
+ * docs/PHASE6_CANONICAL_PAIR.md (the stored Radiohead search capture). It is
+ * keyed by the id, so a record with any other artist refuses to load rather
+ * than showing the wrong name.
+ */
+const RECORDED_ARTISTS: Readonly<Record<string, string>> = {
+  "70CAE5BF-2F4C-445C-A3E5-4EDACFC3591C": "Radiohead",
+};
+
 /** The four causal layers, as stored. */
 export type CausalRecord = {
+  /** The artist the creator confirmed, whose Qloo neighbours were retrieved. */
+  readonly artist: { readonly name: string };
   /** Qloo returned this reference. */
   readonly source: {
     readonly name: string;
@@ -154,6 +168,10 @@ export function buildCanonicalPair(
   const provenance = ProvenanceFileSchema.parse(provenanceRaw);
   const approval = withVersion.approval_snapshot[0] as z.infer<typeof ApprovalSnapshotSchema>;
   const witness = withVersion.validation_summary.witnesses.find((entry) => entry.mechanical);
+  const artistName = RECORDED_ARTISTS[provenance.capture.artist_entity_id];
+  if (artistName === undefined) {
+    throw new Error("canonical pair: the provenance capture's artist is not the recorded one");
+  }
   const evidence = (kind: string): string | null =>
     provenance.evidence.find((entry) => entry.kind === kind)?.text ?? null;
 
@@ -164,6 +182,7 @@ export function buildCanonicalPair(
     recordedPrefix: withoutVersion.revision_diff.replay.prefix,
     storedChangedActionIds: withoutVersion.revision_diff.replay.changed_action_ids,
     causal: {
+      artist: { name: artistName },
       source: {
         name: provenance.reference.name,
         kind: DOMAIN_NOUNS[approval.domain] ?? approval.domain,

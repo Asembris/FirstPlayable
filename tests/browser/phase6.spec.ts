@@ -80,6 +80,9 @@ test.describe("Phase 6 · landing", () => {
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(
       "Choose the influences. Play the consequences.",
     );
+    // Who it is for, what they test, and the decision it serves.
+    await expect(page.locator(".rt-landing__lede")).toContainText("For narrative-game creators");
+    await expect(page.locator(".rt-landing__lede")).toContainText("decide whether to keep it");
     const play = page.getByTestId("rt-door-play");
     const create = page.getByTestId("rt-door-create");
     await expect(play).toHaveAttribute("href", "/difference");
@@ -230,7 +233,7 @@ test.describe("Phase 6 · canonical Compare", () => {
     const proposed = await note.getByTestId("rt-layer-proposed").innerText();
     expect(approval.proposed_idea.startsWith(proposed.replace(/…$/, ""))).toBe(true);
     await expect(note.getByTestId("rt-layer-approved")).toHaveText(approval.approved_text);
-    await expect(note).toContainText("Edited by you");
+    await expect(note).toContainText("Edited by the creator");
     await expect(note.getByTestId("rt-layer-consequence")).toHaveText(
       `After the same two choices, ${label("core.give")} is locked with Moon and open without it. ` +
         `With Moon, two choices are added, and ${label("core.give")} needs both.`,
@@ -240,6 +243,23 @@ test.describe("Phase 6 · canonical Compare", () => {
     const approvedStyle = await note.getByTestId("rt-layer-approved").evaluate((el) => getComputedStyle(el).fontStyle);
     expect(proposedStyle).toBe("italic");
     expect(approvedStyle).toBe("normal");
+  });
+
+  test("the saved example names Radiohead and credits the creator, not the visitor", async ({ page }) => {
+    await openCompare(page);
+    const note = page.getByTestId("rt-note");
+    await expect(note.getByTestId("rt-layer-source")).toContainText(
+      `Radiohead → Qloo → ${provenanceJson.reference.name}`,
+    );
+    await expect(note.locator(".rt-layer__label--decision")).toContainText("the creator approved");
+    await expect(note.locator(".rt-layer__label--decision")).toContainText("Edited by the creator");
+    await expect(page.getByTestId("rt-compare-heads")).toContainText("creator approved");
+    await page.getByTestId("rt-note").locator(".rt-note__more > summary").click();
+    for (const path of ["/difference?view=compare", "/difference?view=play"]) {
+      if (path !== "/difference?view=compare") await page.goto(path);
+      const text = await page.locator("body").innerText();
+      expect(text).not.toMatch(/\byou (edited|approved|confirmed)\b|edited by you|artist you confirmed|interpretation is yours/i);
+    }
   });
 
   test("no raw id, hash, or validator term reaches the page", async ({ page }) => {

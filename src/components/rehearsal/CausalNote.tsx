@@ -3,12 +3,15 @@
  *
  *   Source       Qloo returned        mono catalogue slip (the only boxed element)
  *   Suggestion   FirstPlayable proposed   italic serif, pencil, dashed underline
- *   Decision     you edited + approved    upright serif ink with a left rule
+ *   Decision     the creator approved     upright serif ink with a left rule
  *   Consequence  the scene changed        revision stock
  *
  * Every string is a stored field of the canonical pair or derived from the
  * stored witness by the presentation model. No identifier, hash, or validator
  * sentence is shown.
+ *
+ * The saved example was decided by its creator, not by the visitor reading
+ * it, so the note names "the creator" and never says "you approved".
  */
 
 import type { CanonicalPair } from "../../presentation/canonical-pair";
@@ -30,13 +33,20 @@ export function PhraseText({ phrase }: { phrase: Phrase }): React.ReactElement {
  * Drawn, because the UI face has no caret glyph and a fallback one reads as
  * an underscore.
  */
-export function EditedMark({ testId }: { testId?: string }): React.ReactElement {
+export function EditedMark({
+  testId,
+  label = "Edited by you",
+}: {
+  testId?: string;
+  /** The studio's own creator reads "Edited by you"; a saved example names the creator. */
+  label?: string;
+}): React.ReactElement {
   return (
     <span className="rt-edited" data-testid={testId}>
       <svg className="rt-edited__caret" viewBox="0 0 10 9" aria-hidden="true" focusable="false">
         <path d="M1 8 L5 1.5 L9 8" />
       </svg>
-      Edited by you
+      {label}
     </span>
   );
 }
@@ -54,7 +64,7 @@ export type CausalNoteProps = {
 
 export function CausalNote(props: CausalNoteProps): React.ReactElement {
   const { causal, influenceName } = props.pair;
-  const { source, proposed, decision } = causal;
+  const { artist, source, proposed, decision } = causal;
   const suggestion = firstSentence(proposed.idea);
   const consequence = consequenceOf(props.pair);
   const headingId = `${props.id ?? "rt-note"}-heading`;
@@ -88,7 +98,7 @@ export function CausalNote(props: CausalNoteProps): React.ReactElement {
               </span>
             </div>
             <p className="rt-slip__line">
-              #{source.rank} of the {source.kind}s returned for the artist you confirmed
+              {artist.name} → Qloo → {source.name} · #{source.rank} of the {source.kind}s returned
             </p>
             {source.theme === null ? null : (
               <p className="rt-slip__evidence">Theme · “{source.theme}”</p>
@@ -107,9 +117,10 @@ export function CausalNote(props: CausalNoteProps): React.ReactElement {
         <li className="rt-layer">
           <p className="rt-layer__label rt-layer__label--decision">
             <span>
-              3 · Decision · {decision.editedByCreator ? "you edited, then approved" : "you approved"}
+              {/* The caret mark beside this label records that the creator edited it. */}
+              3 · Decision · the creator approved
             </span>
-            {decision.editedByCreator ? <EditedMark /> : null}
+            {decision.editedByCreator ? <EditedMark label="Edited by the creator" /> : null}
           </p>
           <blockquote className="rt-decision" data-testid="rt-layer-approved">
             {decision.approvedText}
@@ -127,7 +138,7 @@ export function CausalNote(props: CausalNoteProps): React.ReactElement {
       </ol>
 
       <p className="rt-note__foot">
-        Qloo supplied the reference. The interpretation is yours.
+        Qloo supplied the reference. The interpretation is the creator’s.
         {causal.witness === null ? "" : " The scene's own check confirmed the change."}
       </p>
 
@@ -143,7 +154,7 @@ export function CausalNote(props: CausalNoteProps): React.ReactElement {
             <dd className="rt-suggestion">{proposed.interaction}</dd>
           </div>
           <div>
-            <dt>What you wanted to change in play</dt>
+            <dt>What the creator wanted to change in play</dt>
             <dd>{decision.intendedEffect}</dd>
           </div>
           {source.tone === null ? null : (

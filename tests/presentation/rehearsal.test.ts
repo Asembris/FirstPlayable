@@ -99,6 +99,33 @@ describe("the canonical pair", () => {
   });
 });
 
+describe("Attribution of the saved example", () => {
+  it("names the confirmed artist recorded for the stored capture's Qloo entity", () => {
+    expect(provenanceJson.capture.artist_entity_id).toBe("70CAE5BF-2F4C-445C-A3E5-4EDACFC3591C");
+    expect(pair.causal.artist.name).toBe("Radiohead");
+  });
+
+  it("refuses a record whose artist is not the recorded one, rather than misnaming it", () => {
+    expect(() =>
+      buildCanonicalPair(withMoonJson, withoutMoonJson, {
+        ...provenanceJson,
+        capture: { ...provenanceJson.capture, artist_entity_id: "00000000-0000-0000-0000-000000000000" },
+      }),
+    ).toThrow();
+  });
+
+  it("keeps the cross-domain step and the four layers distinct, credited to the creator", () => {
+    const summary = causalSummary(pair);
+    expect(summary.startsWith(`Radiohead → Qloo → ${provenanceJson.reference.name} · `)).toBe(true);
+    // The stored decision is a creator edit, and the summary must not hide it.
+    expect(stored.approval.edited_by_creator).toBe(true);
+    expect(summary).toContain("the creator edited and approved an interpretation");
+    expect(summary.endsWith("the scene changed.")).toBe(true);
+    // A visitor reading the saved example did not approve anything.
+    expect(summary).not.toMatch(/\byou\b/i);
+  });
+});
+
 describe("Compare at the recorded point", () => {
   const comparison = compareAt(pair, pair.recordedPrefix);
 

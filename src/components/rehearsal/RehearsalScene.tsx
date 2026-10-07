@@ -428,7 +428,7 @@ export function RehearsalScene(props: RehearsalSceneProps): React.ReactElement {
     notice !== ""
       ? notice
       : side === "with"
-        ? "Lines marked * exist because of the influence you approved. Click one to see why."
+        ? "Lines marked * exist because of the influence the creator approved. Click one to see why."
         : "Without the influence: no marks, nothing added.";
 
   const headline =
@@ -505,7 +505,7 @@ export function RehearsalScene(props: RehearsalSceneProps): React.ReactElement {
           </p>
           <div className="rt-head__cmp" aria-hidden="true" data-testid="rt-compare-heads">
             <span className="rt-label rt-head__without">Without this influence</span>
-            <span className="rt-label rt-head__with">With {pair.influenceName} · you approved</span>
+            <span className="rt-label rt-head__with">With {pair.influenceName} · creator approved</span>
           </div>
         </>
       }

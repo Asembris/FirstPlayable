@@ -423,9 +423,9 @@ export function blockedTextsOf(scene: Scene, state: State, actionId: Id): string
 /** The one-line "why" used on mobile and wherever the full note is folded. */
 export function causalSummary(pair: CanonicalPair): string {
   const decided = pair.causal.decision.editedByCreator
-    ? "you edited and approved an interpretation"
-    : "you approved an interpretation";
-  return `Qloo returned ${pair.causal.source.name} · ${decided} · the scene changed.`;
+    ? "the creator edited and approved an interpretation"
+    : "the creator approved an interpretation";
+  return `${pair.causal.artist.name} → Qloo → ${pair.causal.source.name} · ${decided} · the scene changed.`;
 }
 
 /** The first sentence of a stored text, and whether anything follows it. */

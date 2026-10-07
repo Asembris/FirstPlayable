@@ -84,8 +84,9 @@ export function Landing(): React.ReactElement {
             <em className="rt-hero__line">Play the consequences.</em>
           </h1>
           <p className="rt-landing__lede">
-            Approve one cultural influence for a scene. Then play it with and without that
-            influence, and see exactly which choices it changed.
+            For narrative-game creators: test a cultural influence as a playable variation of
+            your scene. Play it with and without, see exactly which choices it changed, then
+            decide whether to keep it.
           </p>
         </div>
 
