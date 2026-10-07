@@ -130,6 +130,7 @@ export class MemoryGateway implements DataGateway {
   readonly operations = new Map<string, OperationRecord>();
   readonly buckets = new Map<string, BucketRecord>();
   readonly decisions: DecisionRecord[] = [];
+  /** All immutable captures, keyed by row ID, including expired history. */
   readonly captures = new Map<string, QlooCaptureRow>();
   readonly versions: VersionRecord[] = [];
   readonly publications: PublicationRecord[] = [];
@@ -619,20 +620,31 @@ export class MemoryGateway implements DataGateway {
   // Qloo captures
   // -------------------------------------------------------------------------
 
-  async findQlooCaptureByFingerprint(fingerprint: string): Promise<QlooCaptureRow | null> {
+  async findQlooCaptureByFingerprint(fingerprint: string, freshAt?: string): Promise<QlooCaptureRow | null> {
     this.#guard("findQlooCaptureByFingerprint");
-    const row = this.captures.get(fingerprint);
-    return row === undefined ? null : { ...row };
+    const rows = this.#newestCaptures([fingerprint], freshAt);
+    return rows[0] ?? null;
+  }
+
+  #newestCaptures(fingerprints: readonly string[], freshAt?: string): QlooCaptureRow[] {
+    const wanted = new Set(fingerprints);
+    const rows = [...this.captures.values()]
+      .filter((row) => wanted.has(row.request_fingerprint) &&
+        (freshAt === undefined || Date.parse(row.cache_expires_at) > Date.parse(freshAt)))
+      .sort((a, b) => Date.parse(b.captured_at) - Date.parse(a.captured_at) || b.id.localeCompare(a.id));
+    const newest = new Map<string, QlooCaptureRow>();
+    for (const row of rows) {
+      if (!newest.has(row.request_fingerprint)) newest.set(row.request_fingerprint, structuredClone(row));
+    }
+    return [...newest.values()];
   }
 
   async findQlooCapturesByFingerprints(
     fingerprints: readonly string[],
+    freshAt?: string,
   ): Promise<QlooCaptureRow[]> {
     this.#guard("findQlooCapturesByFingerprints");
-    return fingerprints
-      .map((fingerprint) => this.captures.get(fingerprint))
-      .filter((row): row is QlooCaptureRow => row !== undefined)
-      .map((row) => ({ ...row }));
+    return this.#newestCaptures(fingerprints, freshAt);
   }
 
   async findLatestQlooCapture(
@@ -642,7 +654,7 @@ export class MemoryGateway implements DataGateway {
     this.#guard("findLatestQlooCapture");
     const matching = [...this.captures.values()]
       .filter((row) => row.artist_entity_id === artistEntityId && row.domain === domain)
-      .sort((a, b) => Date.parse(b.captured_at) - Date.parse(a.captured_at));
+      .sort((a, b) => Date.parse(b.captured_at) - Date.parse(a.captured_at) || b.id.localeCompare(a.id));
     const first = matching[0];
     return first === undefined ? null : { ...first };
   }
@@ -655,13 +667,11 @@ export class MemoryGateway implements DataGateway {
       .map((row) => ({ ...row }));
   }
 
-  /** Mirrors the `ignoreDuplicates` upsert: the first writer's row wins. */
+  /** Every successful upstream retrieval gets its own immutable row. */
   async insertQlooCapture(input: InsertQlooCaptureInput): Promise<QlooCaptureRow> {
     this.#guard("insertQlooCapture");
     await Promise.resolve();
-    const existing = this.captures.get(input.requestFingerprint);
-    if (existing !== undefined) return { ...existing };
-    const capturedAt = this.now().toISOString();
+    const capturedAt = input.capturedAt ?? this.now().toISOString();
     if (Date.parse(input.cacheExpiresAt) <= Date.parse(capturedAt)) {
       throw appErrors.persistenceUnavailable("cache_expires_at must be after captured_at");
     }
@@ -678,8 +688,8 @@ export class MemoryGateway implements DataGateway {
       captured_at: capturedAt,
       cache_expires_at: input.cacheExpiresAt,
     };
-    this.captures.set(row.request_fingerprint, row);
-    return { ...row };
+    this.captures.set(row.id, structuredClone(row));
+    return structuredClone(row);
   }
 
   // -------------------------------------------------------------------------

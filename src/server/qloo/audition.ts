@@ -322,7 +322,7 @@ export async function readCompSearchCache(
   fingerprint: string,
   now: Date,
 ): Promise<CompSearchSnapshot | null> {
-  const row = await gateway.findQlooCaptureByFingerprint(fingerprint);
+  const row = await gateway.findQlooCaptureByFingerprint(fingerprint, now.toISOString());
   if (row === null || row.kind !== "search" || !isFresh(row.cache_expires_at, now)) return null;
   const parsed = StoredCompSearchSchema.safeParse(row.results);
   if (!parsed.success) return null;
@@ -362,6 +362,7 @@ export async function writeCompSearchCapture(
     artistEntityId: null,
     domain: null,
     results: snapshot,
+    capturedAt: snapshot.retrieved_at,
     quotaDiagnostics: quota,
     normalizerVersion: snapshot.normalizer_version,
     cacheExpiresAt: expiryFrom(now, ttl),
@@ -374,7 +375,7 @@ export async function readCompScoreCache(
   fingerprint: string,
   now: Date,
 ): Promise<CompScoreCapture | null> {
-  const row = await gateway.findQlooCaptureByFingerprint(fingerprint);
+  const row = await gateway.findQlooCaptureByFingerprint(fingerprint, now.toISOString());
   if (row === null || row.kind === "search" || !isFresh(row.cache_expires_at, now)) return null;
   const parsed = StoredCompScoreSchema.safeParse(row.results);
   if (!parsed.success) return null;
@@ -397,6 +398,7 @@ export async function writeCompScoreCapture(
     artistEntityId: null,
     domain: capture.domain,
     results: capture,
+    capturedAt: capture.retrieved_at,
     quotaDiagnostics: quota,
     normalizerVersion: capture.normalizer_version,
     cacheExpiresAt: expiryFrom(now, CACHE_TTL_SECONDS.firstHop),

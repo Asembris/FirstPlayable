@@ -85,7 +85,7 @@ export async function readArtistSearchCache(
   fingerprint: string,
   now: Date,
 ): Promise<ArtistSearchSnapshot | null> {
-  const row = await gateway.findQlooCaptureByFingerprint(fingerprint);
+  const row = await gateway.findQlooCaptureByFingerprint(fingerprint, now.toISOString());
   if (row === null || row.kind !== "search" || !isFresh(row, now)) return null;
   const parsed = StoredSearchSchema.safeParse(row.results);
   if (!parsed.success) return null;
@@ -111,6 +111,7 @@ export async function writeArtistSearchCapture(
     artistEntityId: null,
     domain: null,
     results: snapshot,
+    capturedAt: snapshot.retrieved_at,
     quotaDiagnostics: quota,
     normalizerVersion: snapshot.normalizer_version,
     cacheExpiresAt: expiryFrom(now, ttl),
@@ -155,18 +156,18 @@ export async function readReferenceCache(
   fingerprint: string,
   now: Date,
 ): Promise<ReferenceCapture | null> {
-  const row = await gateway.findQlooCaptureByFingerprint(fingerprint);
+  const row = await gateway.findQlooCaptureByFingerprint(fingerprint, now.toISOString());
   if (row === null || !isFresh(row, now)) return null;
   return toReferenceCapture(row, "cached");
 }
 
-/** Both first hops in one round trip, for the parallel retrieval path. */
+/** Newest fresh captures for both first hops, for the parallel retrieval path. */
 export async function readReferenceCaches(
   gateway: DataGateway,
   fingerprints: readonly string[],
   now: Date,
 ): Promise<Map<string, ReferenceCapture>> {
-  const rows = await gateway.findQlooCapturesByFingerprints(fingerprints);
+  const rows = await gateway.findQlooCapturesByFingerprints(fingerprints, now.toISOString());
   const hits = new Map<string, ReferenceCapture>();
   for (const row of rows) {
     if (!isFresh(row, now)) continue;
@@ -189,6 +190,7 @@ export async function writeReferenceCapture(
     artistEntityId: capture.artist_entity_id,
     domain: capture.domain,
     results: capture,
+    capturedAt: capture.retrieved_at,
     quotaDiagnostics: quota,
     normalizerVersion: capture.normalizer_version,
     cacheExpiresAt: expiryFrom(now, CACHE_TTL_SECONDS.firstHop),

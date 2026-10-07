@@ -39,6 +39,7 @@ describe("committed migrations", () => {
       "20261004160000_phase4_compilation.sql",
       "20261004173000_phase4_validation_boolean.sql",
       "20261004200000_phase5_revision_share.sql",
+      "20261007120000_qloo_capture_refresh.sql",
     ]);
   });
 
@@ -505,5 +506,20 @@ describe("committed migrations", () => {
 
   it("introduces no phase 3 Qloo call and no model call in SQL", () => {
     expect(/qloo\.com|api\.openai\.com|http:\/\/|https:\/\//i.test(sql)).toBe(false);
+  });
+});
+
+
+describe("capture refresh migration", () => {
+  it("replaces only fingerprint uniqueness, preserving historical evidence and immutability", () => {
+    const refresh = readFileSync(join(migrationsDir, "20261007120000_qloo_capture_refresh.sql"), "utf8");
+    expect(refresh).toContain("drop index public.qloo_captures_fingerprint_key;");
+    expect(refresh).toMatch(/create index qloo_captures_fingerprint_captured_idx\s+on public\.qloo_captures \(request_fingerprint, captured_at desc, id desc\)/);
+    expect(refresh).not.toMatch(/create unique|update |delete from|drop (table|trigger|constraint)|alter table/i);
+    expect(refresh).toContain("begin;");
+    expect(refresh).toContain("commit;");
+    const original = readFileSync(join(migrationsDir, "20261003222350_phase2_schema.sql"), "utf8");
+    expect(original).toContain("create unique index qloo_captures_fingerprint_key");
+    expect(original).toContain("create trigger qloo_captures_immutable");
   });
 });

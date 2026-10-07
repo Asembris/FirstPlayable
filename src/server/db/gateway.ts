@@ -594,6 +594,8 @@ export type InsertQlooCaptureInput = {
   results: unknown;
   quotaDiagnostics: unknown;
   normalizerVersion: string;
+  /** Upstream retrieval time; defaults to the database clock for direct inserts. */
+  capturedAt?: string;
   cacheExpiresAt: string;
 };
 
@@ -737,11 +739,12 @@ export interface DataGateway {
     ownerSessionId: string,
   ): Promise<InfluenceDecisionRow[]>;
 
-  /** Exact cache lookup by request fingerprint. */
-  findQlooCaptureByFingerprint(fingerprint: string): Promise<QlooCaptureRow | null>;
-  /** Several fingerprints in one round trip, for the two parallel first hops. */
+  /** Newest capture, optionally restricted to rows still fresh at freshAt. */
+  findQlooCaptureByFingerprint(fingerprint: string, freshAt?: string): Promise<QlooCaptureRow | null>;
+  /** Newest capture per fingerprint, optionally still fresh. */
   findQlooCapturesByFingerprints(
     fingerprints: readonly string[],
+    freshAt?: string,
   ): Promise<QlooCaptureRow[]>;
   /** The newest capture for one exact artist and domain, for a stale fallback. */
   findLatestQlooCapture(
@@ -750,7 +753,7 @@ export interface DataGateway {
   ): Promise<QlooCaptureRow | null>;
   /** Captures a frozen decision still points at, read by id regardless of TTL. */
   findQlooCapturesByIds(ids: readonly string[]): Promise<QlooCaptureRow[]>;
-  /** Immutable insert. A concurrent writer's row for the same key is returned. */
+  /** Append one immutable retrieval and return that exact row, even during races. */
   insertQlooCapture(input: InsertQlooCaptureInput): Promise<QlooCaptureRow>;
 
   /** The global launch policy. `granted: false` is a normal, waitable outcome. */
