@@ -18,6 +18,7 @@
 
 import type {
   BaseNarrativeCopy,
+  DilemmaCompilationOutput,
   ModuleCompilationOutput,
   ModuleMechanic,
 } from "../../../src/domain/compile";
@@ -278,14 +279,68 @@ export function validDiscoveryOutput(): ModuleCompilationOutput {
 }
 
 /**
- * A Commitment module the real validator accepts, with a real witness.
+ * A Commitment module the real validator accepts: one consequential dilemma.
+ *
+ * This is what the commitment stage now asks for and what the fake provider
+ * therefore returns for it. Asking why she wants the letter reveals who it is
+ * addressed to; the player can then either leave her secret unread, which
+ * secures handing it back, or look, which secures keeping it — and either one
+ * forfeits the other.
+ */
+export function validCommitmentOutput(): DilemmaCompilationOutput {
+  return {
+    tension_speaker: "character",
+    tension_text:
+      "It is to my brother. If he reads it, he will come home, and I am not ready for that.",
+    trade: "return_or_keep",
+    first_response: {
+      verb: "ask",
+      action_label: "Tell her you will not ask who it is for",
+      dialogue_speaker: "player",
+      dialogue_text:
+        "Then I will not ask. It stays your letter, and it stays sealed. I just will not know what I handed back.",
+      lock_text: "She will only take it from someone who left her secret alone.",
+    },
+    second_response: {
+      verb: "inspect",
+      action_label: "Hold the envelope to the lamp",
+      dialogue_speaker: "narrator",
+      dialogue_text:
+        "His name shows through the paper. Now you know who is waiting, and she has seen you look.",
+      lock_text: "Keeping it is only yours to decide once you know who it was for.",
+    },
+  };
+}
+
+/**
+ * A dilemma the model contract accepts and the scene contract refuses.
+ *
+ * The control character is legal in a provider string and illegal in a scene,
+ * so assembly produces a candidate whose `SCHEMA_INVALID` findings are this
+ * application's own — the rejection the one permitted repair is shown.
+ */
+export function controlCharacterDilemmaOutput(): DilemmaCompilationOutput {
+  const output = validCommitmentOutput();
+  return {
+    ...output,
+    first_response: { ...output.first_response, dialogue_text: "Then I will not ask." },
+  };
+}
+
+/**
+ * A legacy Commitment module: the prerequisite shape this slot compiled to
+ * before the dilemma.
+ *
+ * The commitment stage no longer asks for it, but stored versions carry modules
+ * in exactly this shape and must keep validating and playing, so the assembler
+ * and validator suites still exercise it directly.
  *
  * One mechanic with a hook: a line on `core.ask_context` sets up the cost, and
  * `core.ask_terms` stays locked until the player has asked what returning the
  * letter costs her. Because `core.withhold` requires `core.promised` to still
  * be false, closing `core.ask_terms` changes which endings remain reachable.
  */
-export function validCommitmentOutput(): ModuleCompilationOutput {
+export function legacyCommitmentOutput(): ModuleCompilationOutput {
   return {
     mechanics: [
       mechanic({
@@ -309,7 +364,7 @@ export function validCommitmentOutput(): ModuleCompilationOutput {
 export function twoMechanicCommitmentOutput(): ModuleCompilationOutput {
   return {
     mechanics: [
-      validCommitmentOutput().mechanics[0] as ModuleMechanic,
+      legacyCommitmentOutput().mechanics[0] as ModuleMechanic,
       mechanic({
         gate_port: "core.withhold",
         action_label: "Ask who else has come looking for it",

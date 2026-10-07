@@ -23,16 +23,19 @@
 import type { Brief } from "@/domain/brief";
 import {
   BaseNarrativeCopySchema,
+  DilemmaCompilationOutputSchema,
   moduleOutputSchemaFor,
   type BaseNarrativeCopy,
-  type ModuleCompilationOutput,
+  type ModuleStageOutput,
 } from "@/domain/compile";
+import { DILEMMA_SLOT } from "@/domain/limits";
 import type { ApprovedInfluence, ApprovedInfluencePayload, Slot } from "@/domain/influence";
 import type { CoreScene, InfluenceModule, Scene } from "@/domain/scene";
 import { baseCoreFromCopy } from "./base";
 import {
   assembleScene,
   coreHash,
+  dilemmaModuleFromModelOutput,
   moduleFromModelOutput,
   moduleHash,
   sceneApprovalAllowlist,
@@ -47,6 +50,7 @@ import {
 } from "./compiler";
 import {
   BASE_INSTRUCTIONS,
+  DILEMMA_INSTRUCTIONS,
   moduleInstructions,
   REPAIR_NOTE_HEADING,
 } from "./instructions";
@@ -210,7 +214,7 @@ export type ModuleStageInput = {
 
 export type ModuleStageOutcome = StageOutcome<{
   module: InfluenceModule;
-  output: ModuleCompilationOutput;
+  output: ModuleStageOutput;
   /** The candidate this module was verified in: the clean base plus itself. */
   scene: Scene;
 }>;
@@ -240,28 +244,45 @@ export async function runModuleStage(
     input.brief.forbidden_wording,
   );
   const repairing = input.repair !== null;
-
-  const result = await compiler.generate({
+  const world = worldFromBrief(input.brief);
+  const request = (instructions: string) => ({
     schemaName: MODULE_SCHEMA_NAME,
-    // The slot's own contract, so `gate_port` enumerates only this slot's
-    // ports. Discovery has exactly one, so the provider forces it.
-    schema: moduleOutputSchemaFor(input.slot),
     instructions: repairing
-      ? `${moduleInstructions(input.slot)}\n\n${repairNote(input.repair?.errors ?? [])}`
-      : moduleInstructions(input.slot),
+      ? `${instructions}\n\n${repairNote(input.repair?.errors ?? [])}`
+      : instructions,
     payload: repairing
       ? buildRepairPayload(payload, input.repair?.candidate ?? null, input.repair?.errors ?? [])
       : payload,
     maxOutputTokens: MODULE_MAX_OUTPUT_TOKENS,
   });
 
-  const world = worldFromBrief(input.brief);
-  const module = moduleFromModelOutput(
-    result.data,
-    input.slot,
-    input.approval.approval_id,
-    world,
-  );
+  // The commitment slot compiles one dilemma; discovery keeps the prerequisite
+  // shape. Either way the payload is the same isolated context, and the server
+  // writes every identifier, condition, effect, and gate.
+  let result: { data: ModuleStageOutput; model: string; usage: ModelUsage | null };
+  let module: InfluenceModule;
+  if (input.slot === DILEMMA_SLOT) {
+    const generated = await compiler.generate({
+      ...request(DILEMMA_INSTRUCTIONS),
+      schema: DilemmaCompilationOutputSchema,
+    });
+    result = generated;
+    module = dilemmaModuleFromModelOutput(
+      generated.data,
+      input.slot,
+      input.approval.approval_id,
+      world,
+    );
+  } else {
+    const generated = await compiler.generate({
+      ...request(moduleInstructions(input.slot)),
+      // The slot's own contract, so `gate_port` enumerates only this slot's
+      // ports. Discovery has exactly one, so the provider forces it.
+      schema: moduleOutputSchemaFor(input.slot),
+    });
+    result = generated;
+    module = moduleFromModelOutput(generated.data, input.slot, input.approval.approval_id, world);
+  }
   const assembled = assembleScene({
     brief: input.brief,
     inputHash: input.inputHash,

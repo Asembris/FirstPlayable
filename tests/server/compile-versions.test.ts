@@ -111,9 +111,9 @@ describe("the immutable scene version", () => {
     expect(row.base_hash).toHaveLength(64);
     expect(row.module_hashes).toHaveProperty("discovery");
     expect(row.model_identifier).toBe("gpt-4o-mini-2024-07-18");
-    expect(row.compiler_identifier).toBe("fp-compiler-4.2");
-    expect(row.prompt_identifier).toBe("fp-prompts-4.2");
-    expect(row.schema_identifier).toBe("fp-model-schema-4.2");
+    expect(row.compiler_identifier).toBe("fp-compiler-4.3");
+    expect(row.prompt_identifier).toBe("fp-prompts-4.3");
+    expect(row.schema_identifier).toBe("fp-model-schema-4.3");
     expect(row.validator_identifier).toBe("fp-engine-validator-1.1");
     expect(row.operation_id).toBe(status.operation_id);
 

@@ -30,7 +30,7 @@ import {
   SENTINELS,
   SENTINELS_FORBIDDEN_IN_COMMITMENT,
   SENTINELS_FORBIDDEN_IN_DISCOVERY,
-  overBudgetModuleOutput,
+  controlCharacterDilemmaOutput,
   wrongPortModuleOutput,
   nonPlainTextBaseCopy,
   validBaseCopy,
@@ -244,8 +244,8 @@ describe("the module stage", () => {
     );
   });
 
-  it("rejects a module that asks for more mechanics than its budget allows", async () => {
-    const compiler = fakeCompiler({ module: [{ output: overBudgetModuleOutput() }] });
+  it("rejects a module the scene contract refuses", async () => {
+    const compiler = fakeCompiler({ module: [{ output: controlCharacterDilemmaOutput() }] });
     const outcome = await runModuleStage(moduleInput("commitment"), compiler);
     expect(outcome.kind).toBe("rejected");
     if (outcome.kind !== "rejected") return;
@@ -253,7 +253,7 @@ describe("the module stage", () => {
   });
 
   it("keeps a rejection's findings free of the other approval", async () => {
-    const compiler = fakeCompiler({ module: [{ output: overBudgetModuleOutput() }] });
+    const compiler = fakeCompiler({ module: [{ output: controlCharacterDilemmaOutput() }] });
     const outcome = await runModuleStage(moduleInput("commitment"), compiler);
     expect(outcome.kind).toBe("rejected");
     if (outcome.kind !== "rejected") return;
@@ -262,7 +262,7 @@ describe("the module stage", () => {
   });
 
   it("shows a module repair its own context, candidate, and findings only", async () => {
-    const rejected = overBudgetModuleOutput();
+    const rejected = controlCharacterDilemmaOutput();
     const compiler = fakeCompiler({ module: [{ output: validCommitmentOutput() }] });
     const outcome = await runModuleStage(
       moduleInput("commitment", {
@@ -270,7 +270,7 @@ describe("the module stage", () => {
         errors: [
           {
             code: "SCHEMA_INVALID",
-            detail: "modules.0.variables: Too big: expected array to have <=3 items",
+            detail: "modules.0.dialogue.1.text: must be plain text without control characters",
           },
         ],
       }),

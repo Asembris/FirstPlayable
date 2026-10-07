@@ -38,7 +38,7 @@ import {
   twoMechanicCommitmentOutput,
   nonPlainTextBaseCopy,
   validBaseCopy,
-  validCommitmentOutput,
+  legacyCommitmentOutput,
   validDiscoveryOutput,
   wrongPortModuleOutput,
 } from "./support/compile-fixtures";
@@ -160,7 +160,7 @@ describe("the server assigns every authority", () => {
   it("drops a module whose approval is not in the frozen set", () => {
     const result = assemble(
       validBaseCopy(),
-      [{ slot: "commitment", output: validCommitmentOutput() }],
+      [{ slot: "commitment", output: legacyCommitmentOutput() }],
       [DISCOVERY_APPROVAL],
     );
     // No approval authorised a commitment module, so neither the module nor an
@@ -184,12 +184,12 @@ describe("the server assigns every authority", () => {
     const forwards = sceneOf(
       assemble(validBaseCopy(), [
         { slot: "discovery", output: validDiscoveryOutput() },
-        { slot: "commitment", output: validCommitmentOutput() },
+        { slot: "commitment", output: legacyCommitmentOutput() },
       ]),
     );
     const backwards = sceneOf(
       assemble(validBaseCopy(), [
-        { slot: "commitment", output: validCommitmentOutput() },
+        { slot: "commitment", output: legacyCommitmentOutput() },
         { slot: "discovery", output: validDiscoveryOutput() },
       ]),
     );
@@ -246,7 +246,7 @@ describe("base generation", () => {
     const withBoth = sceneOf(
       assemble(validBaseCopy(), [
         { slot: "discovery", output: validDiscoveryOutput() },
-        { slot: "commitment", output: validCommitmentOutput() },
+        { slot: "commitment", output: legacyCommitmentOutput() },
       ]),
     );
     const withNone = sceneOf(assemble());
@@ -270,8 +270,8 @@ describe("module generation", () => {
     expect(witness?.mechanical).toBe(true);
   });
 
-  it("accepts a Commitment module with a real mechanical witness", () => {
-    const verdict = moduleVerdict("commitment", validCommitmentOutput());
+  it("accepts a legacy prerequisite Commitment module with a real mechanical witness", () => {
+    const verdict = moduleVerdict("commitment", legacyCommitmentOutput());
     expect(verdict.ok, verdict.errors.map((error) => error.code).join(",")).toBe(true);
     expect(verdict.report.module_witnesses.commitment?.mechanical).toBe(true);
   });
@@ -403,7 +403,7 @@ describe("module generation", () => {
     const world = worldFromBrief(SECOND_COPY_BRIEF);
     const allowed = new Set<string>([...RESERVED_SPEAKER_IDS, world.characters[0].id]);
     for (const speaker of MODULE_SPEAKERS) {
-      const first = validCommitmentOutput().mechanics[0] as ModuleCompilationOutput["mechanics"][number];
+      const first = legacyCommitmentOutput().mechanics[0] as ModuleCompilationOutput["mechanics"][number];
       const module = moduleFromModelOutput(
         { mechanics: [{ ...first, dialogue_speaker: speaker }] },
         "commitment",
@@ -474,7 +474,7 @@ describe("subset validation", () => {
     const scene = sceneOf(
       assemble(validBaseCopy(), [
         { slot: "discovery", output: validDiscoveryOutput() },
-        { slot: "commitment", output: validCommitmentOutput() },
+        { slot: "commitment", output: legacyCommitmentOutput() },
       ]),
     );
     const verdict = verifyCandidate(
@@ -511,7 +511,7 @@ describe("subset validation", () => {
     const composed = sceneOf(
       assemble(validBaseCopy(), [
         { slot: "discovery", output: validDiscoveryOutput() },
-        { slot: "commitment", output: validCommitmentOutput() },
+        { slot: "commitment", output: legacyCommitmentOutput() },
       ]),
     );
     const scene = {
@@ -582,7 +582,7 @@ describe("subset validation", () => {
  */
 describe("a module cannot name the port it attaches to", () => {
   it("has no action field on a hook in the model-facing contract", () => {
-    const first = validCommitmentOutput().mechanics[0] as ModuleCompilationOutput["mechanics"][number];
+    const first = legacyCommitmentOutput().mechanics[0] as ModuleCompilationOutput["mechanics"][number];
     const withPort = {
       mechanics: [
         {
@@ -603,7 +603,7 @@ describe("a module cannot name the port it attaches to", () => {
 
   it("attaches every hook to its own slot's effect port", () => {
     for (const slot of ["discovery", "commitment"] as const) {
-      const output = slot === "discovery" ? validDiscoveryOutput() : validCommitmentOutput();
+      const output = slot === "discovery" ? validDiscoveryOutput() : legacyCommitmentOutput();
       const built = moduleFromModelOutput(
         output,
         slot,

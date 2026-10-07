@@ -30,7 +30,7 @@
 
 import { z } from "zod";
 import { SceneSchema } from "./scene";
-import { FIXED_PORTS, SLOTS, TEXT } from "./limits";
+import { DILEMMA_TRADES, FIXED_PORTS, SLOTS, TEXT } from "./limits";
 import { ProjectViewSchema, ReferencesViewSchema, WorkflowStateSchema } from "./project";
 import { PublicationSummarySchema } from "./publish";
 import { RevisionDiffViewSchema, RevisionLabelSchema } from "./revision";
@@ -202,6 +202,59 @@ export function moduleOutputSchemaFor(slot: (typeof SLOTS)[number]) {
     mechanics: z.array(moduleMechanicSchema(FIXED_PORTS[slot].gate_action_ids)),
   });
 }
+
+/* ---------------------------------------------- the dilemma module contract */
+
+/** The three trades, each a pair of existing endings, in `DILEMMA_TRADES` order. */
+export const DILEMMA_TRADE_NAMES = Object.keys(DILEMMA_TRADES) as [
+  keyof typeof DILEMMA_TRADES,
+  ...(keyof typeof DILEMMA_TRADES)[],
+];
+
+/** One response, as the model describes it. The server owns all of its wiring. */
+const DilemmaResponseOutputSchema = z.strictObject({
+  /** `inspect` or `ask`: a response is something the player does, not an ending. */
+  verb: z.enum(MODULE_VERBS),
+  action_label: z.string().min(1).max(TEXT.action_label),
+  dialogue_speaker: ModuleSpeakerSchema,
+  /** What taking this response says or shows. */
+  dialogue_text: z.string().min(1).max(TEXT.dialogue),
+  /**
+   * Shown on the ending this response secures whenever that ending is locked —
+   * before the choice, and for good once the other response is taken.
+   */
+  lock_text: z.string().min(1).max(TEXT.gate_blocked_text),
+});
+
+/**
+ * The commitment slot's whole output: **one consequential dilemma.**
+ *
+ * What the model decides is the dramatic content — the tension the approved
+ * interpretation creates, the two responses to it, and which of the three
+ * existing endings each response secures (`trade`). The first response
+ * secures the trade's first ending and the second response its second, so the
+ * two can never secure the same one: that is not a rejected value but an
+ * unrepresentable one.
+ *
+ * What it cannot decide is the structure, because there is no field for it:
+ * `dilemmaModuleFromModelOutput` writes every identifier, both availability
+ * conditions, the flags, the effects, the hook's port, and the two gates. Those
+ * are what make the responses mutually exclusive and the benefits impossible to
+ * hold together, so they are the server's, and the validator proves them.
+ */
+export const DilemmaCompilationOutputSchema = z.strictObject({
+  /** Who states the tension, in the line shown after the request is explained. */
+  tension_speaker: ModuleSpeakerSchema,
+  tension_text: z.string().min(1).max(TEXT.dialogue),
+  trade: z.enum(DILEMMA_TRADE_NAMES),
+  first_response: DilemmaResponseOutputSchema,
+  second_response: DilemmaResponseOutputSchema,
+});
+
+export type DilemmaCompilationOutput = z.infer<typeof DilemmaCompilationOutputSchema>;
+
+/** Whatever one module stage returned: prerequisite mechanics, or a dilemma. */
+export type ModuleStageOutput = ModuleCompilationOutput | DilemmaCompilationOutput;
 
 /* ------------------------------------------------- the ending-copy contract */
 

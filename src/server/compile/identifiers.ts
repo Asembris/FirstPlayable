@@ -20,14 +20,19 @@
  * identifiers, conditions, effects, branches, ports, and the flag's initial
  * value — moved out of model output and into `materializeMechanic` in
  * `assemble.ts`, leaving the module's genuine mechanical choices and its copy.
+ * `4.3` is the consequential dilemma: the commitment slot now compiles one
+ * dilemma (`DILEMMA_INSTRUCTIONS`, `DilemmaCompilationOutputSchema`) that
+ * `dilemmaModuleFromModelOutput` wires. Discovery is unchanged, but the three
+ * identifiers are global, so every module stage is keyed afresh — which is the
+ * truthful consequence of a compiler that no longer does what it did.
  */
-export const COMPILER_IDENTIFIER = "fp-compiler-4.2";
+export const COMPILER_IDENTIFIER = "fp-compiler-4.3";
 
 /** The fixed instruction blocks in `instructions.ts`. */
-export const PROMPT_IDENTIFIER = "fp-prompts-4.2";
+export const PROMPT_IDENTIFIER = "fp-prompts-4.3";
 
 /** The model-facing output contracts in `src/domain/compile.ts`. */
-export const SCHEMA_IDENTIFIER = "fp-model-schema-4.2";
+export const SCHEMA_IDENTIFIER = "fp-model-schema-4.3";
 
 /**
  * The deterministic validator this application accepted a candidate with.

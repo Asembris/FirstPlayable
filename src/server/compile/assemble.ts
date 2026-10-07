@@ -35,12 +35,13 @@
 
 import type { Brief } from "@/domain/brief";
 import type {
+  DilemmaCompilationOutput,
   ModuleCompilationOutput,
   ModuleMechanic,
   ModuleSpeaker,
 } from "@/domain/compile";
 import type { ApprovedInfluence, Slot } from "@/domain/influence";
-import { FIXED_PORTS, SLOTS, VERB_TARGET_KIND } from "@/domain/limits";
+import { DILEMMA_TRADES, FIXED_PORTS, SLOTS, VERB_TARGET_KIND } from "@/domain/limits";
 import type {
   Action,
   Condition,
@@ -291,6 +292,120 @@ export function moduleFromModelOutput(
     dialogue: materialized.flatMap((entry) => entry.dialogue),
     gates: materialized.map((entry) => entry.gate),
     on_actions: materialized.flatMap((entry) => entry.hooks),
+  };
+}
+
+/**
+ * The base flag a dilemma waits on: the request has been explained, which is
+ * the moment the tension line is spoken. It is `BASE_VARIABLE_IDS.context` in
+ * `base.ts`; it is restated rather than imported because `base.ts` imports
+ * this file, and `tests/server/dilemma.test.ts` pins the two together.
+ */
+export const DILEMMA_WAITS_ON = "core.context";
+
+/** The server's names for a dilemma's two hidden flags. Nobody reads them. */
+const DILEMMA_FLAG_LABELS = ["Took the first response", "Took the second response"] as const;
+
+/**
+ * One dilemma, wired into the engine.
+ *
+ * The model chose the tension, the two responses, and the trade; everything
+ * structural is written here, and it is what makes the dilemma a dilemma:
+ *
+ *   * the tension is one line on this slot's own effect port, so it is spoken
+ *     when the player learns why the object is wanted;
+ *   * both responses are offered only once that has happened and only while
+ *     *neither* response flag is set, and each sets its own flag — so taking
+ *     one withdraws both, and the two flags can never both be true;
+ *   * each response's stake is a terminal action gated on that response's flag
+ *     alone, so the ending it secures stays locked until it is taken, and stays
+ *     locked for good once the other one is.
+ *
+ * Mutual exclusion, "you cannot hold both benefits", and "the choice changes
+ * which endings remain" are therefore properties of this wiring, and
+ * `src/engine/dilemma.ts` proves each one over the explored graph rather than
+ * trusting this comment. Like the rest of assembly, this is total: it does not
+ * check the result, the validator does.
+ */
+export function dilemmaModuleFromModelOutput(
+  output: DilemmaCompilationOutput,
+  slot: Slot,
+  approvalId: string,
+  world: World,
+): InfluenceModule {
+  const stakes = DILEMMA_TRADES[output.trade];
+  const ids = [mechanicIds(slot, 0), mechanicIds(slot, 1)] as const;
+  const flags = [ids[0].flag, ids[1].flag] as const;
+  const undecided: Condition = {
+    kind: "any",
+    clauses: [
+      [
+        { var_id: DILEMMA_WAITS_ON, equals: true },
+        { var_id: flags[0], equals: false },
+        { var_id: flags[1], equals: false },
+      ],
+    ],
+  };
+  const responses = [output.first_response, output.second_response] as const;
+
+  return {
+    slot,
+    approval_id: sceneApprovalId(approvalId),
+    variables: flags.map((id, index) => ({
+      id,
+      label: DILEMMA_FLAG_LABELS[index] as string,
+      initial: false as const,
+      visible: false,
+    })),
+    actions: responses.map((response, index) => ({
+      id: ids[index]!.action,
+      verb: response.verb,
+      label: response.action_label,
+      target: targetFor(response.verb, world),
+      when: undecided,
+      branches: [
+        {
+          when: { kind: "always" as const },
+          effects: [{ op: "set_true" as const, var_id: flags[index] as string }],
+          dialogue_id: ids[index]!.line,
+          ending_id: null,
+        },
+      ],
+    })),
+    dialogue: [
+      {
+        id: ids[0].hookLine,
+        speaker_id: speakerId(output.tension_speaker, world),
+        text: output.tension_text,
+      },
+      ...responses.map((response, index) => ({
+        id: ids[index]!.line,
+        speaker_id: speakerId(response.dialogue_speaker, world),
+        text: response.dialogue_text,
+      })),
+    ],
+    gates: responses.map((response, index) => ({
+      id: ids[index]!.gate,
+      action_id: stakes[index] as string,
+      when: { kind: "any" as const, clauses: [[{ var_id: flags[index] as string, equals: true }]] },
+      blocked_text: response.lock_text,
+    })),
+    on_actions: [
+      {
+        id: ids[0].hook,
+        action_id: FIXED_PORTS[slot].effect_action_ids[0],
+        when: { kind: "always" },
+        effects: [],
+        dialogue_id: ids[0].hookLine,
+      },
+    ],
+    dilemma: {
+      tension_hook_id: ids[0].hook,
+      responses: [
+        { action_id: ids[0].action, secures_action_id: stakes[0] },
+        { action_id: ids[1].action, secures_action_id: stakes[1] },
+      ],
+    },
   };
 }
 
