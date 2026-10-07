@@ -8,11 +8,11 @@
 .rt-audition {
   max-width: 1120px;
   margin: 0 auto;
-  padding: 32px 16px 64px;
+  padding: 24px 16px 64px;
 }
 
 .rt-audition__head {
-  margin-bottom: 24px;
+  margin-bottom: 0;
 }
 
 .rt-audition__title {
@@ -219,11 +219,12 @@
 }
 
 /* The audition table: two readings of the same creator-selected slips. */
-.rt-audition__title { font-size: clamp(32px, 4.8vw, 56px); max-width: 24ch; }
-.rt-audition__mode, .rt-audition__switch { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0; }
+.rt-audition__title { font-size: clamp(30px, 3.6vw, 44px); max-width: 22ch; margin: 8px 0 6px; }
+.rt-audition__mode, .rt-audition__switch { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
 .rt-audition__mode [aria-pressed="true"], .rt-audition__switch [aria-pressed="true"] { background: var(--rt-ink); color: var(--rt-sheet); }
-.rt-audition__concept { border-top: 1px solid var(--rt-rule); padding: 20px 0; max-width: 76ch; }
-.rt-audition__concept .rt-label { display: block; margin-bottom: 8px; }
+.rt-audition__concept { border-top: 1px solid var(--rt-rule); padding: 14px 0; max-width: 76ch; }
+.rt-audition__concept .rt-label { display: block; margin-bottom: 4px; }
+.rt-audition__concept p { margin: 4px 0; }
 .rt-audition__domains { grid-template-columns: 1fr; gap: 28px; }
 .rt-audition__columns { grid-template-columns: 1fr 1fr; gap: 20px; }
 .rt-audition__column { padding: 12px; border: 1px solid var(--rt-rule); background: var(--rt-paper); }
@@ -254,5 +255,5 @@
   .rt-audition__name { display: block; font-size: 20px; line-height: 1.1; margin-top: 6px; }
   .rt-audition__fact { font-size: 10px; }
 }
-.rt-audition__summary { font-family: var(--rt-font-fact); font-size: 12px; margin: 12px 0; }
+.rt-audition__summary { font-family: var(--rt-font-fact); font-size: 12px; margin: 6px 0 12px; }
 .rt-audition__movement { display: block; font-family: var(--rt-font-fact); font-size: 11px; color: var(--rt-ink-2); margin-top: 4px; }
