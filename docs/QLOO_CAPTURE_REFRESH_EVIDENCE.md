@@ -8,8 +8,25 @@ Migration `20261007120000_qloo_capture_refresh.sql` drops only that standalone
 unique index and creates the non-unique index
 `(request_fingerprint, captured_at desc, id desc)`. Historical migrations,
 capture rows, primary keys, immutable UPDATE trigger, and decision pointers are
-unchanged. Apply this migration before releasing the changed gateway. Neither
-the migration nor the application was deployed during this work.
+unchanged. Neither the migration nor the application was deployed during this
+work.
+
+## Deployment plan
+
+**Do not apply the migration while the old gateway is still the production
+code.** Its `upsert(... onConflict: "request_fingerprint", ignoreDuplicates: true)`
+depends on the existing unique fingerprint index.
+
+1. Deploy the new gateway/application code first while the old unique index
+   still exists.
+2. During that brief compatibility window, a refresh for an already-existing
+   fingerprint may fail closed on the unique index rather than create false
+   provenance. The new gateway returns only its own successful INSERT result.
+3. Immediately apply `20261007120000_qloo_capture_refresh.sql`.
+4. Run the guarded provenance smoke (`scripts/smoke-qloo-provenance.ts`).
+5. Verify a new capture ID, fresh timestamps/content, an unchanged historical
+   row, and newest-fresh lookup.
+6. Then complete production verification.
 
 Each insert returns its own row directly. Captured time is the upstream
 snapshot's retrieval time. Fingerprint reads select the newest capture with a
