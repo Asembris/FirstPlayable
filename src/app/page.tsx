@@ -1,5 +1,2 @@
-import { Landing } from "@/components/rehearsal/Landing";
-
-export default function HomePage() {
-  return <Landing />;
-}
+import { AudienceLanding } from '@/components/audition/AudienceLanding';
+export default function HomePage() { return <AudienceLanding />; }
