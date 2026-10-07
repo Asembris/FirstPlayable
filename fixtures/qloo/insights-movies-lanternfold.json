@@ -1,0 +1,648 @@
+{
+  "success": true,
+  "results": {
+    "entities": [
+      {
+        "name": "Ashfall Covenant",
+        "entity_id": "5B000000-0000-4000-8000-000000000001",
+        "type": "urn:entity",
+        "subtype": "urn:entity:movie",
+        "disambiguation": "2006, Teodor Lisk",
+        "popularity": 0.981234,
+        "properties": {
+          "description": "Ashfall Covenant (2006), directed by Teodor Lisk, is an invented near-future drama about a courier who must carry a sealed agreement across a country slowly buried by volcanic ash. Along the way the courier shelters a family that no checkpoint will admit, and the agreement she carries turns out to decide whether anyone will be let through at all. The film is a synthetic fixture: its story, cast and reception do not exist, and every sentence here was written for FirstPlayable's offline tests. The film is synthetic test data for FirstPlayable: its cast, crew, release history and reception are invented, and no real title shares this story. It sits in the fixture so the offline tests can check ranking, evidence selection and the per-candidate context budget against a full-length description.",
+          "plot_summary": "A tired courier is hired to carry a sealed covenant across a region where volcanic ash has closed the roads. She takes in a family turned away at a checkpoint and hides them in the back of her van. As the ash deepens, she learns the covenant she carries will decide who is allowed past the last open border, and she has to choose between delivering it intact and rewriting the terms for the people riding with her.",
+          "plot_themes_description": "Asks who gets to cross a closing border, and what one messenger owes to the strangers travelling with her. It keeps returning to the question of what a person owes the people around them.",
+          "emotional_tone_description": "Grey, urgent and stubbornly hopeful, with long silences between short bursts of danger.",
+          "style_description": "Handheld, ash-filtered photography and long unbroken takes that keep the van and its passengers in one cramped frame.",
+          "genre_description": "An invented dystopian road drama that mixes thriller pacing with a quiet character study.",
+          "short_descriptions": [
+            {
+              "value": "A courier carrying a sealed covenant through an ash-buried country must decide whose names it protects.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "keywords": [
+            "courier",
+            "border",
+            "ash",
+            "road movie",
+            "sealed document",
+            "refugees",
+            "near future",
+            "long take",
+            "moral choice",
+            "van"
+          ],
+          "genres": [
+            "Drama",
+            "Thriller",
+            "Sci-Fi"
+          ],
+          "release_year": 2006,
+          "release_date": "2006-09-22"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:theme:qloo:borders",
+            "name": "Borders",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:sacrifice",
+            "name": "Sacrifice",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:hope",
+            "name": "Hope",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:drama",
+            "name": "Drama",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:thriller",
+            "name": "Thriller",
+            "type": "urn:tag:genre:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.912404
+        }
+      },
+      {
+        "name": "The Borrowed Window",
+        "entity_id": "5B000000-0000-4000-8000-000000000002",
+        "type": "urn:entity",
+        "subtype": "urn:entity:movie",
+        "disambiguation": "1999, Pell Amari",
+        "popularity": 0.973456,
+        "properties": {
+          "description": "The Borrowed Window (1999), directed by Pell Amari, is an invented absurdist comedy about a clerk who finds a small window in his office wall that lets him look out through another person's eyes for fifteen minutes. He starts renting the view to strangers, and the person on the other side begins to notice. Nothing in this description refers to a real film; it was written as synthetic test data. The film is synthetic test data for FirstPlayable: its cast, crew, release history and reception are invented, and no real title shares this story. It sits in the fixture so the offline tests can check ranking, evidence selection and the per-candidate context budget against a full-length description.",
+          "plot_summary": "A filing clerk discovers a narrow window behind a cabinet that shows the world through the eyes of a stranger across the city. He charges coworkers to look through it, and the business grows until the stranger starts leaving notes for whoever is watching. The clerk must decide whether to close the window or meet the person whose life he has been selling. Along the way, small decisions made early in the story return with consequences, and the ending turns on whether the main character will accept what the evidence in front of them says.",
+          "plot_themes_description": "Treats identity as something that can be rented, borrowed and resold, and asks what is left of a person who is always being watched.",
+          "emotional_tone_description": "Dry, odd and melancholy, with comic set pieces that slowly turn uneasy.",
+          "style_description": "Flat, symmetrical office framing broken by grainy point-of-view sequences seen through the window.",
+          "genre_description": "An invented surreal comedy-drama built on one impossible device.",
+          "short_descriptions": [
+            {
+              "value": "A clerk rents out a window that sees through a stranger's eyes, until the stranger starts writing back.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "keywords": [
+            "window",
+            "office",
+            "voyeurism",
+            "identity",
+            "absurdist",
+            "point of view",
+            "business",
+            "notes",
+            "stranger",
+            "surreal"
+          ],
+          "genres": [
+            "Comedy",
+            "Drama",
+            "Fantasy"
+          ],
+          "release_year": 1999,
+          "release_date": "1999-10-29"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:theme:qloo:identity",
+            "name": "Identity",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:obsession",
+            "name": "Obsession",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:comedy",
+            "name": "Comedy",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:fantasy",
+            "name": "Fantasy",
+            "type": "urn:tag:genre:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.909871
+        }
+      },
+      {
+        "name": "Halcyon Relay",
+        "entity_id": "5B000000-0000-4000-8000-000000000003",
+        "type": "urn:entity",
+        "subtype": "urn:entity:movie",
+        "disambiguation": "2009, Maren Oduya",
+        "popularity": 0.968812,
+        "properties": {
+          "description": "Halcyon Relay (2009), directed by Maren Oduya, is an invented, small-scale science fiction drama set on a signal relay station at the edge of a gas giant. The station's only technician is weeks from the end of a long contract when he finds a sealed maintenance bay holding someone with his face, his handwriting and his memories. The film exists only as synthetic test data for FirstPlayable; no such title, director or cast is real. The film is synthetic test data for FirstPlayable: its cast, crew, release history and reception are invented, and no real title shares this story. It sits in the fixture so the offline tests can check ranking, evidence selection and the per-candidate context budget against a full-length description.",
+          "plot_summary": "The lone technician on a remote relay station is counting down the last weeks of his contract when the station's logs start disagreeing with his memory. In a sealed maintenance bay he finds a duplicate of himself who insists he is the original. The two men must work out which of their memories are real before the relief ship arrives and only one of them is expected to board. Along the way, small decisions made early in the story return with consequences, and the ending turns on whether the main character will accept what the evidence in front of them says.",
+          "plot_themes_description": "Asks what makes a person the same person by setting two copies of one man against the record of a single life, under total isolation.",
+          "emotional_tone_description": "Hushed, lonely and suspenseful, with an undertow of tenderness between two people who share everything except certainty.",
+          "style_description": "Cramped practical sets, low amber light and patient close-ups that keep the station feeling small and the distance outside enormous.",
+          "genre_description": "An invented chamber science fiction drama driven by psychological mystery rather than spectacle.",
+          "short_descriptions": [
+            {
+              "value": "A lone relay technician finds a second version of himself and has to decide which of them gets to go home.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "keywords": [
+            "relay station",
+            "duplicate",
+            "isolation",
+            "memory",
+            "identity",
+            "minimal cast",
+            "gas giant",
+            "contract",
+            "chamber piece",
+            "relief ship"
+          ],
+          "genres": [
+            "Drama",
+            "Mystery",
+            "Sci-Fi"
+          ],
+          "release_year": 2009,
+          "release_date": "2009-06-12"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:theme:qloo:identity",
+            "name": "Identity",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:memory",
+            "name": "Memory",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:isolation",
+            "name": "Isolation",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:science_fiction",
+            "name": "Science fiction",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:mystery",
+            "name": "Mystery",
+            "type": "urn:tag:genre:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.903315
+        }
+      },
+      {
+        "name": "Second Draft Weather",
+        "entity_id": "5B000000-0000-4000-8000-000000000004",
+        "type": "urn:entity",
+        "subtype": "urn:entity:movie",
+        "disambiguation": "2002, Pell Amari",
+        "popularity": 0.951234,
+        "properties": {
+          "description": "Second Draft Weather (2002), directed by Pell Amari, is an invented comedy about a screenwriter who cannot finish a script about the weather and starts writing himself into it instead. It is synthetic test data. The film is synthetic test data for FirstPlayable: its cast, crew, release history and reception are invented, and no real title shares this story. It sits in the fixture so the offline tests can check ranking, evidence selection and the per-candidate context budget against a full-length description.",
+          "plot_summary": "A blocked screenwriter is hired to adapt a book about weather forecasting. Unable to find a story, he writes himself and his twin into the script, and the script begins to happen. Along the way, small decisions made early in the story return with consequences, and the ending turns on whether the main character will accept what the evidence in front of them says.",
+          "plot_themes_description": "Plays with authorship and self-doubt by letting a writer's anxieties rewrite his own life. It keeps returning to the question of what a person owes the people around them.",
+          "emotional_tone_description": "Neurotic, warm and increasingly unhinged.",
+          "style_description": "Talky interiors and a voice-over that keeps interrupting itself.",
+          "genre_description": "An invented meta-comedy about writing.",
+          "short_descriptions": [
+            {
+              "value": "A screenwriter stuck on a weather book writes himself into the script.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "keywords": [
+            "screenwriter",
+            "writer's block",
+            "twins",
+            "meta",
+            "weather",
+            "voice-over",
+            "adaptation",
+            "comedy",
+            "anxiety",
+            "script"
+          ],
+          "genres": [
+            "Comedy",
+            "Drama"
+          ],
+          "release_year": 2002,
+          "release_date": "2002-12-06"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:theme:qloo:art_and_creativity",
+            "name": "Art and creativity",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:comedy",
+            "name": "Comedy",
+            "type": "urn:tag:genre:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.899022
+        }
+      },
+      {
+        "name": "Scale Model City",
+        "entity_id": "5B000000-0000-4000-8000-000000000005",
+        "type": "urn:entity",
+        "subtype": "urn:entity:movie",
+        "disambiguation": "2008, Ira Bellweather",
+        "popularity": 0.944321,
+        "properties": {
+          "description": "Scale Model City (2008), directed by Ira Bellweather, is an invented drama about a theatre director who builds a full-size copy of his own neighbourhood inside a warehouse and casts actors to play his neighbours. It is synthetic test data. The film is synthetic test data for FirstPlayable: its cast, crew, release history and reception are invented, and no real title shares this story. It sits in the fixture so the offline tests can check ranking, evidence selection and the per-candidate context budget against a full-length description.",
+          "plot_summary": "A theatre director receives a grant and spends decades building a life-size model of his street in a warehouse, casting actors to play everyone he knows, including himself. Along the way, small decisions made early in the story return with consequences, and the ending turns on whether the main character will accept what the evidence in front of them says.",
+          "plot_themes_description": "Looks at art, ageing and the impossibility of capturing a life by rebuilding it. It keeps returning to the question of what a person owes the people around them.",
+          "emotional_tone_description": "Sprawling, sad and strange.",
+          "style_description": "Nested sets and slow, drifting camera moves through rooms within rooms.",
+          "genre_description": "An invented existential drama.",
+          "short_descriptions": [
+            {
+              "value": "A director builds a full-size copy of his street and casts actors to live in it.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "keywords": [
+            "theatre",
+            "warehouse",
+            "model",
+            "ageing",
+            "art",
+            "existential",
+            "actors",
+            "neighbourhood",
+            "grant",
+            "nested"
+          ],
+          "genres": [
+            "Drama"
+          ],
+          "release_year": 2008,
+          "release_date": "2008-10-24"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:theme:qloo:art_and_creativity",
+            "name": "Art and creativity",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:mortality",
+            "name": "Mortality",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:drama",
+            "name": "Drama",
+            "type": "urn:tag:genre:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.89765
+        }
+      },
+      {
+        "name": "Static Undercover",
+        "entity_id": "5B000000-0000-4000-8000-000000000006",
+        "type": "urn:entity",
+        "subtype": "urn:entity:movie",
+        "disambiguation": "2006, Juno Rask",
+        "popularity": 0.931234,
+        "properties": {
+          "description": "Static Undercover (2006), directed by Juno Rask, is an invented animated thriller about an undercover agent whose disguise suit scrambles his own sense of who he is. It is synthetic test data. The film is synthetic test data for FirstPlayable: its cast, crew, release history and reception are invented, and no real title shares this story. It sits in the fixture so the offline tests can check ranking, evidence selection and the per-candidate context budget against a full-length description.",
+          "plot_summary": "An undercover agent wears a suit that constantly changes his appearance. Assigned to watch his own housemates, he slowly loses track of which identity is his. Along the way, small decisions made early in the story return with consequences, and the ending turns on whether the main character will accept what the evidence in front of them says.",
+          "plot_themes_description": "Surveillance and self-erosion in a city that watches everyone. It keeps returning to the question of what a person owes the people around them.",
+          "emotional_tone_description": "Paranoid, funny and bleak.",
+          "style_description": "Traced-over animation that flickers like a bad signal.",
+          "genre_description": "An invented animated paranoid thriller.",
+          "short_descriptions": [
+            {
+              "value": "An undercover agent in a shape-shifting suit is assigned to spy on himself.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "keywords": [
+            "undercover",
+            "surveillance",
+            "animation",
+            "disguise",
+            "paranoia",
+            "housemates",
+            "identity",
+            "thriller",
+            "city",
+            "suit"
+          ],
+          "genres": [
+            "Animation",
+            "Thriller",
+            "Sci-Fi"
+          ],
+          "release_year": 2006,
+          "release_date": "2006-07-07"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:theme:qloo:surveillance",
+            "name": "Surveillance",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:identity",
+            "name": "Identity",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:thriller",
+            "name": "Thriller",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:animation",
+            "name": "Animation",
+            "type": "urn:tag:genre:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.896118
+        }
+      },
+      {
+        "name": "The Tangent Year",
+        "entity_id": "5B000000-0000-4000-8000-000000000007",
+        "type": "urn:entity",
+        "subtype": "urn:entity:movie",
+        "disambiguation": "2001, Corin Abel",
+        "popularity": 0.962345,
+        "properties": {
+          "description": "The Tangent Year (2001), directed by Corin Abel, is an invented teen mystery about a student who is warned by a stranger that the year will end in twenty-eight days. It is synthetic test data. The film is synthetic test data for FirstPlayable: its cast, crew, release history and reception are invented, and no real title shares this story. It sits in the fixture so the offline tests can check ranking, evidence selection and the per-candidate context budget against a full-length description.",
+          "plot_summary": "A sleepwalking student survives an accident after a stranger in a strange mask leads him out of his house, and is told the world will end in twenty-eight days. Along the way, small decisions made early in the story return with consequences, and the ending turns on whether the main character will accept what the evidence in front of them says.",
+          "plot_themes_description": "Fate, adolescence and the pull of a different timeline. It keeps returning to the question of what a person owes the people around them.",
+          "emotional_tone_description": "Eerie, wistful and darkly comic.",
+          "style_description": "Suburban nights in saturated colour, set to a looping score.",
+          "genre_description": "An invented psychological mystery.",
+          "short_descriptions": [
+            {
+              "value": "A sleepwalking teenager is told the world ends in twenty-eight days.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "keywords": [
+            "sleepwalking",
+            "countdown",
+            "suburb",
+            "teen",
+            "time loop",
+            "mask",
+            "mystery",
+            "fate",
+            "school",
+            "accident"
+          ],
+          "genres": [
+            "Drama",
+            "Mystery",
+            "Sci-Fi",
+            "Thriller"
+          ],
+          "release_year": 2001,
+          "release_date": "2001-01-19"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:theme:qloo:fate",
+            "name": "Fate",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:drama",
+            "name": "Drama",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:mystery",
+            "name": "Mystery",
+            "type": "urn:tag:genre:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.894377
+        }
+      },
+      {
+        "name": "Ninefold",
+        "entity_id": "5B000000-0000-4000-8000-000000000008",
+        "type": "urn:entity",
+        "subtype": "urn:entity:movie",
+        "disambiguation": "1998, Dara Voss",
+        "popularity": 0.921234,
+        "properties": {
+          "description": "Ninefold (1998), directed by Dara Voss, is an invented black-and-white thriller about a mathematician convinced a nine-digit sequence predicts everything. It is synthetic test data. The film is synthetic test data for FirstPlayable: its cast, crew, release history and reception are invented, and no real title shares this story. It sits in the fixture so the offline tests can check ranking, evidence selection and the per-candidate context budget against a full-length description.",
+          "plot_summary": "A reclusive mathematician finds a nine-digit pattern in the stock market and is hunted by people who want it. Along the way, small decisions made early in the story return with consequences, and the ending turns on whether the main character will accept what the evidence in front of them says.",
+          "plot_themes_description": "Obsession and the cost of looking for order everywhere. It keeps returning to the question of what a person owes the people around them.",
+          "emotional_tone_description": "Feverish and claustrophobic.",
+          "style_description": "High-contrast black and white with jittery cutting.",
+          "genre_description": "An invented psychological thriller.",
+          "short_descriptions": [
+            {
+              "value": "A mathematician believes a nine-digit sequence explains everything.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "keywords": [
+            "mathematics",
+            "obsession",
+            "pattern",
+            "black and white",
+            "paranoia",
+            "stock market",
+            "recluse",
+            "migraine",
+            "thriller",
+            "number"
+          ],
+          "genres": [
+            "Drama",
+            "Thriller"
+          ],
+          "release_year": 1998,
+          "release_date": "1998-07-10"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:theme:qloo:obsession",
+            "name": "Obsession",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:thriller",
+            "name": "Thriller",
+            "type": "urn:tag:genre:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.893001
+        }
+      },
+      {
+        "name": "Night Shift in Kessa",
+        "entity_id": "5B000000-0000-4000-8000-000000000009",
+        "type": "urn:entity",
+        "subtype": "urn:entity:movie",
+        "disambiguation": "2003, Lio Marchetti",
+        "popularity": 0.958765,
+        "properties": {
+          "description": "Night Shift in Kessa (2003), directed by Lio Marchetti, is an invented drama about two strangers who keep meeting in a hotel bar in a city where neither speaks the language. It is synthetic test data. The film is synthetic test data for FirstPlayable: its cast, crew, release history and reception are invented, and no real title shares this story. It sits in the fixture so the offline tests can check ranking, evidence selection and the per-candidate context budget against a full-length description.",
+          "plot_summary": "Two insomniac travellers stranded in a foreign city form a brief, careful friendship over a week of sleepless nights. Along the way, small decisions made early in the story return with consequences, and the ending turns on whether the main character will accept what the evidence in front of them says.",
+          "plot_themes_description": "Loneliness, connection and the relief of being understood without explanation. It keeps returning to the question of what a person owes the people around them.",
+          "emotional_tone_description": "Gentle and wistful.",
+          "style_description": "Neon night exteriors and quiet hotel interiors.",
+          "genre_description": "An invented romantic drama.",
+          "short_descriptions": [
+            {
+              "value": "Two sleepless strangers in a foreign city find a brief connection.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "keywords": [
+            "hotel",
+            "insomnia",
+            "travel",
+            "loneliness",
+            "friendship",
+            "city",
+            "night",
+            "language",
+            "bar",
+            "connection"
+          ],
+          "genres": [
+            "Drama",
+            "Romance"
+          ],
+          "release_year": 2003,
+          "release_date": "2003-09-12"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:theme:qloo:self_discovery",
+            "name": "Self discovery",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:theme:qloo:loneliness",
+            "name": "Loneliness",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:drama",
+            "name": "Drama",
+            "type": "urn:tag:genre:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.890245
+        }
+      },
+      {
+        "name": "Garage Loop",
+        "entity_id": "5B000000-0000-4000-8000-00000000000A",
+        "type": "urn:entity",
+        "subtype": "urn:entity:movie",
+        "disambiguation": "2004, Sami Okonkwo",
+        "popularity": 0.912345,
+        "properties": {
+          "description": "Garage Loop (2004), directed by Sami Okonkwo, is an invented micro-budget science fiction film about two engineers who build a box in a rented garage and discover that it lets them repeat the same afternoon. At first they use it to win small bets, then to correct mistakes, and finally to undo each other, until neither can say how many versions of the week have happened or which of them is still telling the truth. The film is written as dense, technical and deliberately confusing, with conversations full of jargon and few explanations. None of it is real: the title, the director and this description are synthetic fixture text for FirstPlayable, written long on purpose so the normalizer's per-item length limit is exercised.",
+          "plot_summary": "Two engineers accidentally build a device in a garage that sends them back to the start of the same afternoon. Their friendship frays as each starts using it without telling the other. Along the way, small decisions made early in the story return with consequences, and the ending turns on whether the main character will accept what the evidence in front of them says.",
+          "plot_themes_description": "Trust, ambition and the paradoxes of repeating a choice until it is no longer yours. It keeps returning to the question of what a person owes the people around them.",
+          "emotional_tone_description": "Cold, cerebral and tense.",
+          "style_description": "Natural light, overlapping dialogue and an unexplained timeline.",
+          "genre_description": "An invented low-budget time-travel thriller.",
+          "short_descriptions": [
+            {
+              "value": "Two engineers build a device that repeats one afternoon, and stop trusting each other.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "keywords": [
+            "time travel",
+            "garage",
+            "engineers",
+            "paradox",
+            "low budget",
+            "friendship",
+            "loop",
+            "jargon",
+            "invention",
+            "trust"
+          ],
+          "genres": [
+            "Drama",
+            "Sci-Fi",
+            "Thriller"
+          ],
+          "release_year": 2004,
+          "release_date": "2004-10-08"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:theme:qloo:trust",
+            "name": "Trust",
+            "type": "urn:tag:theme:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:science_fiction",
+            "name": "Science fiction",
+            "type": "urn:tag:genre:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.888612
+        }
+      }
+    ]
+  }
+}

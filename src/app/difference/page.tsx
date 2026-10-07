@@ -3,7 +3,7 @@ import { RehearsalScene } from "@/components/rehearsal/RehearsalScene";
 export const metadata = {
   title: "The Second Copy · FirstPlayable",
   description:
-    "Saved example, generated from a real build. Play it with and without the approved influence; nothing is generated live.",
+    "Saved example, a synthetic deterministic demonstration. Play it with and without the approved influence; nothing is generated live.",
 };
 
 type Params = Promise<Record<string, string | string[] | undefined>>;

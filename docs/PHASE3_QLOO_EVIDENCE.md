@@ -9,6 +9,13 @@ narrower than it might appear, the narrowing is stated.
 No API key, access token, database password, or cookie secret appears anywhere
 in this file.
 
+> **Redaction, 7 October 2026.** Qloo entity identifiers, returned result
+> lists, and text quoted verbatim from Qloo responses have been removed from
+> this record, and the Qloo captures it describes are no longer committed. The
+> offline tests now use synthetic fixtures in the same response shapes
+> (`fixtures/qloo/`). The observations below are kept as statements of what
+> was checked; the redacted values are marked *[redacted]*.
+
 ---
 
 ## 1. What Phase 3 implemented
@@ -30,7 +37,7 @@ in this file.
 | Routes | `src/server/api/{qloo,proposals,decisions,shared}.ts` and five route files |
 | Studio workflow | `src/components/studio/{AnchorPanel,ReferenceRows,ApprovedInfluences,ProjectClient}.tsx` |
 | Migration | `supabase/migrations/20261004085412_phase3_qloo.sql` |
-| Redacted real captures | `fixtures/qloo/` |
+| Synthetic fixtures in the observed response shapes (the redacted real captures were removed on 7 October 2026) | `fixtures/qloo/` |
 | Live smokes | `scripts/smoke-qloo.ts`, `scripts/smoke-proposal.ts` |
 
 ---
@@ -53,8 +60,8 @@ substituted and the key header never printed:
 
 ```
 {base}/search?query=Radiohead&types=urn%3Aentity%3Aartist&take=5
-{base}/v2/insights?filter.type=urn%3Aentity%3Amovie&signal.interests.entities=70CAE5BF-2F4C-445C-A3E5-4EDACFC3591C&take=10
-{base}/v2/insights?filter.type=urn%3Aentity%3Avideogame&signal.interests.entities=70CAE5BF-2F4C-445C-A3E5-4EDACFC3591C&take=10
+{base}/v2/insights?filter.type=urn%3Aentity%3Amovie&signal.interests.entities=<confirmed artist UUID, redacted>&take=10
+{base}/v2/insights?filter.type=urn%3Aentity%3Avideogame&signal.interests.entities=<confirmed artist UUID, redacted>&take=10
 ```
 
 `urn:entity:videogame` is the type that works. `urn:entity:video_game` is never
@@ -190,62 +197,46 @@ RUN_QLOO_SMOKE=1 npm run smoke:qloo       →  exit 0
 |---|---|
 | Query | `Radiohead` |
 | Confirmed name | Radiohead |
-| Confirmed UUID | `70CAE5BF-2F4C-445C-A3E5-4EDACFC3591C` |
+| Confirmed UUID | *[redacted]* |
 | Returned at rank | 1 of 5 |
 | Confirmation rule | exact case-insensitive name match, never position |
 
-The UUID matches the one the supplied report recorded (E2 §4). It was
+The UUID matched the one the supplied report recorded (E2 §4). It was
 re-observed live, not copied from the report.
 
-The other four returned candidates were `Radiohead Tribute`,
-`Dub Tribute To Radiohead`, `The Bluegrass Tribute to Radiohead`, and
-`Thom Yorke and Johnny Greenwood (Radiohead)` — which is exactly why
-confirmation is an explicit creator action and not a top-result pick.
+The other four returned candidates were similarly named acts *[names
+redacted]* — which is exactly why confirmation is an explicit creator action
+and not a top-result pick.
 
 ### Movie first hop — all ten rows normalized, ten usable
 
-| Rank | Name | Year | Qloo UUID | Application id |
-|---|---|---|---|---|
-| 1 | Children of Men | 2006 | `BB9AA6CE-8012-44B8-B554-54BE8A374A5E` | `ref.mv.7b622fd31d6f5938` |
-| 2 | Being John Malkovich | 1999 | `42AFD1E0-D42C-42C8-9272-945248E87BB6` | `ref.mv.ba9d3ec4a7c40a9a` |
-| 3 | Moon | 2009 | `6BBB34F4-9345-4459-82AE-10991FA35CD2` | `ref.mv.fe2f37e5fa35ed7b` |
+Ten rows were returned and normalized, all ten usable. The returned titles,
+their Qloo UUIDs, and their application ids are *[redacted]*. All three
+historically observed titles were still present.
 
-Ranks 4–10: Adaptation., Synecdoche New York, A Scanner Darkly, Donnie Darko,
-Pi, Lost in Translation, Primer. All three historically observed titles are
-still present.
-
-**Moon's canonical context was recovered, not invented.** The duplicate-identity
-material comes from `properties.plot_summary`, verbatim from the API:
-"…an identical man at an exterior harvester forces him to confront the truth
-about his identity…". `properties.plot_themes_description` adds: "The film
-probes what makes someone human by exploring identity and memory under extreme
-isolation…".
+The canonical reference's duplicate-identity context was recovered from a
+returned field (`properties.plot_summary`), not invented; its themes came from
+`properties.plot_themes_description`. The quoted text is *[redacted]*.
 
 ### Videogame first hop — all ten rows normalized, ten usable
 
-| Rank | Name | Year | Qloo UUID | Application id |
-|---|---|---|---|---|
-| 1 | Mass Effect 2 | 2010 | `5B3C9A59-72CF-4EC1-924A-3CC7AA87647D` | `ref.vg.c517a0da602525c6` |
-| 2 | Dragon Age: Origins | 2009 | `2EFBE2D7-A977-4824-8304-6389BF377127` | `ref.vg.b0e598da32f6aa32` |
-| 3 | Mass Effect | 2007 | `DB003E13-0C9F-4011-B928-43ADC2A59F26` | `ref.vg.76da93dea4ee7839` |
-
-All three historically observed titles are still present. Game metadata is
-genuinely thinner — short descriptions plus tag groups rather than a plot
-summary — and it was left thin. No model-written game description exists
+Ten rows were returned and normalized, all ten usable; titles and identifiers
+*[redacted]*. All three historically observed titles were still present. Game
+metadata is genuinely thinner — short descriptions plus tag groups rather than
+a plot summary — and it was left thin. No model-written game description exists
 anywhere in the application.
 
 ### A second artist, to show the path is not Radiohead-specific
 
 ```
-QLOO_SMOKE_ARTIST="Taylor Swift" RUN_QLOO_SMOKE=1 npm run smoke:qloo  →  exit 0
+QLOO_SMOKE_ARTIST="<second artist>" RUN_QLOO_SMOKE=1 npm run smoke:qloo  →  exit 0
 ```
 
-Confirmed `Taylor Swift` / `4BBEF799-A0C4-4110-AB01-39216993C312` at rank 1 of
-5. Movies: Me Before You (2016), Love Rosie (2014), The Fault in Our Stars
-(2014). Videogames: Temple Run (2011), Mario Kart Wii (2008), Tennis (2020).
-Ten usable rows per domain. A completely different neighbourhood, which is
-consistent with the supplied report's observation that first-hop neighbourhoods
-are distinct (E2).
+A second, unrelated artist was confirmed at rank 1 of 5 (identity
+*[redacted]*). Its movie and videogame neighbourhoods *[titles redacted]* were
+completely different, with ten usable rows per domain, which is consistent
+with the supplied report's observation that first-hop neighbourhoods are
+distinct (E2).
 
 ### Call counts
 
@@ -256,7 +247,7 @@ are distinct (E2).
 | Repeat of the identical retrieval | **0** |
 | Repeat in a separate process, against the shared database | **0** |
 
-Observed on the Taylor Swift run, which was genuinely uncached: three calls,
+Observed on the second-artist run, which was genuinely uncached: three calls,
 both insight launches taking a lease (`references_movie`,
 `references_videogame`). The immediately following repeat made zero requests,
 took zero leases, and returned the same immutable capture ids.
@@ -786,12 +777,12 @@ first hops → one bounded proposal call → one explicit approval
 | Model | `gpt-4o-mini-2024-07-18` |
 | Token usage | 4,247 in · 945 out · 5,192 total (first run); 4,247 · 983 · 5,230 (re-run at HEAD) |
 | Proposals returned | 6 |
-| Approval created | **Moon → Discovery**, unedited |
+| Approval created | **one movie reference *[title redacted]* → Discovery**, unedited |
 | Project revision at the end | 3 |
 | Workflow state | `PROPOSALS_READY` |
 
 The approved interpretation, as the model wrote it and the creator accepted it
-unedited, citing `properties.plot_themes_description` on Moon:
+unedited, citing `properties.plot_themes_description` on that reference:
 
 > Delve into the themes of identity and memory, emphasizing how the past can be
 > blurred and uncertain. Encountering clues within the letter triggers thoughts
@@ -839,7 +830,7 @@ or stack trace in any refusal body.
 | `PUT anchor` | 200, Radiohead frozen at rank 1 |
 | Confirming approves nothing | 0 approved |
 | `POST references` | 200, **upstream calls 0**, 10 usable per domain, both `cached` |
-| Real first-hop titles rendered | Children of Men, Being John Malkovich, Moon · Mass Effect 2, Dragon Age: Origins, Mass Effect |
+| Real first-hop titles rendered | three movie and three videogame titles *[redacted]* |
 | No affinity, fingerprint, or credential | 20,250 bytes scanned, clean |
 | `POST proposals` | 200, 5 proposals, **1 model call**, `repaired: false` |
 | Default approved count | 0 |
@@ -862,7 +853,7 @@ walked the whole workflow on the live site:
 | Both domain rows rendered real cards | 3 movie, 3 videogame |
 | Cards show retrieved context and no quality score | "Qloo describes" present; no affinity, confidence, `NN%`, or "Qloo recommends/proves/says/knows/generated" |
 | Proposals approve nothing by default | the empty-approvals panel was present |
-| Clicking Approve froze exactly one influence | `Discovery: Children of Men` |
+| Clicking Approve froze exactly one influence | `Discovery: [title redacted]` |
 | Provenance drawer layers | qloo retrieved → firstplayable proposed → creator approved |
 | No scene-change claim | absent; "Retrieved for Radiohead" present |
 | Approval survived a full page reload | yes |
@@ -919,7 +910,7 @@ Live, opt-in, never in CI:
 | Command | Result |
 |---|---|
 | `RUN_QLOO_SMOKE=1 npm run smoke:qloo` | passed, exit 0 |
-| `QLOO_SMOKE_ARTIST="Taylor Swift" RUN_QLOO_SMOKE=1 npm run smoke:qloo` | passed, exit 0 |
+| `QLOO_SMOKE_ARTIST="<second artist>" RUN_QLOO_SMOKE=1 npm run smoke:qloo` | passed, exit 0 |
 | `RUN_PROPOSAL_SMOKE=1 npm run smoke:proposal` | passed, exit 0 |
 | `RUN_DEPLOY_VERIFY=1 DEPLOY_URL=… npm run verify:deployment` | passed, exit 0 — 54 checks |
 

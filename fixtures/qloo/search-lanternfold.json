@@ -1,0 +1,91 @@
+{
+  "results": [
+    {
+      "name": "Lanternfold",
+      "entity_id": "5A000000-0000-4000-8000-000000000001",
+      "types": [
+        "urn:entity:artist"
+      ],
+      "disambiguation": "Lanternfold",
+      "popularity": 0.987654,
+      "properties": {
+        "short_description": "Lanternfold is an invented art-rock band known for slow-building, experimental records; it exists only in FirstPlayable's synthetic fixtures.",
+        "external": {
+          "facebook": {
+            "id": "synthetic"
+          },
+          "instagram": {
+            "id": "synthetic"
+          },
+          "lastfm": {
+            "id": "synthetic"
+          },
+          "musicbrainz": {
+            "id": "synthetic"
+          },
+          "spotify": {
+            "id": "synthetic"
+          },
+          "twitter": {
+            "id": "synthetic"
+          },
+          "wikidata": {
+            "id": "synthetic"
+          }
+        }
+      }
+    },
+    {
+      "name": "Lanternfold Tribute",
+      "entity_id": "5A000000-0000-4000-8000-000000000002",
+      "types": [
+        "urn:entity:artist"
+      ],
+      "disambiguation": "Lanternfold Tribute",
+      "popularity": 0.412345,
+      "properties": {
+        "short_description": "An invented tribute act that performs the music of Lanternfold.",
+        "external": {}
+      }
+    },
+    {
+      "name": "Dub Tribute To Lanternfold",
+      "entity_id": "5A000000-0000-4000-8000-000000000003",
+      "types": [
+        "urn:entity:artist"
+      ],
+      "disambiguation": "Dub Tribute To Lanternfold",
+      "popularity": 0.654321,
+      "properties": {
+        "short_description": "An invented group playing dub versions of Lanternfold songs.",
+        "external": {}
+      }
+    },
+    {
+      "name": "The Bluegrass Tribute to Lanternfold",
+      "entity_id": "5A000000-0000-4000-8000-000000000004",
+      "types": [
+        "urn:entity:artist"
+      ],
+      "disambiguation": "The Bluegrass Tribute to Lanternfold",
+      "popularity": 0.587654,
+      "properties": {
+        "short_description": "An invented bluegrass act covering Lanternfold songs.",
+        "external": {}
+      }
+    },
+    {
+      "name": "Ines Varga and Tobin Hale (Lanternfold)",
+      "entity_id": "5A000000-0000-4000-8000-000000000005",
+      "types": [
+        "urn:entity:artist"
+      ],
+      "disambiguation": "Ines Varga and Tobin Hale (Lanternfold)",
+      "popularity": 0.498765,
+      "properties": {
+        "short_description": "Ines Varga and Tobin Hale are the invented core members of Lanternfold, recording as a duo.",
+        "external": {}
+      }
+    }
+  ]
+}

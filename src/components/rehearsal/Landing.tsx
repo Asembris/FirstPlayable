@@ -1,6 +1,6 @@
 /**
  * The judge-facing entry. Two doors styled as action rows, and a specimen of
- * the real comparison in the margin. Every specimen string is read from the
+ * the synthetic demonstration comparison in the margin. Every specimen string is read from the
  * canonical pair.
  */
 
@@ -102,7 +102,7 @@ export function Landing(): React.ReactElement {
                 </span>
                 <span className="rt-door__label">Play the difference</span>
                 <span className="rt-door__aside">
-                  <span className="rt-chip">Saved example · generated from a real build</span>
+                  <span className="rt-chip">Saved example · synthetic demonstration</span>
                   <span className="rt-door__sub">Plays instantly · nothing is generated live</span>
                 </span>
               </Link>

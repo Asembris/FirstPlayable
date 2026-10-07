@@ -1,12 +1,16 @@
 /**
- * The real Phase 6 canonical comparison pair, as stored.
+ * The Phase 6 canonical comparison pair: a synthetic deterministic
+ * demonstration.
  *
  * Every string the judge path shows about the saved example is read from the
- * three files recorded in docs/PHASE6_CANONICAL_PAIR.md: the With-Moon version
- * row, the Without-Moon version row (which carries the stored revision diff),
- * and the provenance capture. Nothing here was written by hand, and nothing is
- * fetched: the files are bundled, so the saved example plays with no database,
- * model, or Qloo call.
+ * three files recorded in docs/PHASE6_CANONICAL_PAIR.md: the with-influence
+ * version row, the without-influence version row (which carries the stored
+ * revision diff), and the provenance record. The scenes, the creator decision
+ * and the diff are kept as the product stored them. The Qloo layer is not: the
+ * artist, the reference, its entity ids, its evidence text, and the capture
+ * fingerprint and timestamp are invented stand-ins in the shape of a Qloo
+ * capture, not a Qloo response. Nothing is fetched: the files are bundled, so
+ * the saved example plays with no database, model, or Qloo call.
  *
  * The schemas below read only the fields the presentation uses. Identifiers,
  * hashes, and validator internals stay in the files; they never reach a
@@ -17,8 +21,8 @@ import { z } from "zod";
 import { parseScene } from "../domain/scene";
 import type { Id, Scene } from "../domain/scene";
 import provenanceJson from "../../docs/phase6-canonical-pair/provenance.json";
-import withMoonJson from "../../docs/phase6-canonical-pair/with-moon.version.json";
-import withoutMoonJson from "../../docs/phase6-canonical-pair/without-moon.version.json";
+import withInfluenceJson from "../../docs/phase6-canonical-pair/with-influence.version.json";
+import withoutInfluenceJson from "../../docs/phase6-canonical-pair/without-influence.version.json";
 
 const ApprovalSnapshotSchema = z.object({
   domain: z.string(),
@@ -83,13 +87,13 @@ export type Availability = "enabled" | "locked" | "hidden";
 
 /**
  * The confirmed artist of the saved example. The provenance file stores only
- * the artist's Qloo entity id; the name is the one recorded for that id in
- * docs/PHASE6_CANONICAL_PAIR.md (the stored Radiohead search capture). It is
- * keyed by the id, so a record with any other artist refuses to load rather
+ * the artist's entity id; the name is the one recorded for that id in
+ * docs/PHASE6_CANONICAL_PAIR.md (the synthetic Lanternfold search fixture). It
+ * is keyed by the id, so a record with any other artist refuses to load rather
  * than showing the wrong name.
  */
 const RECORDED_ARTISTS: Readonly<Record<string, string>> = {
-  "70CAE5BF-2F4C-445C-A3E5-4EDACFC3591C": "Radiohead",
+  "5A000000-0000-4000-8000-000000000001": "Lanternfold",
 };
 
 /** The four causal layers, as stored. */
@@ -102,7 +106,7 @@ export type CausalRecord = {
     /** "film", from the stored proposal domain. */
     readonly kind: string;
     readonly year: number;
-    /** The stored disambiguation without its leading year: "Duncan Jones". */
+    /** The stored disambiguation without its leading year: "Maren Oduya". */
     readonly maker: string;
     readonly rank: number;
     readonly theme: string | null;
@@ -137,7 +141,7 @@ export type CanonicalPair = {
   readonly withScene: Scene;
   /** The same scene with that influence removed. */
   readonly withoutScene: Scene;
-  /** The influence's display name, from the approval snapshot: "Moon". */
+  /** The influence's display name, from the approval snapshot: "Halcyon Relay". */
   readonly influenceName: string;
   /** The stored comparison point, `revision_diff.replay.prefix`. */
   readonly recordedPrefix: readonly Id[];
@@ -223,7 +227,7 @@ export function buildCanonicalPair(
 
 /** Parsed once at module load, so a malformed record can never reach the page. */
 export const CANONICAL_PAIR: CanonicalPair = buildCanonicalPair(
-  withMoonJson,
-  withoutMoonJson,
+  withInfluenceJson,
+  withoutInfluenceJson,
   provenanceJson,
 );

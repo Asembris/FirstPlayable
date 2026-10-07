@@ -18,9 +18,9 @@ import { GAMES, installPhase3Api, MOVIES, PROJECT_ID } from "./support/phase3-ap
  * boundary — are covered by the offline unit suite.
  */
 
-const MOON = MOVIES[2]!;
-const CHILDREN = MOVIES[0]!;
-const MASS_EFFECT = GAMES[0]!;
+const HALCYON = MOVIES[2]!;
+const ASHFALL = MOVIES[0]!;
+const STARWARD = GAMES[0]!;
 
 /** Records any request that is not same-origin. The list must stay empty. */
 function watchForeignRequests(page: Page, baseURL: string): string[] {
@@ -62,7 +62,7 @@ test("artist search lists every result and selects none of them", async ({ page 
   await installPhase3Api(page);
   await page.goto(`/studio/${PROJECT_ID}`);
 
-  await page.getByTestId("artist-query").fill("Radiohead");
+  await page.getByTestId("artist-query").fill("Lanternfold");
   await page.getByTestId("artist-search-submit").click();
 
   const results = page.getByTestId("artist-results");
@@ -76,7 +76,7 @@ test("artist search lists every result and selects none of them", async ({ page 
   await expect(page.getByTestId("anchor-confirm")).toBeDisabled();
 
   // Enough context to tell the band from the tribute acts.
-  await expect(results).toContainText("Radiohead Tribute");
+  await expect(results).toContainText("Lanternfold Tribute");
   await expect(results).toContainText("Also listed on lastfm, musicbrainz, spotify");
 
   // No ranking score is shown anywhere.
@@ -105,7 +105,7 @@ test("confirming an artist is an explicit second step", async ({ page }) => {
   await installPhase3Api(page);
   await page.goto(`/studio/${PROJECT_ID}`);
 
-  await page.getByTestId("artist-query").fill("Radiohead");
+  await page.getByTestId("artist-query").fill("Lanternfold");
   await page.getByTestId("artist-search-submit").click();
   await expect(page.getByTestId("artist-results")).toBeVisible();
 
@@ -116,7 +116,7 @@ test("confirming an artist is an explicit second step", async ({ page }) => {
   await page.getByTestId("anchor-confirm").click();
 
   await expect(page.getByTestId("anchor-confirmed")).toBeVisible();
-  await expect(page.getByTestId("anchor-name")).toHaveText("Radiohead");
+  await expect(page.getByTestId("anchor-name")).toHaveText("Lanternfold");
   await expect(page.getByTestId("anchor-confirmed")).toContainText("as result 1");
   await expect(page.getByTestId("project-state")).toHaveText("ANCHOR_CONFIRMED");
   await expect(page.getByTestId("retrieve-references")).toBeVisible();
@@ -141,23 +141,23 @@ test("each domain row shows at most three cards with supported context", async (
 
   const movies = page.getByTestId("domain-row-movie");
   await expect(movies.locator(".card")).toHaveCount(3);
-  await expect(page.getByTestId(`card-${MOON.reference_id}`)).toContainText("Moon");
-  await expect(page.getByTestId(`card-context-${MOON.reference_id}`)).toContainText(
+  await expect(page.getByTestId(`card-${HALCYON.reference_id}`)).toContainText("Halcyon Relay");
+  await expect(page.getByTestId(`card-context-${HALCYON.reference_id}`)).toContainText(
     "Qloo describes",
   );
-  await expect(page.getByTestId(`card-context-${MOON.reference_id}`)).toContainText(
-    "identical man",
+  await expect(page.getByTestId(`card-context-${HALCYON.reference_id}`)).toContainText(
+    "duplicate of himself",
   );
 
   const games = page.getByTestId("domain-row-videogame");
   await expect(games.locator(".card")).toHaveCount(2);
-  await expect(page.getByTestId(`card-${MASS_EFFECT.reference_id}`)).toContainText(
-    "Mass Effect 2",
+  await expect(page.getByTestId(`card-${STARWARD.reference_id}`)).toContainText(
+    "Starward Accord II",
   );
 
   // The ranking and its gaps are honest, behind a disclosure.
   await page.getByTestId("domain-skipped-movie").click();
-  await expect(movies).toContainText("Result 4: Adaptation.");
+  await expect(movies).toContainText("Result 4: Second Draft Weather");
 
   // Nothing resembling a quality score anywhere in the rows.
   const text = await page.locator("main").innerText();
@@ -197,8 +197,8 @@ test("both domains unusable says so and invents nothing", async ({ page }) => {
   );
   await expect(page.getByTestId("run-proposals")).toHaveCount(0);
   const text = await page.locator("main").innerText();
-  expect(text).not.toContain("Children of Men");
-  expect(text).not.toContain("Mass Effect");
+  expect(text).not.toContain("Ashfall Covenant");
+  expect(text).not.toContain("Starward Accord");
   expect(text).toContain("Nothing was invented");
 });
 
@@ -207,18 +207,18 @@ test("proposals render under their cards and approve nothing by default", async 
   await page.goto(`/studio/${PROJECT_ID}`);
 
   // Before the proposal stage: cards, but no interaction and no decision buttons.
-  await expect(page.getByTestId(`card-no-proposal-${MOON.reference_id}`)).toBeVisible();
-  await expect(page.getByTestId(`approve-${MOON.reference_id}`)).toHaveCount(0);
+  await expect(page.getByTestId(`card-no-proposal-${HALCYON.reference_id}`)).toBeVisible();
+  await expect(page.getByTestId(`approve-${HALCYON.reference_id}`)).toHaveCount(0);
 
   await page.getByTestId("run-proposals").click();
 
-  const card = page.getByTestId(`card-${MOON.reference_id}`);
+  const card = page.getByTestId(`card-${HALCYON.reference_id}`);
   await expect(card).toContainText("Proposed interaction:");
   await expect(card).toContainText("FirstPlayable interpretation, not a Qloo assertion");
   // Approve, Edit and Dismiss sit immediately under the interaction.
-  await expect(page.getByTestId(`approve-${MOON.reference_id}`)).toBeVisible();
-  await expect(page.getByTestId(`edit-${MOON.reference_id}`)).toBeVisible();
-  await expect(page.getByTestId(`dismiss-${MOON.reference_id}`)).toBeVisible();
+  await expect(page.getByTestId(`approve-${HALCYON.reference_id}`)).toBeVisible();
+  await expect(page.getByTestId(`edit-${HALCYON.reference_id}`)).toBeVisible();
+  await expect(page.getByTestId(`dismiss-${HALCYON.reference_id}`)).toBeVisible();
 
   // The default approved count is zero.
   await expect(page.getByTestId("no-approvals")).toBeVisible();
@@ -233,9 +233,9 @@ test("approving one proposal creates one chip and one provenance chain", async (
   });
   await page.goto(`/studio/${PROJECT_ID}`);
 
-  await page.getByTestId(`approve-${MOON.reference_id}`).click();
+  await page.getByTestId(`approve-${HALCYON.reference_id}`).click();
 
-  await expect(page.getByTestId("approved-chip-discovery")).toContainText("Discovery: Moon");
+  await expect(page.getByTestId("approved-chip-discovery")).toContainText("Discovery: Halcyon Relay");
   await expect(page.getByTestId("no-approvals")).toHaveCount(0);
 
   await page.getByTestId("approved-chip-discovery").click();
@@ -254,8 +254,8 @@ test("approving one proposal creates one chip and one provenance chain", async (
   // And no fourth one.
   await expect(drawer).not.toContainText("Scene changed");
 
-  await expect(page.getByTestId("provenance-context-discovery")).toContainText("identical man");
-  await expect(drawer).toContainText("Retrieved for Radiohead on 2026-10-04");
+  await expect(page.getByTestId("provenance-context-discovery")).toContainText("duplicate of himself");
+  await expect(drawer).toContainText("Retrieved for Lanternfold on 2026-10-04");
   await expect(page.getByTestId("approved-text-discovery")).toContainText(
     "contradictory identity",
   );
@@ -281,14 +281,14 @@ test("editing before approving records the creator's own wording", async ({ page
   });
   await page.goto(`/studio/${PROJECT_ID}`);
 
-  await page.getByTestId(`edit-${MOON.reference_id}`).click();
-  const idea = page.getByTestId(`edit-idea-${MOON.reference_id}`);
+  await page.getByTestId(`edit-${HALCYON.reference_id}`).click();
+  const idea = page.getByTestId(`edit-idea-${HALCYON.reference_id}`);
   await expect(idea).toBeVisible();
   await idea.fill("Inspecting the letter shows two names. Ask Nia which one is hers.");
   await page
-    .getByTestId(`edit-effect-${MOON.reference_id}`)
+    .getByTestId(`edit-effect-${HALCYON.reference_id}`)
     .fill("Asking about the second name is what opens returning it.");
-  await page.getByTestId(`approve-edit-${MOON.reference_id}`).click();
+  await page.getByTestId(`approve-edit-${HALCYON.reference_id}`).click();
 
   await expect(page.getByTestId("approved-chip-discovery")).toContainText("edited");
   await page.getByTestId("approved-chip-discovery").click();
@@ -311,16 +311,16 @@ test("dismissing a proposal approves nothing and keeps an existing approval", as
   await page.goto(`/studio/${PROJECT_ID}`);
 
   // Dismiss with nothing approved: still nothing approved.
-  await page.getByTestId(`dismiss-${CHILDREN.reference_id}`).click();
+  await page.getByTestId(`dismiss-${ASHFALL.reference_id}`).click();
   await expect(page.getByTestId("no-approvals")).toBeVisible();
 
   // Approve one, then dismiss another card for the same slot.
-  await page.getByTestId(`approve-${MOON.reference_id}`).click();
+  await page.getByTestId(`approve-${HALCYON.reference_id}`).click();
   await expect(page.getByTestId("approved-chip-discovery")).toBeVisible();
-  await page.getByTestId(`dismiss-${CHILDREN.reference_id}`).click();
+  await page.getByTestId(`dismiss-${ASHFALL.reference_id}`).click();
 
   // The approval survives the dismissal.
-  await expect(page.getByTestId("approved-chip-discovery")).toContainText("Discovery: Moon");
+  await expect(page.getByTestId("approved-chip-discovery")).toContainText("Discovery: Halcyon Relay");
 });
 
 test("filling an occupied slot requires an explicit replacement", async ({ page }) => {
@@ -331,19 +331,19 @@ test("filling an occupied slot requires an explicit replacement", async ({ page 
   });
   await page.goto(`/studio/${PROJECT_ID}`);
 
-  await page.getByTestId(`approve-${MOON.reference_id}`).click();
-  await expect(page.getByTestId("approved-chip-discovery")).toContainText("Moon");
+  await page.getByTestId(`approve-${HALCYON.reference_id}`).click();
+  await expect(page.getByTestId("approved-chip-discovery")).toContainText("Halcyon Relay");
 
   // The other Discovery card now offers a replacement, not a plain approval.
-  const other = page.getByTestId(`card-${CHILDREN.reference_id}`);
+  const other = page.getByTestId(`card-${ASHFALL.reference_id}`);
   await expect(other).toContainText("this slot already holds an approval");
-  await expect(page.getByTestId(`approve-${CHILDREN.reference_id}`)).toHaveText(
+  await expect(page.getByTestId(`approve-${ASHFALL.reference_id}`)).toHaveText(
     "Replace this slot",
   );
 
-  await page.getByTestId(`approve-${CHILDREN.reference_id}`).click();
+  await page.getByTestId(`approve-${ASHFALL.reference_id}`).click();
   await expect(page.getByTestId("approved-chip-discovery")).toContainText(
-    "Discovery: Children of Men",
+    "Discovery: Ashfall Covenant",
   );
 
   // The replacement names its predecessor, so the change is visible.
@@ -359,8 +359,8 @@ test("at most one approval per slot, across both slots", async ({ page }) => {
   });
   await page.goto(`/studio/${PROJECT_ID}`);
 
-  await page.getByTestId(`approve-${MOON.reference_id}`).click();
-  await page.getByTestId(`approve-${MASS_EFFECT.reference_id}`).click();
+  await page.getByTestId(`approve-${HALCYON.reference_id}`).click();
+  await page.getByTestId(`approve-${STARWARD.reference_id}`).click();
 
   await expect(page.getByTestId("approved-chip-discovery")).toBeVisible();
   await expect(page.getByTestId("approved-chip-commitment")).toBeVisible();
@@ -375,12 +375,12 @@ test("an approval survives a reload", async ({ page }) => {
   });
   await page.goto(`/studio/${PROJECT_ID}`);
 
-  await page.getByTestId(`approve-${MOON.reference_id}`).click();
+  await page.getByTestId(`approve-${HALCYON.reference_id}`).click();
   await expect(page.getByTestId("approved-chip-discovery")).toBeVisible();
 
   await page.reload();
 
-  await expect(page.getByTestId("approved-chip-discovery")).toContainText("Discovery: Moon");
+  await expect(page.getByTestId("approved-chip-discovery")).toContainText("Discovery: Halcyon Relay");
   await page.getByTestId("approved-chip-discovery").click();
   await expect(page.getByTestId("approved-text-discovery")).toContainText(
     "contradictory identity",
@@ -395,14 +395,14 @@ test("removing an approval restores the empty state and keeps the cards", async 
   });
   await page.goto(`/studio/${PROJECT_ID}`);
 
-  await page.getByTestId(`approve-${MOON.reference_id}`).click();
+  await page.getByTestId(`approve-${HALCYON.reference_id}`).click();
   await page.getByTestId("approved-chip-discovery").click();
   await page.getByTestId("remove-discovery").click();
 
   await expect(page.getByTestId("no-approvals")).toBeVisible();
   await expect(page.getByTestId("approved-chips")).toHaveCount(0);
   // The reference is still retrieved and still inspectable.
-  await expect(page.getByTestId(`card-${MOON.reference_id}`)).toBeVisible();
+  await expect(page.getByTestId(`card-${HALCYON.reference_id}`)).toBeVisible();
 });
 
 test("a second browser cannot inspect the project", async ({ page }) => {
@@ -416,7 +416,7 @@ test("a second browser cannot inspect the project", async ({ page }) => {
   // It learns nothing about whether the id exists.
   const text = await page.locator("main").innerText();
   expect(text).not.toContain("The Second Copy");
-  expect(text).not.toContain("Radiohead");
+  expect(text).not.toContain("Lanternfold");
 });
 
 test("the browser speaks only to this application, never to an upstream host", async ({
@@ -434,7 +434,7 @@ test("the browser speaks only to this application, never to an upstream host", a
   });
 
   await page.goto(`/studio/${PROJECT_ID}`);
-  await page.getByTestId(`approve-${MOON.reference_id}`).click();
+  await page.getByTestId(`approve-${HALCYON.reference_id}`).click();
   await page.getByTestId("approved-chip-discovery").click();
   await page.getByTestId("provenance-detail-discovery").click();
 
@@ -467,7 +467,7 @@ test("the workflow is keyboard-operable and focus stays visible", async ({ page 
   });
   await page.goto(`/studio/${PROJECT_ID}`);
 
-  const approve = page.getByTestId(`approve-${MOON.reference_id}`);
+  const approve = page.getByTestId(`approve-${HALCYON.reference_id}`);
   await approve.focus();
   await expect(approve).toBeFocused();
   await page.keyboard.press("Enter");
@@ -498,9 +498,9 @@ test("the workflow has no clipped critical action at 390px or 1440px", async ({ 
     for (const testId of [
       "artist-query",
       "artist-search-submit",
-      `approve-${MOON.reference_id}`,
-      `edit-${MOON.reference_id}`,
-      `dismiss-${MOON.reference_id}`,
+      `approve-${HALCYON.reference_id}`,
+      `edit-${HALCYON.reference_id}`,
+      `dismiss-${HALCYON.reference_id}`,
     ]) {
       const locator = page.getByTestId(testId);
       await expect(locator, `${testId} at ${viewport.width}px`).toBeVisible();

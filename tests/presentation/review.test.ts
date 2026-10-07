@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import provenanceJson from "../../docs/phase6-canonical-pair/provenance.json";
-import withMoonJson from "../../docs/phase6-canonical-pair/with-moon.version.json";
-import withoutMoonJson from "../../docs/phase6-canonical-pair/without-moon.version.json";
+import withInfluenceJson from "../../docs/phase6-canonical-pair/with-influence.version.json";
+import withoutInfluenceJson from "../../docs/phase6-canonical-pair/without-influence.version.json";
 import { SECOND_COPY_BRIEF, SECOND_COPY_DISCOVERY_V1 } from "../../fixtures/second-copy";
 import { PlayableViewSchema } from "../../src/domain/compile";
 import type { PlayableView } from "../../src/domain/compile";
@@ -20,30 +20,30 @@ import { verifyCandidate } from "../../src/server/compile/verify";
 import { sceneChangedFrom } from "../../src/server/db/versions";
 
 /**
- * The creator-side review model, against the real stored Moon build.
+ * The creator-side review model, against the stored Halcyon Relay build (synthetic demonstration).
  *
- * The With-Moon version row is exactly what the review screen receives for a
+ * The with-influence version row is exactly what the review screen receives for a
  * candidate build, so every expectation is read back from it.
  */
 
-const withScene = parseScene(withMoonJson.scene);
-const withoutScene = parseScene(withoutMoonJson.scene);
-const witness = withMoonJson.validation_summary.witnesses[0]!;
-const snapshot = withMoonJson.approval_snapshot[0]!;
-const discovery = withMoonJson.scene.modules[0]!;
+const withScene = parseScene(withInfluenceJson.scene);
+const withoutScene = parseScene(withoutInfluenceJson.scene);
+const witness = withInfluenceJson.validation_summary.witnesses[0]!;
+const snapshot = withInfluenceJson.approval_snapshot[0]!;
+const discovery = withInfluenceJson.scene.modules[0]!;
 
 /** The stored row, in the shape the project read hands the review screen. */
 const candidate: PlayableView = PlayableViewSchema.parse({
-  version_id: withMoonJson.id,
+  version_id: withInfluenceJson.id,
   state: "pending",
-  created_at: withMoonJson.created_at,
-  scene: withMoonJson.scene,
-  validation: withMoonJson.validation_summary,
+  created_at: withInfluenceJson.created_at,
+  scene: withInfluenceJson.scene,
+  validation: withInfluenceJson.validation_summary,
   scene_changed: [
     {
       approval_id: witness.approval_id,
       slot: witness.slot,
-      mechanic_ids: withMoonJson.scene.provenance[0]!.mechanic_ids,
+      mechanic_ids: withInfluenceJson.scene.provenance[0]!.mechanic_ids,
       witness,
     },
   ],
@@ -73,7 +73,7 @@ const approval: ApprovedInfluence = ApprovedInfluenceSchema.parse({
 });
 
 const label = (id: string) =>
-  [...withMoonJson.scene.core.actions, ...discovery.actions].find((action) => action.id === id)!.label;
+  [...withInfluenceJson.scene.core.actions, ...discovery.actions].find((action) => action.id === id)!.label;
 const text = (phrase: Phrase | null) =>
   (phrase ?? []).map((part) => (typeof part === "string" ? part : part.em)).join("");
 
@@ -102,13 +102,13 @@ describe("where an approval stands", () => {
   });
 });
 
-describe("intended vs observed for the real Moon build", () => {
+describe("intended vs observed for the stored Halcyon Relay build", () => {
   const [observation, ...others] = observationsOf(candidate, [approval]);
 
   it("reports one influence, named from the approval", () => {
     expect(others).toEqual([]);
     expect(observation!.slot).toBe("discovery");
-    expect(observation!.influenceName).toBe("Moon");
+    expect(observation!.influenceName).toBe("Halcyon Relay");
   });
 
   it("keeps the intended effect and the interpretation exactly as compiled", () => {
@@ -120,7 +120,7 @@ describe("intended vs observed for the real Moon build", () => {
   it("observes exactly the stored diff's changed choices after the witness's prefix", () => {
     expect(observation!.prefixLabels).toEqual(witness.prefix.map(label));
     expect(observation!.rows.map((row) => row.id).sort()).toEqual(
-      [...withoutMoonJson.revision_diff.replay.changed_action_ids].sort(),
+      [...withoutInfluenceJson.revision_diff.replay.changed_action_ids].sort(),
     );
     expect(observation!.rows).toEqual([
       { id: "core.give", label: label("core.give"), reading: "locked" },
@@ -138,8 +138,8 @@ describe("intended vs observed for the real Moon build", () => {
   it("puts the observation in player words, never the raw witness sentence", () => {
     const sentence = text(observation!.phrase);
     expect(sentence).toBe(
-      `After the same two choices, ${label("core.give")} is locked with Moon and open without it. ` +
-        `With Moon, two choices are added, and ${label("core.give")} needs both.`,
+      `After the same two choices, ${label("core.give")} is locked with Halcyon Relay and open without it. ` +
+        `With Halcyon Relay, two choices are added, and ${label("core.give")} needs both.`,
     );
     expect(sentence).not.toBe(witness.sentence);
     expect(sentence).not.toMatch(/core\.|discovery\.|approval\./);

@@ -66,16 +66,16 @@
       "approval_id": "8f213c1e-6683-48d9-8bb6-9c86d8ce76c1",
       "approved_at": "2026-10-05T22:23:39.588702+00:00",
       "source_kind": "qloo",
-      "reference_id": "ref.mv.fe2f37e5fa35ed7b",
+      "reference_id": "ref.mv.cefae39f4a9c2dcb",
       "approved_text": "Borrow the idea of a contradictory identity, not the film's plot. The envelope is addressed to two names: Nia's, and someone else's. Returning the letter stays locked until you ask Nia who the other name belongs to.",
       "proposed_idea": "Examine the themes of memory and identity under pressure, reflected in the sealed letter. It could represent lost memories or an urgent truth waiting to be uncovered, adding tension to the decision of whether to return it.",
-      "reference_name": "Moon",
+      "reference_name": "Halcyon Relay",
       "intended_effect": "Returning the letter stays locked until you ask Nia who the second name on the envelope belongs to.",
       "edited_by_creator": true,
       "scene_approval_id": "approval.8f213c1e-6683-48d9-8bb6-9c86d8ce76c1",
       "selected_evidence_ids": [
-        "ref.mv.fe2f37e5fa35ed7b#ev2",
-        "ref.mv.fe2f37e5fa35ed7b#ev3"
+        "ref.mv.cefae39f4a9c2dcb#ev2",
+        "ref.mv.cefae39f4a9c2dcb#ev3"
       ]
     }
   ],
@@ -557,7 +557,7 @@
       {
         "approval_id": "approval.8f213c1e-6683-48d9-8bb6-9c86d8ce76c1",
         "source_kind": "qloo",
-        "reference_id": "ref.mv.fe2f37e5fa35ed7b",
+        "reference_id": "ref.mv.cefae39f4a9c2dcb",
         "approved_text": "Borrow the idea of a contradictory identity, not the film's plot. The envelope is addressed to two names: Nia's, and someone else's. Returning the letter stays locked until you ask Nia who the other name belongs to.",
         "intended_effect": "Returning the letter stays locked until you ask Nia who the second name on the envelope belongs to."
       }

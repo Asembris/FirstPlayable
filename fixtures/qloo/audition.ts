@@ -1,20 +1,21 @@
 /**
  * SYNTHETIC test payloads for the comp audition.
  *
- * Unlike the Radiohead captures beside this file, these are **not** recorded
+ * Like the Lanternfold payloads beside this file, these are **not** recorded
  * responses. They are written in the envelope shapes the live API was observed
  * to return (`{ results: [...] }` for search, `{ success, results: { entities } }`
  * for insights, `subtype`, `query.affinity`), and every affinity value below is
  * made up for the test that uses it. They must never be shown as Qloo
  * evidence, and no browser surface imports them.
  *
- * Radiohead's id is the real one from `search-radiohead.json`, so the audience
- * search can reuse that real capture. Every other id is a synthetic UUID.
+ * The first audience is the synthetic Lanternfold artist from
+ * `search-lanternfold.json`, so the audience search can reuse that payload.
+ * Every id is a synthetic UUID.
  */
 
-import { RADIOHEAD_ENTITY_ID } from "./index";
+import { LANTERNFOLD_ENTITY_ID } from "./index";
 
-export { RADIOHEAD_ENTITY_ID };
+export { LANTERNFOLD_ENTITY_ID };
 export const KENDRICK_ENTITY_ID = "A0000000-0000-4000-8000-0000000000A1";
 export const METALLICA_ENTITY_ID = "A0000000-0000-4000-8000-0000000000A2";
 

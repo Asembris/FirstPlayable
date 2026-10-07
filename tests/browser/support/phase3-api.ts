@@ -21,7 +21,7 @@ import type { Page, Route } from "@playwright/test";
 
 export const PROJECT_ID = "3f1c2d4e-5a6b-4c8d-9e0f-112233445566";
 
-const RADIOHEAD = "70CAE5BF-2F4C-445C-A3E5-4EDACFC3591C";
+const LANTERNFOLD = "5A000000-0000-4000-8000-000000000001";
 
 type Slot = "discovery" | "commitment";
 
@@ -62,7 +62,7 @@ function movie(
   plot: string,
   theme: string,
 ): Candidate {
-  const referenceId = `ref.mv.${entityId.slice(0, 16).toLowerCase().replace(/-/g, "")}`;
+  const referenceId = `ref.mv.${entityId.replace(/-/g, "").slice(-16).toLowerCase()}`;
   return {
     reference_id: referenceId,
     entity_id: entityId,
@@ -82,7 +82,7 @@ function movie(
 }
 
 function game(rank: number, name: string, year: number, entityId: string, description: string): Candidate {
-  const referenceId = `ref.vg.${entityId.slice(0, 16).toLowerCase().replace(/-/g, "")}`;
+  const referenceId = `ref.vg.${entityId.replace(/-/g, "").slice(-16).toLowerCase()}`;
   return {
     reference_id: referenceId,
     entity_id: entityId,
@@ -104,61 +104,61 @@ function game(rank: number, name: string, year: number, entityId: string, descri
 export const MOVIES: Candidate[] = [
   movie(
     1,
-    "Children of Men",
+    "Ashfall Covenant",
     2006,
-    "BB9AA6CE-8012-44B8-B554-54BE8A374A5E",
-    "A disillusioned activist escorts a miraculously pregnant refugee through collapsing cities.",
-    "Examines state power, displacement, and the moral costs of protecting new life.",
+    "5B000000-0000-4000-8000-000000000001",
+    "A tired courier carries a sealed covenant across a region where volcanic ash has closed the roads.",
+    "Asks who gets to cross a closing border, and what one messenger owes to the strangers travelling with her.",
   ),
   movie(
     2,
-    "Being John Malkovich",
+    "The Borrowed Window",
     1999,
-    "0C62A1B3-2222-4333-8444-555555555555",
-    "A puppeteer finds a passage into another man's head and starts selling tickets.",
-    "Identity as something that can be entered, borrowed, and sold.",
+    "5B000000-0000-4000-8000-000000000002",
+    "A filing clerk discovers a narrow window that shows the world through the eyes of a stranger.",
+    "Treats identity as something that can be rented, borrowed and resold.",
   ),
   movie(
     3,
-    "Moon",
+    "Halcyon Relay",
     2009,
-    "6BBB34F4-9345-4459-82AE-10991FA35CD2",
-    "An astronaut nearing the end of a solitary lunar contract finds an identical man outside.",
-    "Probes what makes someone human by exploring identity and memory under isolation.",
+    "5B000000-0000-4000-8000-000000000003",
+    "The lone technician on a remote relay station finds a duplicate of himself in a sealed maintenance bay.",
+    "Asks what makes a person the same person by setting two copies of one man against the record of a single life.",
   ),
 ];
 
 export const GAMES: Candidate[] = [
   game(
     1,
-    "Mass Effect 2",
+    "Starward Accord II",
     2010,
-    "5B3C9A59-72CF-4EC1-924A-3CC7AA87647D",
-    "A commander recruits a squad to confront a galaxy-threatening force, with choices that matter.",
+    "5C000000-0000-4000-8000-000000000001",
+    "An invented commander gathers a reluctant crew for a mission whose survivors depend on every promise kept.",
   ),
   game(
     2,
-    "Dragon Age: Origins",
+    "Emberfall: Oaths",
     2009,
-    "7A1B2C3D-4444-4555-8666-777777777777",
-    "A dark-fantasy role-playing game in which alliances are won and lost by what you promise.",
+    "5C000000-0000-4000-8000-000000000002",
+    "An invented dark-fantasy role-playing game in which alliances are won and lost by what you promise.",
   ),
 ];
 
 const SKIPPED_MOVIES = [
-  { original_rank: 4, name: "Adaptation.", reason: "beyond_display_limit" as const },
-  { original_rank: 5, name: "Synecdoche, New York", reason: "beyond_display_limit" as const },
+  { original_rank: 4, name: "Second Draft Weather", reason: "beyond_display_limit" as const },
+  { original_rank: 5, name: "Scale Model City", reason: "beyond_display_limit" as const },
 ];
 
 export const ANCHOR = {
-  entity_id: RADIOHEAD,
-  name: "Radiohead",
+  entity_id: LANTERNFOLD,
+  name: "Lanternfold",
   short_description:
-    "Radiohead is an English rock band known for their innovative and experimental approach to music.",
-  disambiguation: "Radiohead",
+    "Lanternfold is an invented art-rock band known for slow-building, experimental records; it exists only in FirstPlayable's synthetic fixtures.",
+  disambiguation: "Lanternfold",
   identity_hints: ["lastfm", "musicbrainz", "spotify"],
-  query: "Radiohead",
-  normalized_query: "radiohead",
+  query: "Lanternfold",
+  normalized_query: "lanternfold",
   search_capture_id: "11111111-1111-4111-8111-111111111111",
   original_rank: 1,
   confirmed_at: "2026-10-04T10:00:00.000Z",
@@ -166,24 +166,24 @@ export const ANCHOR = {
 
 const SEARCH_CANDIDATES = [
   {
-    entity_id: RADIOHEAD,
-    name: "Radiohead",
+    entity_id: LANTERNFOLD,
+    name: "Lanternfold",
     short_description: ANCHOR.short_description,
-    disambiguation: "Radiohead",
+    disambiguation: "Lanternfold",
     identity_hints: ["lastfm", "musicbrainz", "spotify"],
     original_rank: 1,
   },
   {
-    entity_id: "99ECEFED-B982-40C2-A2ED-EB042E9545FA",
-    name: "Radiohead Tribute",
-    short_description: "A tribute band dedicated to performing the music of Radiohead.",
+    entity_id: "5A000000-0000-4000-8000-000000000002",
+    name: "Lanternfold Tribute",
+    short_description: "An invented tribute act that performs the music of Lanternfold.",
     disambiguation: null,
     identity_hints: [],
     original_rank: 2,
   },
   {
-    entity_id: "93D30F68-DA61-4CB3-A672-1C7983C79086",
-    name: "Thom Yorke and Johnny Greenwood (Radiohead)",
+    entity_id: "5A000000-0000-4000-8000-000000000005",
+    name: "Ines Varga and Tobin Hale (Lanternfold)",
     short_description: null,
     disambiguation: null,
     identity_hints: [],
@@ -240,11 +240,11 @@ function proposalFor(candidate: Candidate, slot: Slot, index: number): Proposal 
     selected_evidence_ids: [candidate.evidence[0]!.id],
     slot,
     idea:
-      candidate.name === "Moon"
+      candidate.name === "Halcyon Relay"
         ? "Borrow the idea of a contradictory identity, not the film's plot. Inspecting the letter reveals two names."
         : `An interpretation drawn from the retrieved context for ${candidate.name}.`,
     intended_interaction:
-      candidate.name === "Moon"
+      candidate.name === "Halcyon Relay"
         ? "Before returning it, ask Nia about the second name."
         : `An interaction the player performs, drawn from ${candidate.name}.`,
     relevance: `This follows from the cited excerpt for ${candidate.name}.`,
@@ -502,7 +502,7 @@ export async function installPhase3Api(page: Page, options: ApiOptions = {}): Pr
           normalizer_version: "qloo-norm-1",
           retrieved_at: "2026-10-04T10:00:00.000Z",
           cache: "live",
-          candidates: query.toLowerCase().includes("radio") ? SEARCH_CANDIDATES : [],
+          candidates: query.toLowerCase().includes("lantern") ? SEARCH_CANDIDATES : [],
         },
         project: projectView(),
       });
@@ -510,7 +510,7 @@ export async function installPhase3Api(page: Page, options: ApiOptions = {}): Pr
     }
 
     if (path.endsWith("/anchor")) {
-      if (body["entity_id"] !== RADIOHEAD) {
+      if (body["entity_id"] !== LANTERNFOLD) {
         // Only the chosen artist is installed; the mock mirrors the server in
         // refusing anything that was not in the named snapshot.
         await failure(route, 422, "VALIDATION_FAILED", "Some details in this request are not acceptable.");

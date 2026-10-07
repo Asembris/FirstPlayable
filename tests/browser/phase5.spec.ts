@@ -313,7 +313,7 @@ test.describe("the public share view", () => {
     const html = await page.content();
     for (const forbidden of [
       PROJECT_ID,
-      "Radiohead",
+      "Lanternfold",
       "proposal_draft",
       "capture_id",
       "fp_owner",

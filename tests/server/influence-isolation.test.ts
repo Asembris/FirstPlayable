@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { RADIOHEAD_ENTITY_ID } from "../../fixtures/qloo";
+import { LANTERNFOLD_ENTITY_ID } from "../../fixtures/qloo";
 import { SECOND_COPY_BRIEF } from "../../fixtures/second-copy";
 import type { ApprovedInfluence } from "../../src/domain/influence";
 import type { ReferenceCapture } from "../../src/domain/qloo";
@@ -130,7 +130,7 @@ function sentinelTransport() {
         results: [
           {
             name: "Sentinel Artist",
-            entity_id: RADIOHEAD_ENTITY_ID,
+            entity_id: LANTERNFOLD_ENTITY_ID,
             types: ["urn:entity:artist"],
             disambiguation: SENTINEL.artist,
             properties: { short_description: SENTINEL.artist, external: {} },
@@ -152,10 +152,10 @@ function sentinelCaptures(): ReferenceCapture[] {
   ).map(([domain, raw, captureId]) => {
     const normalized = normalizeReferences(raw, {
       domain,
-      artistEntityId: RADIOHEAD_ENTITY_ID,
+      artistEntityId: LANTERNFOLD_ENTITY_ID,
       requestFingerprint: referenceFingerprint({
         host: "qloo.invalid",
-        artistEntityId: RADIOHEAD_ENTITY_ID,
+        artistEntityId: LANTERNFOLD_ENTITY_ID,
         domain,
       }),
       retrievedAt: T0.toISOString(),
@@ -174,7 +174,7 @@ describe("the proposal payload", () => {
     );
     const serialized = JSON.stringify(payload);
     expect(serialized).not.toContain(SENTINEL.artist);
-    expect(serialized).not.toContain(RADIOHEAD_ENTITY_ID);
+    expect(serialized).not.toContain(LANTERNFOLD_ENTITY_ID);
   });
 
   it("carries no identity-only reference", () => {
@@ -238,7 +238,7 @@ describe("the approved-influence payload", () => {
     expect(serialized).not.toContain(SENTINEL.otherSlot);
     expect(serialized).not.toContain(SENTINEL.unusable);
     expect(serialized).not.toContain(SENTINEL.artist);
-    expect(serialized).not.toContain(RADIOHEAD_ENTITY_ID);
+    expect(serialized).not.toContain(LANTERNFOLD_ENTITY_ID);
     expect(serialized).not.toContain("affinity");
     expect(serialized).not.toContain("capture_id");
     expect(serialized).not.toContain("request_fingerprint");
@@ -409,7 +409,7 @@ async function retrieve(h: Harness): Promise<{
       body: JSON.stringify({
         expected_revision: searched.project.revision,
         search_capture_id: searched.search.capture_id,
-        entity_id: RADIOHEAD_ENTITY_ID,
+        entity_id: LANTERNFOLD_ENTITY_ID,
       }),
     }),
     h.deps,
@@ -522,7 +522,7 @@ describe("isolation through the real decision flow", () => {
     // And the artist that produced all of it is absent from both.
     for (const payload of payloads) {
       expect(JSON.stringify(payload)).not.toContain(SENTINEL.artist);
-      expect(JSON.stringify(payload)).not.toContain(RADIOHEAD_ENTITY_ID);
+      expect(JSON.stringify(payload)).not.toContain(LANTERNFOLD_ENTITY_ID);
     }
 
     // The positive half: each payload holds its own approval's own evidence.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { QLOO_FIXTURES, RADIOHEAD_ENTITY_ID } from "../../fixtures/qloo";
+import { QLOO_FIXTURES, LANTERNFOLD_ENTITY_ID } from "../../fixtures/qloo";
 import type { ProjectView, ProposalsResponse, ReferencesResponse } from "../../src/domain/project";
 import { handleProposals } from "../../src/server/api/proposals";
 import {
@@ -67,7 +67,7 @@ async function withReferences(
   const search = await handleArtistSearch(
     mutation(`/api/projects/${projectId}/artist-search`, {
       cookie,
-      body: JSON.stringify({ query: "Radiohead" }),
+      body: JSON.stringify({ query: "Lanternfold" }),
     }),
     h.deps,
     projectId,
@@ -81,7 +81,7 @@ async function withReferences(
       body: JSON.stringify({
         expected_revision: searched.project.revision,
         search_capture_id: searched.search.capture_id,
-        entity_id: RADIOHEAD_ENTITY_ID,
+        entity_id: LANTERNFOLD_ENTITY_ID,
       }),
     }),
     h.deps,
@@ -335,7 +335,7 @@ describe("POST /api/projects/:id/proposals", () => {
     const h = harness({
       model: [{ parsed: { proposals: [] } }],
       transport: routedTransport({
-        search: () => jsonResponse(QLOO_FIXTURES.searchRadiohead),
+        search: () => jsonResponse(QLOO_FIXTURES.searchLanternfold),
         movie: () => identityOnly("urn:entity:movie", "11111111-2222-4333-8444-555555555555"),
         videogame: () =>
           identityOnly("urn:entity:videogame", "22222222-3333-4444-8555-666666666666"),

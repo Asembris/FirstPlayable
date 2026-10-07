@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import provenanceJson from "../../docs/phase6-canonical-pair/provenance.json";
-import withMoonJson from "../../docs/phase6-canonical-pair/with-moon.version.json";
-import withoutMoonJson from "../../docs/phase6-canonical-pair/without-moon.version.json";
+import withInfluenceJson from "../../docs/phase6-canonical-pair/with-influence.version.json";
+import withoutInfluenceJson from "../../docs/phase6-canonical-pair/without-influence.version.json";
 import { observeReplayPrefix } from "../../src/engine/diff";
 import { CANONICAL_PAIR, buildCanonicalPair } from "../../src/presentation/canonical-pair";
 import type { CanonicalPair } from "../../src/presentation/canonical-pair";
@@ -19,7 +19,7 @@ import {
 import type { Phrase } from "../../src/presentation/rehearsal";
 
 /**
- * The Phase 6 presentation model, against the real stored canonical pair.
+ * The Phase 6 presentation model, against the stored canonical pair (a synthetic deterministic demonstration).
  *
  * Every expectation below is read back from the three stored files rather
  * than restated by hand, so a test can only pass while the judge path shows
@@ -28,10 +28,10 @@ import type { Phrase } from "../../src/presentation/rehearsal";
 
 const pair = CANONICAL_PAIR;
 const stored = {
-  withScene: withMoonJson.scene,
-  approval: withMoonJson.approval_snapshot[0]!,
-  witness: withMoonJson.validation_summary.witnesses[0]!,
-  replay: withoutMoonJson.revision_diff.replay,
+  withScene: withInfluenceJson.scene,
+  approval: withInfluenceJson.approval_snapshot[0]!,
+  witness: withInfluenceJson.validation_summary.witnesses[0]!,
+  replay: withoutInfluenceJson.revision_diff.replay,
 };
 
 const moduleOf = stored.withScene.modules[0]!;
@@ -53,7 +53,7 @@ function phraseText(phrase: Phrase | null): string {
 describe("the canonical pair", () => {
   it("loads both stored versions and the provenance record", () => {
     expect(pair.withScene.title).toBe(stored.withScene.title);
-    expect(pair.withoutScene.title).toBe(withoutMoonJson.scene.title);
+    expect(pair.withoutScene.title).toBe(withoutInfluenceJson.scene.title);
     expect(pair.withScene.modules).toHaveLength(1);
     expect(pair.withoutScene.modules).toHaveLength(0);
     expect(pair.influenceName).toBe(stored.approval.reference_name);
@@ -88,11 +88,11 @@ describe("the canonical pair", () => {
   });
 
   it("refuses a malformed record", () => {
-    expect(() => buildCanonicalPair({}, withoutMoonJson, provenanceJson)).toThrow();
+    expect(() => buildCanonicalPair({}, withoutInfluenceJson, provenanceJson)).toThrow();
     expect(() =>
       buildCanonicalPair(
-        { ...withMoonJson, scene: { ...withMoonJson.scene, title: "" } },
-        withoutMoonJson,
+        { ...withInfluenceJson, scene: { ...withInfluenceJson.scene, title: "" } },
+        withoutInfluenceJson,
         provenanceJson,
       ),
     ).toThrow();
@@ -101,13 +101,13 @@ describe("the canonical pair", () => {
 
 describe("Attribution of the saved example", () => {
   it("names the confirmed artist recorded for the stored capture's Qloo entity", () => {
-    expect(provenanceJson.capture.artist_entity_id).toBe("70CAE5BF-2F4C-445C-A3E5-4EDACFC3591C");
-    expect(pair.causal.artist.name).toBe("Radiohead");
+    expect(provenanceJson.capture.artist_entity_id).toBe("5A000000-0000-4000-8000-000000000001");
+    expect(pair.causal.artist.name).toBe("Lanternfold");
   });
 
   it("refuses a record whose artist is not the recorded one, rather than misnaming it", () => {
     expect(() =>
-      buildCanonicalPair(withMoonJson, withoutMoonJson, {
+      buildCanonicalPair(withInfluenceJson, withoutInfluenceJson, {
         ...provenanceJson,
         capture: { ...provenanceJson.capture, artist_entity_id: "00000000-0000-0000-0000-000000000000" },
       }),
@@ -116,7 +116,7 @@ describe("Attribution of the saved example", () => {
 
   it("keeps the cross-domain step and the four layers distinct, credited to the creator", () => {
     const summary = causalSummary(pair);
-    expect(summary.startsWith(`Radiohead → Qloo → ${provenanceJson.reference.name} · `)).toBe(true);
+    expect(summary.startsWith(`Lanternfold → Qloo → ${provenanceJson.reference.name} · `)).toBe(true);
     // The stored decision is a creator edit, and the summary must not hide it.
     expect(stored.approval.edited_by_creator).toBe(true);
     expect(summary).toContain("the creator edited and approved an interpretation");
@@ -255,8 +255,8 @@ describe("the causal note", () => {
   it("translates the stored witness into player words", () => {
     const text = phraseText(consequenceOf(pair));
     expect(text).toBe(
-      `After the same two choices, ${actionLabel("core.give")} is locked with Moon and open without it. ` +
-        `With Moon, two choices are added, and ${actionLabel("core.give")} needs both.`,
+      `After the same two choices, ${actionLabel("core.give")} is locked with Halcyon Relay and open without it. ` +
+        `With Halcyon Relay, two choices are added, and ${actionLabel("core.give")} needs both.`,
     );
   });
 

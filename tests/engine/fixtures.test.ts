@@ -28,9 +28,9 @@ describe("fixture honesty", () => {
   });
 
   /**
-   * The design fixtures must stay design fixtures. Phase 3 adds real redacted
-   * Qloo captures under `fixtures/qloo/`, which do legitimately carry real
-   * entity UUIDs — that is checked separately below. The hand-authored scene
+   * The design fixtures must stay design fixtures. The synthetic Qloo-shaped
+   * payloads under `fixtures/qloo/` carry entity UUIDs in Qloo's format —
+   * that is checked separately below. The hand-authored scene
    * fixtures still may not, because a fixture cannot mint a production Qloo
    * badge (specification section 5, "Layer A").
    */
@@ -51,12 +51,15 @@ describe("fixture honesty", () => {
   });
 
   /**
-   * The opposite claim, for the phase 3 captures: they are real responses, so
-   * they must carry real identity, and they must carry no credential, header,
-   * or request diagnostic.
+   * The opposite claim, for the Qloo-shaped payloads: they carry identity in
+   * Qloo's UUID format, but every id is a visibly synthetic one, so no real
+   * Qloo response can be committed here unnoticed. They also carry no
+   * credential, header, or request diagnostic.
    */
-  it("keeps the real Qloo captures real, and free of any credential", () => {
+  it("keeps the Qloo-shaped fixtures synthetic, and free of any credential", () => {
     const uuid = /[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}/;
+    const anyUuid = /[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}/g;
+    const synthetic = /^5[A-Fa-f]000000-0000-4000-8000-[0-9A-Fa-f]{12}$/;
     const captures = walk(join(repoRoot, "fixtures", "qloo")).filter((file) =>
       file.endsWith(".json"),
     );
@@ -65,6 +68,10 @@ describe("fixture honesty", () => {
     for (const file of captures) {
       const text = readFileSync(file, "utf8");
       if (uuid.test(text)) withIdentity += 1;
+      for (const id of text.match(anyUuid) ?? []) {
+        expect(id, `${file} carries a non-synthetic id`).toMatch(synthetic);
+      }
+      expect(/hackathon\.api\.qloo\.com/i.test(text), `${file} names the real Qloo host`).toBe(false);
       expect(/x-api-key/i.test(text), `${file} carries a key header`).toBe(false);
       expect(/authorization/i.test(text), `${file} carries an auth header`).toBe(false);
       // Removed during redaction: images, marketing links, audience and

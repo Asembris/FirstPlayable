@@ -6,7 +6,7 @@ import {
   MOON_ID,
   O_BROTHER_ID,
   OUTER_WILDS_ID,
-  RADIOHEAD_ENTITY_ID,
+  LANTERNFOLD_ENTITY_ID,
 } from "../../fixtures/qloo/audition";
 import type { QlooEnv } from "../../src/server/config";
 import {
@@ -82,7 +82,7 @@ describe("searchComps", () => {
 });
 
 describe("scoreComps", () => {
-  const audience = RADIOHEAD_ENTITY_ID;
+  const audience = LANTERNFOLD_ENTITY_ID;
 
   it("sends one audience, one domain, and exactly the confirmed candidate ids", async () => {
     const { urls, deps } = transport([
@@ -219,5 +219,5 @@ describe("score capture storage", () => {
 });
 
 function audienceId(): string {
-  return RADIOHEAD_ENTITY_ID;
+  return LANTERNFOLD_ENTITY_ID;
 }

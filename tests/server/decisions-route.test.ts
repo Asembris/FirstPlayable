@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { RADIOHEAD_ENTITY_ID } from "../../fixtures/qloo";
+import { LANTERNFOLD_ENTITY_ID } from "../../fixtures/qloo";
 import type {
   DecisionsResponse,
   ProjectView,
@@ -26,7 +26,7 @@ import {
   readRequest,
 } from "./support/phase3-harness";
 
-/** Two proposals, one per slot, citing real evidence from the real captures. */
+/** Two proposals, one per slot, citing evidence from the synthetic captures. */
 function modelAnswer(references: ReferencesResponse["references"]): unknown {
   const movie = references.movie.displayed[2] ?? references.movie.displayed[0]!;
   const game = references.videogame.displayed[0]!;
@@ -111,7 +111,7 @@ async function run(h: Harness): Promise<{
   const search = await handleArtistSearch(
     mutation(`/api/projects/${projectId}/artist-search`, {
       cookie,
-      body: JSON.stringify({ query: "Radiohead" }),
+      body: JSON.stringify({ query: "Lanternfold" }),
     }),
     h.deps,
     projectId,
@@ -125,7 +125,7 @@ async function run(h: Harness): Promise<{
       body: JSON.stringify({
         expected_revision: searched.project.revision,
         search_capture_id: searched.search.capture_id,
-        entity_id: RADIOHEAD_ENTITY_ID,
+        entity_id: LANTERNFOLD_ENTITY_ID,
       }),
     }),
     h.deps,
@@ -402,7 +402,7 @@ describe("POST /api/projects/:id/decisions — edit", () => {
     const search = await handleArtistSearch(
       mutation(`/api/projects/${projectId}/artist-search`, {
         cookie,
-        body: JSON.stringify({ query: "Radiohead" }),
+        body: JSON.stringify({ query: "Lanternfold" }),
       }),
       h.deps,
       projectId,
@@ -415,7 +415,7 @@ describe("POST /api/projects/:id/decisions — edit", () => {
         body: JSON.stringify({
           expected_revision: searched.project.revision,
           search_capture_id: searched.search.capture_id,
-          entity_id: RADIOHEAD_ENTITY_ID,
+          entity_id: LANTERNFOLD_ENTITY_ID,
         }),
       }),
       h.deps,
@@ -736,7 +736,7 @@ describe("decision safety", () => {
       { kind: "accept", proposal_id: flow.proposals[0]!.proposal_id, approved: true },
       { kind: "accept", proposal_id: flow.proposals[0]!.proposal_id, source_kind: "qloo" },
       { kind: "accept", proposal_id: flow.proposals[0]!.proposal_id, approval_id: "x" },
-      { kind: "accept", proposal_id: flow.proposals[0]!.proposal_id, entity_id: RADIOHEAD_ENTITY_ID },
+      { kind: "accept", proposal_id: flow.proposals[0]!.proposal_id, entity_id: LANTERNFOLD_ENTITY_ID },
       { kind: "approve", proposal_id: flow.proposals[0]!.proposal_id },
     ]) {
       const response = await decide(flow, { expected_revision: flow.revision, ...hostile });

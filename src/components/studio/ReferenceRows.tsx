@@ -323,7 +323,7 @@ function DomainRow({ row, ...context }: { row: DomainRowView } & RowContext): Re
   );
 }
 
-/** "2009, Duncan Jones" → "Duncan Jones"; the year is already on the slip. */
+/** "2009, Maren Oduya" → "Maren Oduya"; the year is already on the slip. */
 function makerOf(candidate: PublicReferenceCandidate): string | null {
   const text = candidate.disambiguation;
   if (text === null || text.trim() === "") return null;

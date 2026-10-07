@@ -1,4 +1,4 @@
-/** Real Qloo captures are bundled server-side. Replay makes no provider call. */
+/** Synthetic demonstration captures, in Qloo response shapes, are bundled server-side. Replay makes no provider call. */
 import record from '../../fixtures/qloo/audition/canonical.json';
 import { CompScoreCaptureSchema } from '../domain/audition';
 import { domainAuditionView } from '../domain/audition-result';

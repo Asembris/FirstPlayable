@@ -1,0 +1,986 @@
+{
+  "success": true,
+  "results": {
+    "entities": [
+      {
+        "name": "Starward Accord II",
+        "entity_id": "5C000000-0000-4000-8000-000000000001",
+        "type": "urn:entity",
+        "subtype": "urn:entity:videogame",
+        "disambiguation": "2010-01-26, Northlight Forge",
+        "popularity": 0.991234,
+        "properties": {
+          "description": "Starward Accord II is the invented second chapter of a space-opera trilogy in which a commander recruits a crew of specialists for a mission few will survive; it mixes conversation choices, squad tactics and character loyalty across a fictional galaxy. Synthetic test data.",
+          "short_descriptions": [
+            {
+              "value": "An invented commander gathers a reluctant crew for a mission whose survivors depend on every promise kept.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "emotional_tone": [
+            "dramatic",
+            "tense",
+            "melancholic",
+            "hopeful",
+            "heroic"
+          ],
+          "audience_tags": [
+            "rich characters",
+            "immersive worldbuilding",
+            "branching narrative",
+            "replayable",
+            "moral choices"
+          ],
+          "steam_tags": [
+            "Story Rich",
+            "Choices Matter",
+            "Singleplayer",
+            "RPG",
+            "Science Fiction",
+            "Squad-Based",
+            "Space"
+          ],
+          "gameplay_type": [
+            "Single-Player",
+            "Squad-Based",
+            "Role-Playing",
+            "Tactics"
+          ],
+          "genre": [
+            "Western RPG",
+            "Action RPG",
+            "Science Fiction",
+            "Space Opera"
+          ],
+          "art_style": [
+            "3D",
+            "Realistic",
+            "Cinematic"
+          ],
+          "release_date": "2010-01-26",
+          "universe": "Starward Accord"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:emotional_tone:qloo:dramatic",
+            "name": "dramatic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:tense",
+            "name": "tense",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:melancholic",
+            "name": "melancholic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:hopeful",
+            "name": "hopeful",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:western_rpg",
+            "name": "Western RPG",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:action_rpg",
+            "name": "Action RPG",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:science_fiction",
+            "name": "Science Fiction",
+            "type": "urn:tag:genre:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.87421
+        }
+      },
+      {
+        "name": "Emberfall: Oaths",
+        "entity_id": "5C000000-0000-4000-8000-000000000002",
+        "type": "urn:entity",
+        "subtype": "urn:entity:videogame",
+        "disambiguation": "2009-11-03, Northlight Forge",
+        "popularity": 0.987654,
+        "properties": {
+          "description": "Emberfall: Oaths is an invented dark-fantasy role-playing game in which a sworn warden must rebuild a broken alliance before a returning blight; every faction remembers what you promised them and holds you to it. Party members argue, leave and return depending on the oaths you keep. Synthetic test data written for FirstPlayable's offline tests.",
+          "short_descriptions": [
+            {
+              "value": "An invented warden rebuilds an alliance in a dark-fantasy world where every faction remembers what you promised.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "emotional_tone": [
+            "dark",
+            "epic",
+            "tense",
+            "grim",
+            "dramatic"
+          ],
+          "audience_tags": [
+            "moral choices",
+            "branching narrative",
+            "rich characters",
+            "tactical combat",
+            "companion relationships",
+            "lore-heavy"
+          ],
+          "steam_tags": [
+            "RPG",
+            "Fantasy",
+            "Story Rich",
+            "Party-Based RPG",
+            "Choices Matter",
+            "Dark Fantasy",
+            "Singleplayer",
+            "Tactical"
+          ],
+          "gameplay_type": [
+            "Single-Player",
+            "Party-Based",
+            "Role-Playing",
+            "Tactics"
+          ],
+          "genre": [
+            "Western RPG",
+            "Dark Fantasy",
+            "Tactical RPG"
+          ],
+          "art_style": [
+            "3D",
+            "Realistic",
+            "Dark"
+          ],
+          "release_date": "2009-11-03",
+          "universe": "Emberfall"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:emotional_tone:qloo:dark",
+            "name": "dark",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:epic",
+            "name": "epic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:tense",
+            "name": "tense",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:grim",
+            "name": "grim",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:western_rpg",
+            "name": "Western RPG",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:dark_fantasy",
+            "name": "Dark Fantasy",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:tactical_rpg",
+            "name": "Tactical RPG",
+            "type": "urn:tag:genre:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.869935
+        }
+      },
+      {
+        "name": "Starward Accord",
+        "entity_id": "5C000000-0000-4000-8000-000000000003",
+        "type": "urn:entity",
+        "subtype": "urn:entity:videogame",
+        "disambiguation": "2007-11-20, Northlight Forge",
+        "popularity": 0.993456,
+        "properties": {
+          "description": "Starward Accord is the invented first chapter of a space-opera trilogy: as the first envoy of a young interstellar alliance, you investigate a rogue agent and an ancient threat, choosing who to trust across a fictional galaxy. Synthetic test data.",
+          "short_descriptions": [
+            {
+              "value": "As an invented alliance's first envoy, you uncover an ancient threat and decide whom to trust.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "emotional_tone": [
+            "epic",
+            "mysterious",
+            "hopeful",
+            "dramatic"
+          ],
+          "audience_tags": [
+            "immersive worldbuilding",
+            "branching narrative",
+            "moral choices",
+            "rich characters",
+            "exploration"
+          ],
+          "steam_tags": [
+            "RPG",
+            "Science Fiction",
+            "Story Rich",
+            "Singleplayer",
+            "Space",
+            "Choices Matter"
+          ],
+          "gameplay_type": [
+            "Single-Player",
+            "Squad-Based",
+            "Role-Playing",
+            "Exploration"
+          ],
+          "genre": [
+            "Western RPG",
+            "Action RPG",
+            "Science Fiction"
+          ],
+          "art_style": [
+            "3D",
+            "Realistic",
+            "Cinematic",
+            "Retro-futuristic"
+          ],
+          "release_date": "2007-11-20",
+          "universe": "Starward Accord"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:emotional_tone:qloo:epic",
+            "name": "epic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:mysterious",
+            "name": "mysterious",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:hopeful",
+            "name": "hopeful",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:dramatic",
+            "name": "dramatic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:western_rpg",
+            "name": "Western RPG",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:action_rpg",
+            "name": "Action RPG",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:science_fiction",
+            "name": "Science Fiction",
+            "type": "urn:tag:genre:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.861447
+        }
+      },
+      {
+        "name": "Vellum Isles IV: Gatefall",
+        "entity_id": "5C000000-0000-4000-8000-000000000004",
+        "type": "urn:entity",
+        "subtype": "urn:entity:videogame",
+        "disambiguation": "2006-03-20, Hollowmere Studios",
+        "popularity": 0.989012,
+        "properties": {
+          "description": "Vellum Isles IV: Gatefall is an invented open-world fantasy role-playing game about closing a series of gates that open onto a burning otherworld, with guilds, cities and side quests to wander between. Synthetic test data.",
+          "short_descriptions": [
+            {
+              "value": "An invented open-world fantasy in which you close gates to a burning otherworld.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "emotional_tone": [
+            "epic",
+            "adventurous",
+            "whimsical",
+            "tense"
+          ],
+          "audience_tags": [
+            "open world",
+            "exploration",
+            "player freedom",
+            "side quests"
+          ],
+          "steam_tags": [
+            "Open World",
+            "RPG",
+            "Fantasy",
+            "Singleplayer",
+            "Exploration",
+            "Sandbox"
+          ],
+          "gameplay_type": [
+            "Single-Player",
+            "Open World",
+            "Role-Playing",
+            "Exploration"
+          ],
+          "genre": [
+            "Western RPG",
+            "Open World",
+            "Fantasy"
+          ],
+          "art_style": [
+            "3D",
+            "Realistic",
+            "Painterly"
+          ],
+          "release_date": "2006-03-20",
+          "universe": "Vellum Isles"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:emotional_tone:qloo:epic",
+            "name": "epic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:adventurous",
+            "name": "adventurous",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:whimsical",
+            "name": "whimsical",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:tense",
+            "name": "tense",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:western_rpg",
+            "name": "Western RPG",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:open_world",
+            "name": "Open World",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:fantasy",
+            "name": "Fantasy",
+            "type": "urn:tag:genre:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.858123
+        }
+      },
+      {
+        "name": "Starward Accord III",
+        "entity_id": "5C000000-0000-4000-8000-000000000005",
+        "type": "urn:entity",
+        "subtype": "urn:entity:videogame",
+        "disambiguation": "2012-03-06, Northlight Forge",
+        "popularity": 0.990123,
+        "properties": {
+          "description": "Starward Accord III is the invented conclusion of a space-opera trilogy, in which every alliance formed in the earlier games is tested in one last war. Synthetic test data.",
+          "short_descriptions": [
+            {
+              "value": "The invented final chapter of a trilogy, where every earlier alliance is tested.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "emotional_tone": [
+            "epic",
+            "dramatic",
+            "melancholic",
+            "heroic"
+          ],
+          "audience_tags": [
+            "rich characters",
+            "branching narrative",
+            "moral choices",
+            "emotional story",
+            "replayable"
+          ],
+          "steam_tags": [
+            "RPG",
+            "Science Fiction",
+            "Story Rich",
+            "Choices Matter",
+            "Singleplayer",
+            "Space",
+            "Action",
+            "Squad-Based",
+            "Multiplayer"
+          ],
+          "gameplay_type": [
+            "Single-Player",
+            "Squad-Based",
+            "Role-Playing"
+          ],
+          "genre": [
+            "Action RPG",
+            "Science Fiction"
+          ],
+          "art_style": [
+            "3D",
+            "Realistic",
+            "Cinematic"
+          ],
+          "release_date": "2012-03-06",
+          "universe": "Starward Accord"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:emotional_tone:qloo:epic",
+            "name": "epic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:dramatic",
+            "name": "dramatic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:melancholic",
+            "name": "melancholic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:heroic",
+            "name": "heroic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:action_rpg",
+            "name": "Action RPG",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:science_fiction",
+            "name": "Science Fiction",
+            "type": "urn:tag:genre:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.854209
+        }
+      },
+      {
+        "name": "Vellum Isles IV: Lunacy Shore",
+        "entity_id": "5C000000-0000-4000-8000-000000000006",
+        "type": "urn:entity",
+        "subtype": "urn:entity:videogame",
+        "disambiguation": "2007-03-26, Hollowmere Studios",
+        "popularity": 0.971234,
+        "properties": {
+          "description": "Vellum Isles IV: Lunacy Shore is an invented expansion set on an island ruled by a god of madness, split between a bright, manic half and a cold, despairing one. Synthetic test data.",
+          "short_descriptions": [
+            {
+              "value": "An invented expansion on an island split between mania and despair.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "emotional_tone": [
+            "surreal",
+            "whimsical",
+            "dark",
+            "humorous",
+            "eerie"
+          ],
+          "audience_tags": [
+            "exploration",
+            "quirky humor",
+            "open world",
+            "side quests",
+            "lore-heavy",
+            "surreal setting"
+          ],
+          "steam_tags": [
+            "RPG",
+            "Fantasy",
+            "Open World",
+            "Singleplayer",
+            "Exploration",
+            "Surreal",
+            "Expansion",
+            "Atmospheric"
+          ],
+          "gameplay_type": [
+            "Single-Player",
+            "Open World",
+            "Role-Playing",
+            "Exploration"
+          ],
+          "genre": [
+            "Western RPG",
+            "Fantasy",
+            "Expansion",
+            "Surreal"
+          ],
+          "art_style": [
+            "3D",
+            "Surreal",
+            "Colorful",
+            "Painterly"
+          ],
+          "release_date": "2007-03-26",
+          "universe": "Vellum Isles: Lunacy Shore expansion"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:emotional_tone:qloo:surreal",
+            "name": "surreal",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:whimsical",
+            "name": "whimsical",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:dark",
+            "name": "dark",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:humorous",
+            "name": "humorous",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:western_rpg",
+            "name": "Western RPG",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:fantasy",
+            "name": "Fantasy",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:expansion",
+            "name": "Expansion",
+            "type": "urn:tag:genre:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.847812
+        }
+      },
+      {
+        "name": "Vellum Isles III: Ashlands",
+        "entity_id": "5C000000-0000-4000-8000-000000000007",
+        "type": "urn:entity",
+        "subtype": "urn:entity:videogame",
+        "disambiguation": "2002-06-06, Hollowmere Studios",
+        "popularity": 0.982345,
+        "properties": {
+          "description": "Vellum Isles III: Ashlands is an invented open-world role-playing game set on a volcanic island with alien plants, warring houses and a prophecy that may or may not be about you. Synthetic test data.",
+          "short_descriptions": [
+            {
+              "value": "An invented open-world role-playing game on a strange volcanic island.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "emotional_tone": [
+            "epic",
+            "mysterious",
+            "atmospheric",
+            "alien",
+            "adventurous"
+          ],
+          "audience_tags": [
+            "exploration",
+            "open world",
+            "lore-heavy",
+            "player freedom",
+            "challenging"
+          ],
+          "steam_tags": [
+            "RPG",
+            "Open World",
+            "Fantasy",
+            "Classic",
+            "Singleplayer",
+            "Exploration"
+          ],
+          "gameplay_type": [
+            "Single-Player",
+            "Open World",
+            "Role-Playing",
+            "Exploration",
+            "First-Person"
+          ],
+          "genre": [
+            "Western RPG",
+            "Open World",
+            "Fantasy"
+          ],
+          "art_style": [
+            "3D",
+            "Stylized",
+            "Alien"
+          ],
+          "release_date": "2002-06-06",
+          "universe": "Vellum Isles"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:emotional_tone:qloo:epic",
+            "name": "epic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:mysterious",
+            "name": "mysterious",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:atmospheric",
+            "name": "atmospheric",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:alien",
+            "name": "alien",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:western_rpg",
+            "name": "Western RPG",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:open_world",
+            "name": "Open World",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:fantasy",
+            "name": "Fantasy",
+            "type": "urn:tag:genre:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.841376
+        }
+      },
+      {
+        "name": "Lanternkeep Tactics 2",
+        "entity_id": "5C000000-0000-4000-8000-000000000008",
+        "type": "urn:entity",
+        "subtype": "urn:entity:videogame",
+        "disambiguation": "2006-10-31, Quarry Bell Games",
+        "popularity": 0.945678,
+        "properties": {
+          "description": "Lanternkeep Tactics 2 is an invented party-based fantasy role-playing game about a village squire drawn into a war over a shard of old magic. Synthetic test data.",
+          "short_descriptions": [
+            {
+              "value": "An invented party-based fantasy about a squire caught in a war over old magic.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "emotional_tone": [
+            "epic",
+            "heroic",
+            "dramatic",
+            "adventurous",
+            "dark"
+          ],
+          "audience_tags": [
+            "party-based combat",
+            "rich characters",
+            "tactical combat",
+            "lore-heavy",
+            "moral choices"
+          ],
+          "steam_tags": [
+            "RPG",
+            "Fantasy",
+            "Party-Based RPG",
+            "Classic",
+            "Singleplayer",
+            "Tactical",
+            "Story Rich"
+          ],
+          "gameplay_type": [
+            "Single-Player",
+            "Party-Based",
+            "Role-Playing",
+            "Tactics",
+            "Multiplayer"
+          ],
+          "genre": [
+            "Western RPG"
+          ],
+          "art_style": [
+            "3D",
+            "Isometric",
+            "Fantasy"
+          ],
+          "release_date": "2006-10-31",
+          "universe": "Lanternkeep"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:emotional_tone:qloo:epic",
+            "name": "epic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:heroic",
+            "name": "heroic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:dramatic",
+            "name": "dramatic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:adventurous",
+            "name": "adventurous",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:western_rpg",
+            "name": "Western RPG",
+            "type": "urn:tag:genre:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.836598
+        }
+      },
+      {
+        "name": "Old Orbit Chronicles",
+        "entity_id": "5C000000-0000-4000-8000-000000000009",
+        "type": "urn:entity",
+        "subtype": "urn:entity:videogame",
+        "disambiguation": "2003-07-17, Northlight Forge",
+        "popularity": 0.976543,
+        "properties": {
+          "description": "Old Orbit Chronicles is an invented space role-playing game in which an amnesiac pilot learns, too late, which side of an old war they fought on. Synthetic test data.",
+          "short_descriptions": [
+            {
+              "value": "An invented space role-playing game about an amnesiac pilot's forgotten war.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "emotional_tone": [
+            "epic",
+            "mysterious",
+            "dramatic",
+            "heroic",
+            "hopeful"
+          ],
+          "audience_tags": [
+            "moral choices",
+            "rich characters",
+            "branching narrative",
+            "twist ending",
+            "companion relationships"
+          ],
+          "steam_tags": [
+            "RPG",
+            "Science Fiction",
+            "Story Rich",
+            "Classic",
+            "Singleplayer",
+            "Choices Matter",
+            "Space"
+          ],
+          "gameplay_type": [
+            "Single-Player",
+            "Party-Based",
+            "Role-Playing"
+          ],
+          "genre": [
+            "Western RPG",
+            "Science Fiction"
+          ],
+          "art_style": [
+            "3D",
+            "Realistic",
+            "Retro"
+          ],
+          "release_date": "2003-07-17",
+          "universe": "Old Orbit"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:emotional_tone:qloo:epic",
+            "name": "epic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:mysterious",
+            "name": "mysterious",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:dramatic",
+            "name": "dramatic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:heroic",
+            "name": "heroic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:western_rpg",
+            "name": "Western RPG",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:science_fiction",
+            "name": "Science Fiction",
+            "type": "urn:tag:genre:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.832054
+        }
+      },
+      {
+        "name": "Vellum Isles V: Northreach",
+        "entity_id": "5C000000-0000-4000-8000-00000000000A",
+        "type": "urn:entity",
+        "subtype": "urn:entity:videogame",
+        "disambiguation": "2011-11-11, Hollowmere Studios",
+        "popularity": 0.995432,
+        "properties": {
+          "description": "Vellum Isles V: Northreach is an invented open-world fantasy role-playing game set in a cold northern province where old dragons return and a civil war divides the holds. Synthetic test data.",
+          "short_descriptions": [
+            {
+              "value": "An invented open-world fantasy in a cold province where dragons return.",
+              "languages": [
+                "en"
+              ]
+            }
+          ],
+          "emotional_tone": [
+            "epic",
+            "adventurous",
+            "atmospheric",
+            "heroic"
+          ],
+          "audience_tags": [
+            "open world",
+            "exploration",
+            "player freedom",
+            "modding"
+          ],
+          "steam_tags": [
+            "Open World",
+            "RPG",
+            "Fantasy",
+            "Singleplayer",
+            "Exploration",
+            "Dragons",
+            "Moddable",
+            "Atmospheric"
+          ],
+          "gameplay_type": [
+            "Single-Player",
+            "Open World",
+            "Role-Playing",
+            "Exploration"
+          ],
+          "genre": [
+            "Western RPG",
+            "Open World",
+            "Fantasy",
+            "Action RPG"
+          ],
+          "art_style": [
+            "3D",
+            "Realistic",
+            "Nordic"
+          ],
+          "release_date": "2011-11-11",
+          "universe": "Vellum Isles"
+        },
+        "tags": [
+          {
+            "id": "urn:tag:emotional_tone:qloo:epic",
+            "name": "epic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:adventurous",
+            "name": "adventurous",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:atmospheric",
+            "name": "atmospheric",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:emotional_tone:qloo:heroic",
+            "name": "heroic",
+            "type": "urn:tag:emotional_tone:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:western_rpg",
+            "name": "Western RPG",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:open_world",
+            "name": "Open World",
+            "type": "urn:tag:genre:qloo"
+          },
+          {
+            "id": "urn:tag:genre:qloo:fantasy",
+            "name": "Fantasy",
+            "type": "urn:tag:genre:qloo"
+          }
+        ],
+        "query": {
+          "affinity": 0.828731
+        }
+      }
+    ]
+  }
+}

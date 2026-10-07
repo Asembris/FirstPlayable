@@ -7,7 +7,7 @@ import { CompScoreCaptureSchema } from '../../src/domain/audition';
 import { normalizeCompScores, normalizeCompSearch } from '../../src/server/qloo/audition';
 import { normalizeArtistSearch } from '../../src/server/qloo/normalize';
 
-describe('real saved audition', () => {
+describe('synthetic saved audition', () => {
   it('freezes the same six identities and two audiences before the four final evidence calls', () => {
     expect(record.comps).toEqual(frozen.comps);
     expect(record.audiences).toEqual(frozen.audiences);
@@ -19,7 +19,7 @@ describe('real saved audition', () => {
       expect(capture.missing_entity_ids).toEqual([]);
     }
   });
-  it('every confirmed identity and affinity re-normalizes from its real raw Qloo response', () => {
+  it('every confirmed identity and affinity re-normalizes from its synthetic raw response', () => {
     for (const comp of record.comps) {
       const raw = record.raw.find((r) => new URL(r.request).searchParams.get('query') === comp.search.query)!;
       const normalized = normalizeCompSearch(raw.response, { domain: comp.domain as 'movie' | 'videogame', query: comp.search.query, requestFingerprint: comp.search.request_fingerprint, retrievedAt: comp.search.retrieved_at });
@@ -50,7 +50,7 @@ describe('real saved audition', () => {
     }
     expect(saved.domains.movie!.comparison.pairs.map((p) => p.verdict)).toEqual(['reversal', 'reversal', 'close']);
     expect(saved.domains.videogame!.comparison.pairs.map((p) => p.verdict)).toEqual(['reversal', 'holds', 'close']);
-    expect(saved.domains.movie!.comparison.rankings.map((r) => r.ordered.map((c) => c.name))).toEqual([['Moon', 'Arrival', 'Interstellar'], ['Arrival', 'Interstellar', 'Moon']]);
+    expect(saved.domains.movie!.comparison.rankings.map((r) => r.ordered.map((c) => c.name))).toEqual([['Quiet Orbit', 'First Hello', 'Farther Than Light'], ['First Hello', 'Farther Than Light', 'Quiet Orbit']]);
     expect(saved.domains.videogame!.comparison.rankings[1].top.status).toBe('close');
   });
   it('rejects a capture for a different audience or candidate set', () => {

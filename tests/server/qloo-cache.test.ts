@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { QLOO_FIXTURES, RADIOHEAD_ENTITY_ID } from "../../fixtures/qloo";
+import { QLOO_FIXTURES, LANTERNFOLD_ENTITY_ID } from "../../fixtures/qloo";
 import type { ArtistSearchSnapshot, ReferenceCapture } from "../../src/domain/qloo";
 import {
   CACHE_TTL_SECONDS,
@@ -30,8 +30,8 @@ function at(offsetSeconds: number): Date {
 }
 
 function searchSnapshot(
-  query = "Radiohead",
-  raw: unknown = QLOO_FIXTURES.searchRadiohead,
+  query = "Lanternfold",
+  raw: unknown = QLOO_FIXTURES.searchLanternfold,
 ): Omit<ArtistSearchSnapshot, "capture_id" | "cache"> {
   const normalizedQuery = normalizeQuery(query);
   return normalizeArtistSearch(raw, {
@@ -44,11 +44,11 @@ function searchSnapshot(
 
 function referenceCapture(
   domain: "movie" | "videogame",
-  artistEntityId = RADIOHEAD_ENTITY_ID,
+  artistEntityId = LANTERNFOLD_ENTITY_ID,
   retrievedAt = T0.toISOString(),
 ): Omit<ReferenceCapture, "capture_id" | "cache"> {
   const raw =
-    domain === "movie" ? QLOO_FIXTURES.moviesRadiohead : QLOO_FIXTURES.videogamesRadiohead;
+    domain === "movie" ? QLOO_FIXTURES.moviesLanternfold : QLOO_FIXTURES.videogamesLanternfold;
   return normalizeReferences(raw, {
     domain,
     artistEntityId,
@@ -73,7 +73,7 @@ describe("the artist-search cache", () => {
 
     const hit = await readArtistSearchCache(gateway, snapshot.request_fingerprint, at(60));
     expect(hit?.cache).toBe("cached");
-    expect(hit?.candidates[0]?.entity_id).toBe(RADIOHEAD_ENTITY_ID);
+    expect(hit?.candidates[0]?.entity_id).toBe(LANTERNFOLD_ENTITY_ID);
     // The capture row was written once and read back; nothing fetched anything.
     expect(gateway.captures.size).toBe(1);
   });
@@ -104,7 +104,7 @@ describe("the artist-search cache", () => {
   });
 
   it("never answers one query out of another query's capture", async () => {
-    await writeArtistSearchCapture(gateway, searchSnapshot("Radiohead"), null, T0);
+    await writeArtistSearchCapture(gateway, searchSnapshot("Lanternfold"), null, T0);
     const other = artistSearchFingerprint({
       host: HOST,
       normalizedQuery: normalizeQuery("Metallica"),
@@ -150,7 +150,7 @@ describe("the first-hop cache", () => {
     const hit = await readReferenceCache(gateway, capture.request_fingerprint, at(60));
     expect(hit?.cache).toBe("cached");
     expect(hit?.candidates).toHaveLength(10);
-    expect(hit?.artist_entity_id).toBe(RADIOHEAD_ENTITY_ID);
+    expect(hit?.artist_entity_id).toBe(LANTERNFOLD_ENTITY_ID);
   });
 
   it("keeps a first hop for seven days and no longer", async () => {
@@ -182,7 +182,7 @@ describe("the first-hop cache", () => {
     await writeReferenceCapture(gateway, referenceCapture("videogame"), null, T0);
     const movieKey = referenceFingerprint({
       host: HOST,
-      artistEntityId: RADIOHEAD_ENTITY_ID,
+      artistEntityId: LANTERNFOLD_ENTITY_ID,
       domain: "movie",
     });
     expect(await readReferenceCache(gateway, movieKey, at(1))).toBeNull();
@@ -191,12 +191,12 @@ describe("the first-hop cache", () => {
   it("never answers one artist's request out of another artist's capture", async () => {
     const other = "11111111-2222-4333-8444-555555555555";
     await writeReferenceCapture(gateway, referenceCapture("movie", other), null, T0);
-    const radioheadKey = referenceFingerprint({
+    const lanternfoldKey = referenceFingerprint({
       host: HOST,
-      artistEntityId: RADIOHEAD_ENTITY_ID,
+      artistEntityId: LANTERNFOLD_ENTITY_ID,
       domain: "movie",
     });
-    expect(await readReferenceCache(gateway, radioheadKey, at(1))).toBeNull();
+    expect(await readReferenceCache(gateway, lanternfoldKey, at(1))).toBeNull();
   });
 
   it("reads the captures a frozen decision points at, whatever their TTL", async () => {
@@ -219,7 +219,7 @@ describe("the stale fallback", () => {
     gateway.setClock(() => T0);
   });
 
-  async function writeExpired(domain: "movie" | "videogame", artist = RADIOHEAD_ENTITY_ID) {
+  async function writeExpired(domain: "movie" | "videogame", artist = LANTERNFOLD_ENTITY_ID) {
     await writeReferenceCapture(gateway, referenceCapture(domain, artist), null, T0);
   }
 
@@ -228,7 +228,7 @@ describe("the stale fallback", () => {
     const beyondTtl = at(CACHE_TTL_SECONDS.firstHop + 60);
     expect(
       await readStaleReferenceFallback(gateway, {
-        artistEntityId: RADIOHEAD_ENTITY_ID,
+        artistEntityId: LANTERNFOLD_ENTITY_ID,
         domain: "movie",
         consented: false,
         now: beyondTtl,
@@ -240,7 +240,7 @@ describe("the stale fallback", () => {
     await writeExpired("movie");
     const beyondTtl = at(CACHE_TTL_SECONDS.firstHop + 3_600);
     const fallback = await readStaleReferenceFallback(gateway, {
-      artistEntityId: RADIOHEAD_ENTITY_ID,
+      artistEntityId: LANTERNFOLD_ENTITY_ID,
       domain: "movie",
       consented: true,
       now: beyondTtl,
@@ -254,7 +254,7 @@ describe("the stale fallback", () => {
     await writeExpired("movie");
     expect(
       await readStaleReferenceFallback(gateway, {
-        artistEntityId: RADIOHEAD_ENTITY_ID,
+        artistEntityId: LANTERNFOLD_ENTITY_ID,
         domain: "movie",
         consented: true,
         now: at(STALE_FALLBACK_MAX_AGE_SECONDS + 60),
@@ -267,7 +267,7 @@ describe("the stale fallback", () => {
     await writeExpired("movie", other);
     expect(
       await readStaleReferenceFallback(gateway, {
-        artistEntityId: RADIOHEAD_ENTITY_ID,
+        artistEntityId: LANTERNFOLD_ENTITY_ID,
         domain: "movie",
         consented: true,
         now: at(CACHE_TTL_SECONDS.firstHop + 60),
@@ -279,7 +279,7 @@ describe("the stale fallback", () => {
     await writeExpired("videogame");
     expect(
       await readStaleReferenceFallback(gateway, {
-        artistEntityId: RADIOHEAD_ENTITY_ID,
+        artistEntityId: LANTERNFOLD_ENTITY_ID,
         domain: "movie",
         consented: true,
         now: at(CACHE_TTL_SECONDS.firstHop + 60),
@@ -322,7 +322,7 @@ it("refreshes first-hop evidence without changing frozen IDs and selects the new
   expect((await readReferenceCache(gateway, capture.request_fingerprint, now))?.capture_id).toBe(fresh.capture_id);
   expect((await readReferenceCaches(gateway, [capture.request_fingerprint], now)).get(capture.request_fingerprint)?.capture_id).toBe(fresh.capture_id);
   const stale = await readStaleReferenceFallback(gateway, {
-    artistEntityId: RADIOHEAD_ENTITY_ID, domain: "movie", consented: true,
+    artistEntityId: LANTERNFOLD_ENTITY_ID, domain: "movie", consented: true,
     now: new Date(now.getTime() + (CACHE_TTL_SECONDS.firstHop + 60) * 1000),
   });
   expect(stale?.capture.capture_id).toBe(fresh.capture_id);

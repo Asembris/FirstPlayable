@@ -94,7 +94,7 @@ function DomainPanel({ view, activeAudience, savedAt, audiences }: { view: Domai
       )}
       <details className="rt-audition__evidence" data-testid={`evidence-${view.domain}`}>
         <summary>Qloo evidence</summary>
-        {savedAt && <p className="rt-audition__note">Saved capture from {savedAt.slice(0, 10)}. Replayed locally; no provider calls. Capture identifiers are local provenance IDs.</p>}
+        {savedAt && <p className="rt-audition__note">Synthetic saved example dated {savedAt.slice(0, 10)}: every name, entity ID and affinity below is invented in Qloo’s response shape and is not a Qloo response. Replayed locally; no provider calls.</p>}
         <p className="rt-audition__note">
           Names come from the Qloo search result you confirmed. Affinity is the value Qloo returned for each audience in
           one request per audience, filtered to exactly your confirmed {view.domain === "movie" ? "movies" : "games"}.

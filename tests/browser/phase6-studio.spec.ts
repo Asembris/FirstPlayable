@@ -19,7 +19,7 @@ import { installPhase4Api, PROJECT_ID as P4, VERSION_ID } from "./support/phase4
  * only the creator, makes it current.
  */
 
-const MOON = MOVIES[2]!;
+const HALCYON = MOVIES[2]!;
 const fixture = SECOND_COPY_DISCOVERY_V1;
 const fixtureModule = fixture.modules[0]!;
 const fixtureInfluence = fixture.influences[0]!;
@@ -45,7 +45,7 @@ async function revisionPainted(scope: Locator): Promise<number> {
 async function openApproval(page: Page): Promise<void> {
   await installPhase3Api(page, { anchorConfirmed: true, referencesReady: true, proposalsReady: true });
   await page.goto(`/studio/${P3}`);
-  await expect(page.getByTestId(`card-${MOON.reference_id}`)).toBeVisible();
+  await expect(page.getByTestId(`card-${HALCYON.reference_id}`)).toBeVisible();
 }
 
 async function openReview(page: Page, options: { activated?: boolean } = {}): Promise<void> {
@@ -60,19 +60,19 @@ test.describe("Phase 6 · influence approval", () => {
     page,
   }) => {
     await openApproval(page);
-    const card = page.getByTestId(`card-${MOON.reference_id}`);
+    const card = page.getByTestId(`card-${HALCYON.reference_id}`);
     await expect(page.locator(".rt-ref-heads")).toHaveText(/Qloo returned\s*FirstPlayable proposes\s*You decide/);
 
     const slipFont = await card.locator(".rt-ref__slip").evaluate((el) => getComputedStyle(el).borderTopStyle);
     expect(slipFont).toBe("solid");
     const name = await card.locator(".rt-ref__name").evaluate((el) => getComputedStyle(el).fontFamily);
     expect(name).toContain("Geist Mono");
-    const idea = page.getByTestId(`card-idea-${MOON.reference_id}`);
+    const idea = page.getByTestId(`card-idea-${HALCYON.reference_id}`);
     expect(await idea.evaluate((el) => getComputedStyle(el).fontStyle)).toBe("italic");
 
-    await expect(page.getByTestId(`approve-${MOON.reference_id}`)).toHaveText("Approve this interpretation");
-    await expect(page.getByTestId(`edit-${MOON.reference_id}`)).toHaveText("Edit before approving");
-    await expect(page.getByTestId(`dismiss-${MOON.reference_id}`)).toHaveText("Not this one");
+    await expect(page.getByTestId(`approve-${HALCYON.reference_id}`)).toHaveText("Approve this interpretation");
+    await expect(page.getByTestId(`edit-${HALCYON.reference_id}`)).toHaveText("Edit before approving");
+    await expect(page.getByTestId(`dismiss-${HALCYON.reference_id}`)).toHaveText("Not this one");
     // A proposal is not an observed change: no revision colour anywhere here.
     expect(await revisionPainted(page.locator(".rt-approval"))).toBe(0);
   });
@@ -81,29 +81,29 @@ test.describe("Phase 6 · influence approval", () => {
     page,
   }) => {
     await openApproval(page);
-    const proposed = await page.getByTestId(`card-idea-${MOON.reference_id}`).innerText();
-    await page.getByTestId(`edit-${MOON.reference_id}`).click();
+    const proposed = await page.getByTestId(`card-idea-${HALCYON.reference_id}`).innerText();
+    await page.getByTestId(`edit-${HALCYON.reference_id}`).click();
 
     const editor = page.getByLabel("Your interpretation");
     await expect(editor).toBeFocused();
-    const was = page.getByTestId(`card-proposed-${MOON.reference_id}`);
+    const was = page.getByTestId(`card-proposed-${HALCYON.reference_id}`);
     await expect(was).toBeVisible();
     expect(proposed.startsWith((await was.innerText()).replace(/^Proposed: /, "").replace(/…$/, ""))).toBe(true);
     await expect(page.getByLabel("What should change in play")).toBeVisible();
 
     const mine = "Two names on the envelope. Returning it stays locked until you ask whose the other is.";
     await editor.fill(mine);
-    await page.getByTestId(`approve-edit-${MOON.reference_id}`).click();
+    await page.getByTestId(`approve-edit-${HALCYON.reference_id}`).click();
 
-    const status = page.getByTestId(`card-status-${MOON.reference_id}`);
+    const status = page.getByTestId(`card-status-${HALCYON.reference_id}`);
     await expect(status).toHaveText("✓ Approved");
     await expect(status).toBeFocused();
-    await expect(page.getByTestId(`card-approved-${MOON.reference_id}`)).toHaveText(mine);
-    await expect(page.getByTestId(`card-${MOON.reference_id}`)).toContainText("Edited by you");
+    await expect(page.getByTestId(`card-approved-${HALCYON.reference_id}`)).toHaveText(mine);
+    await expect(page.getByTestId(`card-${HALCYON.reference_id}`)).toContainText("Edited by you");
     // The suggestion is still on record, in its own material.
-    await expect(page.getByTestId(`card-${MOON.reference_id}`).locator(".rt-ref__was")).toBeVisible();
+    await expect(page.getByTestId(`card-${HALCYON.reference_id}`).locator(".rt-ref__was")).toBeVisible();
     const approvedStyle = await page
-      .getByTestId(`card-approved-${MOON.reference_id}`)
+      .getByTestId(`card-approved-${HALCYON.reference_id}`)
       .evaluate((el) => getComputedStyle(el).fontStyle);
     expect(approvedStyle).toBe("normal");
   });
@@ -113,10 +113,10 @@ test.describe("Phase 6 · influence approval", () => {
     await expect(page.getByTestId("compile-start")).toBeDisabled();
     await expect(page.getByTestId("compile-needs-approval")).toContainText("Approving alone changes nothing");
 
-    await page.getByTestId(`approve-${MOON.reference_id}`).click();
-    await expect(page.getByTestId(`card-build-${MOON.reference_id}`)).toHaveText("Not built yet");
-    await expect(page.getByTestId(`card-build-${MOON.reference_id}`)).toHaveClass(/rt-chip--dashed/);
-    await expect(page.getByTestId(`card-${MOON.reference_id}`)).toContainText("The scene hasn't changed");
+    await page.getByTestId(`approve-${HALCYON.reference_id}`).click();
+    await expect(page.getByTestId(`card-build-${HALCYON.reference_id}`)).toHaveText("Not built yet");
+    await expect(page.getByTestId(`card-build-${HALCYON.reference_id}`)).toHaveClass(/rt-chip--dashed/);
+    await expect(page.getByTestId(`card-${HALCYON.reference_id}`)).toContainText("The scene hasn't changed");
     await expect(page.getByTestId("approved-build-discovery")).toHaveText("Not built yet");
     await expect(page.getByTestId("build-chip")).toHaveText("Draft · nothing built");
     await expect(page.getByTestId("compile-start")).toHaveText("Build the scene with 1 approved interpretation");
@@ -131,10 +131,10 @@ test.describe("Phase 6 · influence approval", () => {
 
   test("an approval can be undone from its own row", async ({ page }) => {
     await openApproval(page);
-    await page.getByTestId(`approve-${MOON.reference_id}`).click();
-    await page.getByTestId(`undo-approval-${MOON.reference_id}`).click();
+    await page.getByTestId(`approve-${HALCYON.reference_id}`).click();
+    await page.getByTestId(`undo-approval-${HALCYON.reference_id}`).click();
     await expect(page.getByTestId("no-approvals")).toBeVisible();
-    await expect(page.getByTestId(`approve-${MOON.reference_id}`)).toBeVisible();
+    await expect(page.getByTestId(`approve-${HALCYON.reference_id}`)).toBeVisible();
   });
 });
 
@@ -147,7 +147,7 @@ test.describe("Phase 6 · pending review", () => {
     await expect(review.getByRole("heading", { name: "Did it do what you approved?" })).toBeVisible();
 
     await expect(page.getByTestId("intended-discovery")).toHaveText(fixtureInfluence.intended_effect);
-    await expect(page.getByTestId("review-intended")).toContainText("From your interpretation of Moon");
+    await expect(page.getByTestId("review-intended")).toContainText("From your interpretation of Halcyon Relay");
 
     const observed = page.getByTestId("scene-changed-discovery");
     await expect(observed).toContainText(`${label("core.give")} · locked`);
@@ -157,7 +157,7 @@ test.describe("Phase 6 · pending review", () => {
 
     // Player words, never the engine's raw sentence or an identifier.
     const words = await page.getByTestId("witness-discovery").innerText();
-    expect(words).toContain("is locked with Moon and open without it");
+    expect(words).toContain("is locked with Halcyon Relay and open without it");
     const visible = await review.innerText();
     expect(visible).not.toMatch(/\b(core|discovery|approval)\.[a-z_]/);
     expect(visible).not.toContain(VERSION_ID);
@@ -235,9 +235,9 @@ test.describe("Phase 6 · creator sheets · contrast and mobile", () => {
       await page.emulateMedia({ reducedMotion: "reduce" });
       await page.setViewportSize({ width, height: 900 });
       await openApproval(page);
-      await page.getByTestId(`edit-${MOON.reference_id}`).click();
+      await page.getByTestId(`edit-${HALCYON.reference_id}`).click();
       expect(await auditContrast(page)).toEqual([]);
-      await page.getByTestId(`approve-edit-${MOON.reference_id}`).click();
+      await page.getByTestId(`approve-edit-${HALCYON.reference_id}`).click();
       await page.getByTestId("approved-chip-discovery").click();
       await expect(page.getByTestId("provenance-discovery")).toBeVisible();
       expect(await auditContrast(page)).toEqual([]);
@@ -255,10 +255,10 @@ test.describe("Phase 6 · creator sheets · contrast and mobile", () => {
 
     test("approval stacks into one column with full-width 44px actions", async ({ page }) => {
       await openApproval(page);
-      const slip = await page.getByTestId(`card-${MOON.reference_id}`).locator(".rt-ref__slip").boundingBox();
-      const idea = await page.getByTestId(`card-idea-${MOON.reference_id}`).boundingBox();
+      const slip = await page.getByTestId(`card-${HALCYON.reference_id}`).locator(".rt-ref__slip").boundingBox();
+      const idea = await page.getByTestId(`card-idea-${HALCYON.reference_id}`).boundingBox();
       expect(idea!.y).toBeGreaterThan(slip!.y + slip!.height);
-      for (const id of [`approve-${MOON.reference_id}`, `edit-${MOON.reference_id}`, `dismiss-${MOON.reference_id}`]) {
+      for (const id of [`approve-${HALCYON.reference_id}`, `edit-${HALCYON.reference_id}`, `dismiss-${HALCYON.reference_id}`]) {
         const box = (await page.getByTestId(id).boundingBox())!;
         expect(box.height, id).toBeGreaterThanOrEqual(44);
         expect(box.x + box.width, id).toBeLessThanOrEqual(390);

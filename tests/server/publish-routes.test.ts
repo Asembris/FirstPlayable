@@ -195,8 +195,8 @@ describe("the public snapshot reveals nothing private", () => {
     for (const forbidden of [
       state.projectId,
       read.project.brief.premise,
-      read.project.anchor?.entity_id ?? "radiohead-entity",
-      read.project.anchor?.query ?? "Radiohead",
+      read.project.anchor?.entity_id ?? "lanternfold-entity",
+      read.project.anchor?.query ?? "Lanternfold",
       read.project.approvals[0]?.capture_id ?? "capture-id",
       read.project.approvals[0]?.entity_id ?? "entity-id",
     ]) {

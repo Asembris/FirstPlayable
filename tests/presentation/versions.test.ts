@@ -1,20 +1,20 @@
 import { describe, expect, it } from "vitest";
-import withMoonJson from "../../docs/phase6-canonical-pair/with-moon.version.json";
-import withoutMoonJson from "../../docs/phase6-canonical-pair/without-moon.version.json";
+import withInfluenceJson from "../../docs/phase6-canonical-pair/with-influence.version.json";
+import withoutInfluenceJson from "../../docs/phase6-canonical-pair/without-influence.version.json";
 import { parseScene } from "../../src/domain/scene";
 import { compareVersions } from "../../src/presentation/versions";
 
 /**
- * The studio's previous-against-current rows, on the real stored removal of
- * Moon: the active version carried Moon, the revision removed it.
+ * The studio's previous-against-current rows, on the stored removal of
+ * Halcyon Relay: the active version carried Halcyon Relay, the revision removed it.
  */
 
-const withMoon = parseScene(withMoonJson.scene);
-const withoutMoon = parseScene(withoutMoonJson.scene);
-const recorded = withoutMoonJson.revision_diff.replay!.prefix;
+const withInfluence = parseScene(withInfluenceJson.scene);
+const withoutInfluence = parseScene(withoutInfluenceJson.scene);
+const recorded = withoutInfluenceJson.revision_diff.replay!.prefix;
 
-describe("removing Moon, at the stored replay point", () => {
-  const comparison = compareVersions(withMoon, withoutMoon, recorded);
+describe("removing Halcyon Relay, at the stored replay point", () => {
+  const comparison = compareVersions(withInfluence, withoutInfluence, recorded);
 
   it("names the choices by their labels", () => {
     expect(comparison.prefixLabels).toEqual(["Ask Nia why she needs it back", "Examine the letter"]);
@@ -24,7 +24,7 @@ describe("removing Moon, at the stored replay point", () => {
   it("finds exactly the three changes the stored diff recorded", () => {
     const changed = comparison.rows.filter((row) => row.kind !== "unchanged").map((row) => row.id);
     expect(changed.sort()).toEqual(
-      [...withoutMoonJson.revision_diff.replay!.changed_action_ids].sort(),
+      [...withoutInfluenceJson.revision_diff.replay!.changed_action_ids].sort(),
     );
     expect(comparison.changedCount).toBe(3);
     expect(comparison.unchangedCount).toBe(3);
@@ -51,9 +51,9 @@ describe("removing Moon, at the stored replay point", () => {
   });
 });
 
-describe("adding Moon back", () => {
+describe("adding Halcyon Relay back", () => {
   it("marks the module's actions as added in this version", () => {
-    const comparison = compareVersions(withoutMoon, withMoon, recorded);
+    const comparison = compareVersions(withoutInfluence, withInfluence, recorded);
     const added = comparison.rows.filter((row) => row.kind === "added");
     expect(added).toHaveLength(2);
     for (const row of added) {
@@ -65,8 +65,8 @@ describe("adding Moon back", () => {
 
 describe("a choice the previous version does not have", () => {
   it("stops, names the choice, and claims no change it could not observe", () => {
-    const moduleAction = withMoonJson.scene.modules[0]!.actions[0]!;
-    const comparison = compareVersions(withoutMoon, withMoon, ["core.inspect", moduleAction.id]);
+    const moduleAction = withInfluenceJson.scene.modules[0]!.actions[0]!;
+    const comparison = compareVersions(withoutInfluence, withInfluence, ["core.inspect", moduleAction.id]);
     expect(comparison.stoppedAt).toEqual({ id: moduleAction.id, label: moduleAction.label });
     expect(comparison.changedCount).toBe(0);
     for (const row of comparison.rows) {

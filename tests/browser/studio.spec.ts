@@ -70,7 +70,7 @@ test("the error state leads to a saved example that plays without a database", a
   const foreign = watchForeignRequests(page, baseURL ?? "");
 
   await page.goto("/studio");
-  // Phase 6: the saved example is the canonical Moon difference, not the
+  // Phase 6: the saved example is the canonical Halcyon Relay difference, not the
   // Phase 1 design fixture.
   await expect(page.getByTestId("error-example-link")).toHaveAttribute("href", "/difference");
   await page.getByTestId("error-example-link").click();

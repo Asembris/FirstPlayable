@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * The saved example on the Rehearsal Table: the real With-Moon / Without-Moon
- * pair, played in the browser against the same pure engine the validator
+ * The saved example on the Rehearsal Table: the synthetic demonstration
+ * with-influence / without-influence pair, played in the browser against the same pure engine the validator
  * uses. No fetch, no API route, no provider, no database.
  *
  * Play and Compare are one page. The shell never re-mounts; a mode change
@@ -37,7 +37,7 @@ import type { SceneView } from "./SceneShell";
 
 const pair = CANONICAL_PAIR;
 
-const SAVED_LABEL = "Saved example · generated from a real build";
+const SAVED_LABEL = "Saved example · synthetic demonstration";
 
 /** The pause before the saved example splits into Compare on first entry. */
 const AUTO_SPLIT_MS = 1100;

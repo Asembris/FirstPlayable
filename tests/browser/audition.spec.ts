@@ -20,7 +20,7 @@ const CAPTURE = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12,
 const MOON = "B0000000-0000-4000-8000-0000000000B1";
 const MOONRISE = "B0000000-0000-4000-8000-0000000000B9";
 const ARRIVAL = "B0000000-0000-4000-8000-0000000000B2";
-const RADIOHEAD = "70CAE5BF-2F4C-445C-A3E5-4EDACFC3591C";
+const RADIOHEAD = "A0000000-0000-4000-8000-0000000000A0";
 const KENDRICK = "A0000000-0000-4000-8000-0000000000A1";
 
 const SEARCH: Record<string, { kind: "movie" | "audience"; query: string; candidates: [string, string, string | null][] }> = {

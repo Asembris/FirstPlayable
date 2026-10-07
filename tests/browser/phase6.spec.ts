@@ -2,13 +2,13 @@ import { expect, test } from "@playwright/test";
 import type { Locator, Page, Request } from "@playwright/test";
 
 import provenanceJson from "../../docs/phase6-canonical-pair/provenance.json";
-import withMoonJson from "../../docs/phase6-canonical-pair/with-moon.version.json";
-import withoutMoonJson from "../../docs/phase6-canonical-pair/without-moon.version.json";
+import withInfluenceJson from "../../docs/phase6-canonical-pair/with-influence.version.json";
+import withoutInfluenceJson from "../../docs/phase6-canonical-pair/without-influence.version.json";
 import { auditContrast } from "./support/contrast";
 
 /**
  * Browser behaviour of the preserved Phase 6 scene path: Play → Compare on
- * the real canonical pair.
+ * the stored canonical pair, a synthetic deterministic demonstration.
  *
  * Expected strings are read from the stored version files, never retyped, so
  * these tests fail if the page drifts from what the stored versions say. The
@@ -16,10 +16,10 @@ import { auditContrast } from "./support/contrast";
  * unchanged row must keep exactly the same box in Play and in Compare.
  */
 
-const scene = withMoonJson.scene;
+const scene = withInfluenceJson.scene;
 const discovery = scene.modules[0]!;
-const approval = withMoonJson.approval_snapshot[0]!;
-const replay = withoutMoonJson.revision_diff.replay;
+const approval = withInfluenceJson.approval_snapshot[0]!;
+const replay = withoutInfluenceJson.revision_diff.replay;
 
 const label = (id: string): string =>
   [...scene.core.actions, ...discovery.actions].find((action) => action.id === id)!.label;
@@ -73,7 +73,7 @@ async function openCompare(page: Page): Promise<void> {
 const row = (page: Page, id: string): Locator => page.getByTestId(`rt-row-${id}`);
 
 test.describe("Phase 6 · canonical Play", () => {
-  test("renders the stored Moon version at the recorded point, verbatim", async ({
+  test("renders the stored Halcyon Relay version at the recorded point, verbatim", async ({
     page,
     baseURL,
   }) => {
@@ -170,7 +170,7 @@ test.describe("Phase 6 · canonical Compare", () => {
     );
     for (const id of ["discovery.action_1", "discovery.action_2"]) {
       await expect(page.getByTestId(`rt-note-without-${id}`)).toHaveText("Not in this version");
-      await expect(page.getByTestId(`rt-note-with-${id}`)).toHaveText("Added with Moon · open now");
+      await expect(page.getByTestId(`rt-note-with-${id}`)).toHaveText("Added with Halcyon Relay · open now");
       await expect(page.getByTestId(`rt-cell-with-${id}`)).toContainText(label(id));
     }
     expect(offending).toEqual([]);
@@ -181,14 +181,14 @@ test.describe("Phase 6 · canonical Compare", () => {
     const note = page.getByTestId("rt-note");
     await expect(note).toBeVisible();
     await expect(note.getByTestId("rt-layer-source")).toContainText(provenanceJson.reference.name);
-    await expect(note.getByTestId("rt-layer-source")).toContainText("film · 2009 · Duncan Jones");
+    await expect(note.getByTestId("rt-layer-source")).toContainText("film · 2009 · Maren Oduya");
     const proposed = await note.getByTestId("rt-layer-proposed").innerText();
     expect(approval.proposed_idea.startsWith(proposed.replace(/…$/, ""))).toBe(true);
     await expect(note.getByTestId("rt-layer-approved")).toHaveText(approval.approved_text);
     await expect(note).toContainText("Edited by the creator");
     await expect(note.getByTestId("rt-layer-consequence")).toHaveText(
-      `After the same two choices, ${label("core.give")} is locked with Moon and open without it. ` +
-        `With Moon, two choices are added, and ${label("core.give")} needs both.`,
+      `After the same two choices, ${label("core.give")} is locked with Halcyon Relay and open without it. ` +
+        `With Halcyon Relay, two choices are added, and ${label("core.give")} needs both.`,
     );
     // Suggestion and decision are different materials.
     const proposedStyle = await note.getByTestId("rt-layer-proposed").evaluate((el) => getComputedStyle(el).fontStyle);
@@ -197,12 +197,15 @@ test.describe("Phase 6 · canonical Compare", () => {
     expect(approvedStyle).toBe("normal");
   });
 
-  test("the saved example names Radiohead and credits the creator, not the visitor", async ({ page }) => {
+  test("the saved example names Lanternfold and credits the creator, not the visitor", async ({ page }) => {
     await openCompare(page);
     const note = page.getByTestId("rt-note");
     await expect(note.getByTestId("rt-layer-source")).toContainText(
-      `Radiohead → Qloo → ${provenanceJson.reference.name}`,
+      `Lanternfold → Qloo → ${provenanceJson.reference.name}`,
     );
+    // The saved example is a synthetic demonstration and says so where it names its source.
+    await expect(note).toContainText("Qloo returned (synthetic stand-in)");
+    await expect(note).toContainText("not a Qloo response");
     await expect(note.locator(".rt-layer__label--decision")).toContainText("the creator approved");
     await expect(note.locator(".rt-layer__label--decision")).toContainText("Edited by the creator");
     await expect(page.getByTestId("rt-compare-heads")).toContainText("creator approved");
@@ -221,7 +224,7 @@ test.describe("Phase 6 · canonical Compare", () => {
       if (path !== "/difference?view=compare") await page.goto(path);
       const text = await page.locator("body").innerText();
       expect(text).not.toMatch(RAW_ID);
-      expect(text).not.toContain(withMoonJson.validation_summary.witnesses[0]!.sentence);
+      expect(text).not.toContain(withInfluenceJson.validation_summary.witnesses[0]!.sentence);
     }
   });
 
@@ -427,8 +430,8 @@ test.describe("Phase 6 · mobile", () => {
     expect(Math.abs(withCell.x - without.x)).toBeLessThanOrEqual(8);
     expect(withCell.width).toBeGreaterThan(300);
     await expect(page.getByTestId("rt-compare-heads")).toBeHidden();
-    await expect(page.getByTestId("rt-cell-with-core.give")).toContainText("With Moon");
-    await expect(row(page, "discovery.action_1")).toContainText("Added with Moon · without: not in this version");
+    await expect(page.getByTestId("rt-cell-with-core.give")).toContainText("With Halcyon Relay");
+    await expect(row(page, "discovery.action_1")).toContainText("Added with Halcyon Relay · without: not in this version");
 
     for (const id of [...UNCHANGED, ...CHANGED]) {
       expect((await boxOf(row(page, id))).height).toBeGreaterThanOrEqual(52);

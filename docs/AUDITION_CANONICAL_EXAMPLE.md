@@ -1,22 +1,22 @@
 # Saved audience audition: The Last Signal
 
-Captured 7 October 2026. One fixed candidate set, one audience pair, no selection probe and no resampling. The initial transport attempt failed TLS verification before retrieval; the same run succeeded with Node's Windows system certificate trust enabled. TLS verification remained on.
+**Synthetic deterministic demonstration.** The saved `/audition` example contains no Qloo data. Every title, artist, entity ID, affinity, request fingerprint, digest and timestamp in `fixtures/qloo/audition/` is invented and written in the response shapes the production normalizers accept. It is not a Qloo response and was never retrieved from Qloo. (Until 7 October 2026 this example was a redacted real Qloo capture; it was replaced so that no Qloo response data is published in the repository.)
 
-The creator-selected concept is an exploration game about decoding an abandoned orbital station's final message. Movie references: Moon (2009), Arrival (2016), Interstellar (2014). Game references: Outer Wilds (2019), Death Stranding (2019), Mass Effect (2007). Both domains use Radiohead and Kendrick Lamar, confirmed by exact name from Qloo search captures. The concept and reference choices are creative framing, not Qloo project-fit evidence.
+The creator-selected concept is an exploration game about decoding an abandoned orbital station's final message. Invented movie comps: Quiet Orbit (2009), First Hello (2016), Farther Than Light (2014). Invented game comps: Orrery Vale (2019), Courier of Ash (2019), Starward Accord (2007). Invented audiences: Lanternfold and Juno Kestrel, each confirmed by exact name from a synthetic artist search. The concept and comp choices are creative framing, not Qloo project-fit evidence.
 
-`fixtures/qloo/audition/selection.json` records the identities frozen before scoring. `fixtures/qloo/audition/canonical.json` contains redacted Qloo responses retaining original identity and affinity fields, exact credential-free request URLs, UTC retrieval timestamps, original HTTP-body SHA-256 digests, normalizer versions, request fingerprints and normalized captures. Capture UUIDs are locally assigned provenance identifiers, not Qloo-issued request IDs. The body digests identify the original wire text; whitespace of that text is not retained. Integrity tests re-normalize the redacted responses instead. Unused image, tag, marketing and descriptive fields are omitted; captured identities and affinities are unchanged.
+`fixtures/qloo/audition/selection.json` records the identities frozen before scoring. `fixtures/qloo/audition/canonical.json` holds twelve synthetic raw responses (six comp searches, two artist searches, four candidate-filtered insights responses), their request URLs on the reserved `qloo.invalid` host, synthetic retrieval timestamps, the SHA-256 of each synthetic body as serialized, normalizer versions, request fingerprints computed by the production fingerprint functions, and the normalized captures the production normalizers produce from those bodies. The first movie search returns two films with the same name and different years, so identity confirmation still has to disambiguate by year. `tests/server/audition-saved.test.ts` re-normalizes every raw response and requires it to equal the stored capture.
 
-The successful run used twelve Qloo calls: six comp searches, two artist searches, four candidate-filtered insights requests. No OpenAI calls. Each insights request scores exactly three frozen comps for one audience in one domain. Raw responses are imported only by the server-side saved projection; the browser receives the same minimal ScoreResponse as the live path.
+The invented affinities reproduce the comparison cases the saved example has to show:
 
-| Domain / pair | Radiohead | Kendrick Lamar | Deterministic call |
+| Domain / pair | Lanternfold | Juno Kestrel | Deterministic call |
 | --- | --- | --- | --- |
-| Moon / Arrival | 0.927710 / 0.835544 | 0.722093 / 0.822660 | Reversed |
-| Moon / Interstellar | 0.927710 / 0.811855 | 0.722093 / 0.755879 | Reversed |
-| Arrival / Interstellar | 0.835544 / 0.811855 | 0.822660 / 0.755879 | Close, no call |
-| Outer Wilds / Death Stranding | 0.670337 / 0.537880 | 0.518036 / 0.639281 | Reversed |
-| Outer Wilds / Mass Effect | 0.670337 / 0.880901 | 0.518036 / 0.612591 | Holds |
-| Death Stranding / Mass Effect | 0.537880 / 0.880901 | 0.639281 / 0.612591 | Close, no call |
+| Quiet Orbit / First Hello | 0.913482 / 0.846217 | 0.701364 / 0.808571 | Reversed |
+| Quiet Orbit / Farther Than Light | 0.913482 / 0.829905 | 0.701364 / 0.744018 | Reversed |
+| First Hello / Farther Than Light | 0.846217 / 0.829905 | 0.808571 / 0.744018 | Close, no call |
+| Orrery Vale / Courier of Ash | 0.684120 / 0.552907 | 0.503388 / 0.651742 | Reversed |
+| Orrery Vale / Starward Accord | 0.684120 / 0.871346 | 0.503388 / 0.629015 | Holds |
+| Courier of Ash / Starward Accord | 0.552907 / 0.871346 | 0.651742 / 0.629015 | Close, no call |
 
-Full precision values in captures drive comparison. The under-0.03 close threshold is a display rule, never statistical significance. Movies and games remain separate. Both saved replay and live handlers call `domainAuditionView`, which calls the unchanged `compareAudiences`. No stored rankings or hand-entered affinities exist.
+Full precision values in the fixture drive comparison. The under-0.03 close threshold is a display rule, never statistical significance. Movies and games remain separate. Both saved replay and live handlers call `domainAuditionView`, which calls the unchanged `compareAudiences`. No stored rankings exist; the saved affinities are invented inputs to the same deterministic logic.
 
-Replay: `/audition` loads the saved comparison without session, database, Qloo or OpenAI calls. Audience buttons change the reading focus and position movement; both audience orders remain visible. Evidence drawers identify the confirmed entities and filtered requests. `/audition?mode=live` or Try your own opens the creator flow; session readiness gates its first request.
+Replay: `/audition` loads the saved comparison without session, database, Qloo or OpenAI calls, and labels it as synthetic demonstration data. Audience buttons change the reading focus and position movement; both audience orders remain visible. Evidence drawers show the synthetic entities and filtered requests. `/audition?mode=live` or Try your own opens the creator flow, which searches and scores with live Qloo; session readiness gates its first request.

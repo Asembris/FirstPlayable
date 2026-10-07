@@ -31,7 +31,7 @@ export type Side = "with" | "without";
 export type ScenePair = {
   readonly withScene: Scene;
   readonly withoutScene: Scene;
-  /** The influence's display name: "Moon". */
+  /** The influence's display name: "Halcyon Relay". */
   readonly influenceName: string;
   /** The comparison point to fall back to. */
   readonly recordedPrefix: readonly Id[];

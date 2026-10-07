@@ -9,7 +9,7 @@
 
 *Choose the influences. Play the consequences.*
 
-<a href="https://firstplayable.vercel.app/difference?view=compare"><img src="docs/readme/hero.svg" width="100%" alt="A saved comparison from a real FirstPlayable build. For the artist Radiohead, Qloo returned the film Moon; FirstPlayable proposed an interpretation; the creator edited and approved it. After the same two choices, in the same room with the same Nia and the same letter, Return the letter is open without the influence and locked with it, and Moon adds two choices: Ask Nia who the other name belongs to, and Examine the envelope closely. 3 changed, 3 unchanged." /></a>
+<a href="https://firstplayable.vercel.app/difference?view=compare"><img src="docs/readme/hero.svg" width="100%" alt="The saved comparison: a synthetic deterministic demonstration built on a stored FirstPlayable build. For the invented artist Lanternfold, a synthetic stand-in for a Qloo result supplies the invented film Halcyon Relay; FirstPlayable proposed an interpretation; the creator edited and approved it. After the same two choices, in the same room with the same Nia and the same letter, Return the letter is open without the influence and locked with it, and Halcyon Relay adds two choices: Ask Nia who the other name belongs to, and Examine the envelope closely. 3 changed, 3 unchanged." /></a>
 
 [![Live product](https://img.shields.io/badge/Live_product-141518?style=for-the-badge)](https://firstplayable.vercel.app)
 [![Play the difference](https://img.shields.io/badge/%E2%96%B6_Play_the_difference-B0154C?style=for-the-badge)](https://firstplayable.vercel.app/difference?view=compare)
@@ -43,22 +43,27 @@ The product's one claim is narrow and checkable: **this approved influence
 changed these choices in this scene.** The engine shows it by playing the same
 choices with and without the influence and reporting what differs.
 
-## A real example: Radiohead → Qloo → Moon
+## A saved example: Lanternfold → Qloo → Halcyon Relay (synthetic demonstration)
 
-The saved example comes from a real build of a one-room scene, *The Second
-Copy*: a station attendant, a visitor named Nia, and a sealed letter.
+The saved example is a synthetic deterministic demonstration built on a stored
+build of a one-room scene, *The Second Copy*: a station attendant, a visitor
+named Nia, and a sealed letter. The two scene versions, the creator's decision
+and the diff are kept as stored. The Qloo layer is not real data: the artist,
+the film, its evidence text and every Qloo identifier, fingerprint and
+timestamp are invented stand-ins in Qloo's response shape, not a Qloo response.
+The live creation path still uses real Qloo.
 
-1. **The creator confirmed an artist:** Radiohead.
-2. **Qloo returned** the film **Moon** (2009, Duncan Jones) among Radiohead's
-   film neighbours, with descriptive evidence about identity and memory under
-   isolation.
+1. **The creator confirmed an artist:** Lanternfold (invented).
+2. **Qloo returned**, in the synthetic stand-in, the invented film **Halcyon
+   Relay** among Lanternfold's film neighbours, with descriptive evidence about
+   identity and memory under isolation.
 3. **FirstPlayable proposed** an interpretation about memory and identity,
    citing only that evidence.
 4. **The creator edited and approved** a concrete version of it: the envelope
    is addressed to two names, and returning the letter stays locked until you
    ask Nia who the other name belongs to.
 5. **The scene changed.** After the same two choices, *Return the letter* is
-   open without Moon and locked with it, and two new choices exist: **3
+   open without Halcyon Relay and locked with it, and two new choices exist: **3
    changed, 3 unchanged**, in the same room with the same Nia and the same
    letter.
 
@@ -109,11 +114,11 @@ generated live. Step 6 is optional and uses the live creation path.
 
 | # | Do this | What it shows |
 |---|---|---|
-| 1 | Open [the landing page](https://firstplayable.vercel.app) and press **Play the difference** | A saved example, labelled as generated from a real build |
+| 1 | Open [the landing page](https://firstplayable.vercel.app) and press **Play the difference** | A saved example, labelled as a synthetic demonstration |
 | 2 | Watch the scene open at the recorded point, then split into **Compare** by itself | The same room, Nia, and letter after the same two choices: **3 changed, 3 unchanged** |
-| 3 | Read the changed rows | Without Moon, *Return the letter* is open. With Moon, it is locked, and two new choices exist |
+| 3 | Read the changed rows | Without Halcyon Relay, *Return the letter* is open. With it, it is locked, and two new choices exist |
 | 4 | Open a mark to read the causal note | The four stored layers: Qloo returned → proposed → creator approved → scene changed |
-| 5 | Press **Continue without**, or play on with Moon | Both sides are fully playable; with Moon, both requirements unlock Return, which ends the scene |
+| 5 | Press **Continue without**, or play on with Halcyon Relay | Both sides are fully playable; with it, both requirements unlock Return, which ends the scene |
 | 6 | *Optional, live:* go back and press **Create your scene** | The real path: brief → artist → influences → build → review. It makes live Qloo and model calls |
 
 Keyboard: <kbd>P</kbd> / <kbd>C</kbd> switch Play and Compare, <kbd>W</kbd> /
@@ -314,7 +319,7 @@ browser. Among its checks:
 | Export | Owner-only; plays from `file://` offline with zero requests |
 | Isolation | The browser reaches only its own origin — never OpenAI, Qloo, or Supabase; no credential shape or provider host in client chunks |
 
-The canonical Moon pair was re-verified independently after it was stored: same
+The canonical pair was re-verified independently after it was stored: same
 project and parent link, identical `world` / `core` / `ports` hashes, only the
 Discovery module differs, the stored diff equals the recomputed diff, both
 versions validate, all three endings stay reachable with no soft-lock in each.
@@ -350,7 +355,7 @@ npm ci
 npm run dev
 ```
 
-Then open `http://localhost:3000/difference` for the saved Moon pair, or
+Then open `http://localhost:3000/difference` for the saved pair (a synthetic demonstration), or
 `/example` for the hand-authored Phase 1 fixture.
 
 The persistent studio needs credentials. Copy [`.env.example`](.env.example) to
@@ -403,7 +408,7 @@ guard, and none is a dependency of `npm test` or `npm run build`.
   faithfulness to the reference, originality, or emotional effect.
 - **Isolation is dataflow isolation.** A model could still arrive at a similar
   idea from the brief alone; no test claims otherwise.
-- **The saved pair has known seams**, recorded rather than hidden: the Moon
+- **The saved pair has known seams**, recorded rather than hidden: the Discovery
   module added two requirements, not one; the base text calls the envelope
   "unmarked" before Nia mentions the other name; and the "other name" question
   is offered from the start. Changing any of them would mean a new compile and
@@ -426,7 +431,7 @@ guard, and none is a dependency of `npm test` or `npm run build`.
 |---|---|
 | [`docs/FIRSTPLAYABLE_BUILD_SPEC.md`](docs/FIRSTPLAYABLE_BUILD_SPEC.md) | The authoritative specification: scene schema, validation, Qloo layer, isolation, revision semantics, non-goals |
 | [`docs/BUILD_STATUS.md`](docs/BUILD_STATUS.md) | The append-only build and verification record for every phase, including failures |
-| [`docs/PHASE6_CANONICAL_PAIR.md`](docs/PHASE6_CANONICAL_PAIR.md) | The saved Moon pair: identifiers, provenance, diff, independent re-verification, caveats, and the rejected candidates |
+| [`docs/PHASE6_CANONICAL_PAIR.md`](docs/PHASE6_CANONICAL_PAIR.md) | The saved pair (synthetic demonstration): identifiers, provenance, diff, independent re-verification, caveats, and the rejected candidates |
 | [`docs/phase6-canonical-pair/`](docs/phase6-canonical-pair/) | The two stored versions and their provenance record, from which the judge path is built |
 | [`docs/PHASE3_QLOO_EVIDENCE.md`](docs/PHASE3_QLOO_EVIDENCE.md) | The exact Qloo requests, field mappings, live captures, cache policy, proposal boundary, isolation sentinels |
 | [`docs/PHASE4_EVIDENCE.md`](docs/PHASE4_EVIDENCE.md) | Compilation evidence, including every failed attempt |

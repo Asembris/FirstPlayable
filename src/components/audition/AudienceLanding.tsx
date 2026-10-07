@@ -26,7 +26,7 @@ export function AudienceLanding(): React.ReactElement {
             <li><Link href="/audition" className="rt-door" data-testid="rt-door-play">
               <span className="rt-door__num" aria-hidden="true">01</span>
               <span className="rt-door__label">Switch the audience</span>
-              <span className="rt-door__aside"><span className="rt-chip">Saved example · real Qloo evidence</span><span className="rt-door__sub">Opens instantly · no live calls</span></span>
+              <span className="rt-door__aside"><span className="rt-chip">Saved example · synthetic demonstration</span><span className="rt-door__sub">Opens instantly · no live calls</span></span>
             </Link></li>
             <li><Link href="/audition?mode=live" className="rt-door" data-testid="rt-door-create">
               <span className="rt-door__num" aria-hidden="true">02</span>

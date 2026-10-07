@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MOON_ENTITY_ID, QLOO_FIXTURES, RADIOHEAD_ENTITY_ID } from "../../fixtures/qloo";
+import { HALCYON_RELAY_ENTITY_ID, QLOO_FIXTURES, LANTERNFOLD_ENTITY_ID } from "../../fixtures/qloo";
 import type {
   ArtistSearchResponseSchema,
   ConfirmAnchorResponseSchema,
@@ -30,7 +30,7 @@ import {
 type SearchResponse = z.infer<typeof ArtistSearchResponseSchema>;
 type AnchorResponse = z.infer<typeof ConfirmAnchorResponseSchema>;
 
-/** Search, then confirm Radiohead. The shared prelude of most tests below. */
+/** Search, then confirm Lanternfold. The shared prelude of most tests below. */
 async function confirmedProject(
   harnessed: Harness,
 ): Promise<{ cookie: string; projectId: string; revision: number }> {
@@ -40,7 +40,7 @@ async function confirmedProject(
   const search = await handleArtistSearch(
     mutation(`/api/projects/${projectId}/artist-search`, {
       cookie,
-      body: JSON.stringify({ query: "Radiohead" }),
+      body: JSON.stringify({ query: "Lanternfold" }),
     }),
     harnessed.deps,
     projectId,
@@ -55,7 +55,7 @@ async function confirmedProject(
       body: JSON.stringify({
         expected_revision: searched.project.revision,
         search_capture_id: searched.search.capture_id,
-        entity_id: RADIOHEAD_ENTITY_ID,
+        entity_id: LANTERNFOLD_ENTITY_ID,
       }),
     }),
     harnessed.deps,
@@ -72,7 +72,7 @@ describe("POST /api/projects/:id/artist-search", () => {
     const cookie = await owner(h);
     const projectId = await project(h, cookie);
     const request = () => handleArtistSearch(mutation(`/api/projects/${projectId}/artist-search`, {
-      cookie, body: JSON.stringify({ query: "Radiohead" }),
+      cookie, body: JSON.stringify({ query: "Lanternfold" }),
     }), h.deps, projectId);
     const first = await body<SearchResponse>(await request());
     const oldId = first.search.capture_id!;
@@ -95,7 +95,7 @@ describe("POST /api/projects/:id/artist-search", () => {
     // An old search can still validate the historical creator choice.
     const confirmation = await handleConfirmAnchor(mutation(`/api/projects/${projectId}/anchor`, {
       method: "PUT", cookie, body: JSON.stringify({ expected_revision: first.project.revision,
-        search_capture_id: oldId, entity_id: RADIOHEAD_ENTITY_ID }),
+        search_capture_id: oldId, entity_id: LANTERNFOLD_ENTITY_ID }),
     }), h.deps, projectId);
     expect(confirmation.status).toBe(200);
   });
@@ -108,7 +108,7 @@ describe("POST /api/projects/:id/artist-search", () => {
     const response = await handleArtistSearch(
       mutation(`/api/projects/${projectId}/artist-search`, {
         cookie,
-        body: JSON.stringify({ query: "Radiohead" }),
+        body: JSON.stringify({ query: "Lanternfold" }),
       }),
       h.deps,
       projectId,
@@ -117,7 +117,7 @@ describe("POST /api/projects/:id/artist-search", () => {
     expect(response.status).toBe(200);
     const result = await body<SearchResponse>(response);
     expect(result.search.candidates).toHaveLength(5);
-    expect(result.search.candidates[0]?.entity_id).toBe(RADIOHEAD_ENTITY_ID);
+    expect(result.search.candidates[0]?.entity_id).toBe(LANTERNFOLD_ENTITY_ID);
     expect(result.search.cache).toBe("live");
     // Searching is not confirming. The project is untouched.
     expect(result.project.anchor_confirmed).toBe(false);
@@ -133,7 +133,7 @@ describe("POST /api/projects/:id/artist-search", () => {
       handleArtistSearch(
         mutation(`/api/projects/${projectId}/artist-search`, {
           cookie,
-          body: JSON.stringify({ query: "radiohead" }),
+          body: JSON.stringify({ query: "lanternfold" }),
         }),
         h.deps,
         projectId,
@@ -155,7 +155,7 @@ describe("POST /api/projects/:id/artist-search", () => {
     const h = harness();
     const cookie = await owner(h);
     const projectId = await project(h, cookie);
-    for (const query of ["Radiohead", "  radioHEAD ", "RADIOHEAD"]) {
+    for (const query of ["Lanternfold", "  lanternFOLD ", "LANTERNFOLD"]) {
       await handleArtistSearch(
         mutation(`/api/projects/${projectId}/artist-search`, {
           cookie,
@@ -196,10 +196,10 @@ describe("POST /api/projects/:id/artist-search", () => {
     const projectId = await project(h, cookie);
 
     for (const hostile of [
-      { query: "Radiohead", types: "urn:entity:movie" },
-      { query: "Radiohead", take: 50 },
-      { query: "Radiohead", url: "https://example.invalid/" },
-      { query: "Radiohead", "filter.type": "urn:entity:brand" },
+      { query: "Lanternfold", types: "urn:entity:movie" },
+      { query: "Lanternfold", take: 50 },
+      { query: "Lanternfold", url: "https://example.invalid/" },
+      { query: "Lanternfold", "filter.type": "urn:entity:brand" },
     ]) {
       const response = await handleArtistSearch(
         mutation(`/api/projects/${projectId}/artist-search`, {
@@ -238,7 +238,7 @@ describe("POST /api/projects/:id/artist-search", () => {
     const cookie = await owner(h);
     const projectId = await project(h, cookie);
     const path = `/api/projects/${projectId}/artist-search`;
-    const good = JSON.stringify({ query: "Radiohead" });
+    const good = JSON.stringify({ query: "Lanternfold" });
 
     const cases: { request: Request; status: number; code: string }[] = [
       {
@@ -280,7 +280,7 @@ describe("POST /api/projects/:id/artist-search", () => {
     const alice = await owner(h);
     const bob = await owner(h);
     const projectId = await project(h, alice);
-    const good = JSON.stringify({ query: "Radiohead" });
+    const good = JSON.stringify({ query: "Lanternfold" });
 
     const foreign = await handleArtistSearch(
       mutation(`/api/projects/${projectId}/artist-search`, { cookie: bob, body: good }),
@@ -318,10 +318,10 @@ describe("PUT /api/projects/:id/anchor", () => {
     );
     const { project: view } = await body<{ project: ProjectView }>(response);
     expect(view.anchor_confirmed).toBe(true);
-    expect(view.anchor?.entity_id).toBe(RADIOHEAD_ENTITY_ID);
-    expect(view.anchor?.name).toBe("Radiohead");
+    expect(view.anchor?.entity_id).toBe(LANTERNFOLD_ENTITY_ID);
+    expect(view.anchor?.name).toBe("Lanternfold");
     expect(view.anchor?.original_rank).toBe(1);
-    expect(view.anchor?.query).toBe("Radiohead");
+    expect(view.anchor?.query).toBe("Lanternfold");
     expect(view.anchor?.search_capture_id).not.toBeNull();
     expect(view.workflow_state).toBe("ANCHOR_CONFIRMED");
     // A confirmation is a consequential creator edit, so the revision moved.
@@ -338,7 +338,7 @@ describe("PUT /api/projects/:id/anchor", () => {
     const search = await handleArtistSearch(
       mutation(`/api/projects/${projectId}/artist-search`, {
         cookie,
-        body: JSON.stringify({ query: "Radiohead" }),
+        body: JSON.stringify({ query: "Lanternfold" }),
       }),
       h.deps,
       projectId,
@@ -354,7 +354,7 @@ describe("PUT /api/projects/:id/anchor", () => {
         body: JSON.stringify({
           expected_revision: searched.project.revision,
           search_capture_id: searched.search.capture_id,
-          entity_id: RADIOHEAD_ENTITY_ID,
+          entity_id: LANTERNFOLD_ENTITY_ID,
           name: "Totally Different Band",
           short_description: "Something Qloo never said.",
         }),
@@ -371,15 +371,15 @@ describe("PUT /api/projects/:id/anchor", () => {
         body: JSON.stringify({
           expected_revision: searched.project.revision,
           search_capture_id: searched.search.capture_id,
-          entity_id: RADIOHEAD_ENTITY_ID,
+          entity_id: LANTERNFOLD_ENTITY_ID,
         }),
       }),
       h.deps,
       projectId,
     );
     const result = await body<AnchorResponse>(confirmed);
-    expect(result.project.anchor?.name).toBe("Radiohead");
-    expect(result.project.anchor?.short_description).toContain("English rock band");
+    expect(result.project.anchor?.name).toBe("Lanternfold");
+    expect(result.project.anchor?.short_description).toContain("art-rock band");
   });
 
   it("refuses an entity id that is not in the named snapshot", async () => {
@@ -389,7 +389,7 @@ describe("PUT /api/projects/:id/anchor", () => {
     const search = await handleArtistSearch(
       mutation(`/api/projects/${projectId}/artist-search`, {
         cookie,
-        body: JSON.stringify({ query: "Radiohead" }),
+        body: JSON.stringify({ query: "Lanternfold" }),
       }),
       h.deps,
       projectId,
@@ -425,7 +425,7 @@ describe("PUT /api/projects/:id/anchor", () => {
         body: JSON.stringify({
           expected_revision: 1,
           search_capture_id: "00000000-0000-4000-8000-000000000000",
-          entity_id: RADIOHEAD_ENTITY_ID,
+          entity_id: LANTERNFOLD_ENTITY_ID,
         }),
       }),
       h.deps,
@@ -440,7 +440,7 @@ describe("PUT /api/projects/:id/anchor", () => {
     const search = await handleArtistSearch(
       mutation(`/api/projects/${projectId}/artist-search`, {
         cookie,
-        body: JSON.stringify({ query: "Radiohead" }),
+        body: JSON.stringify({ query: "Lanternfold" }),
       }),
       h.deps,
       projectId,
@@ -454,7 +454,7 @@ describe("PUT /api/projects/:id/anchor", () => {
         body: JSON.stringify({
           expected_revision: 1, // the project is at 2
           search_capture_id: searched.search.capture_id,
-          entity_id: RADIOHEAD_ENTITY_ID,
+          entity_id: LANTERNFOLD_ENTITY_ID,
         }),
       }),
       h.deps,
@@ -470,7 +470,7 @@ describe("PUT /api/projects/:id/anchor", () => {
     const search = await handleArtistSearch(
       mutation(`/api/projects/${projectId}/artist-search`, {
         cookie,
-        body: JSON.stringify({ query: "Radiohead" }),
+        body: JSON.stringify({ query: "Lanternfold" }),
       }),
       h.deps,
       projectId,
@@ -484,7 +484,7 @@ describe("PUT /api/projects/:id/anchor", () => {
         body: JSON.stringify({
           expected_revision: revision,
           search_capture_id: searched.search.capture_id,
-          entity_id: RADIOHEAD_ENTITY_ID,
+          entity_id: LANTERNFOLD_ENTITY_ID,
         }),
       }),
       h.deps,
@@ -536,14 +536,14 @@ describe("POST /api/projects/:id/references", () => {
     const { references } = await body<ReferencesResponse>(response);
 
     expect(references.movie.displayed.map((candidate) => candidate.name)).toEqual([
-      "Children of Men",
-      "Being John Malkovich",
-      "Moon",
+      "Ashfall Covenant",
+      "The Borrowed Window",
+      "Halcyon Relay",
     ]);
     expect(references.videogame.displayed.map((candidate) => candidate.name)).toEqual([
-      "Mass Effect 2",
-      "Dragon Age: Origins",
-      "Mass Effect",
+      "Starward Accord II",
+      "Emberfall: Oaths",
+      "Starward Accord",
     ]);
     expect(references.movie.returned_count).toBe(10);
     expect(references.movie.skipped.map((skip) => skip.original_rank)).toEqual([
@@ -552,9 +552,9 @@ describe("POST /api/projects/:id/references", () => {
     for (const skip of references.movie.skipped) {
       expect(skip.reason).toBe("beyond_display_limit");
     }
-    const moon = references.movie.displayed.find((candidate) => candidate.name === "Moon");
-    expect(moon?.entity_id).toBe(MOON_ENTITY_ID);
-    expect(moon?.original_rank).toBe(3);
+    const halcyon = references.movie.displayed.find((candidate) => candidate.name === "Halcyon Relay");
+    expect(halcyon?.entity_id).toBe(HALCYON_RELAY_ENTITY_ID);
+    expect(halcyon?.original_rank).toBe(3);
   });
 
   it("never sends an affinity score to the browser", async () => {
@@ -624,9 +624,9 @@ describe("POST /api/projects/:id/references", () => {
   it("keeps one domain usable when the other fails", async () => {
     const h = harness({
       transport: routedTransport({
-        search: () => jsonResponse(QLOO_FIXTURES.searchRadiohead),
+        search: () => jsonResponse(QLOO_FIXTURES.searchLanternfold),
         movie: () => new Response("", { status: 503 }),
-        videogame: () => jsonResponse(QLOO_FIXTURES.videogamesRadiohead),
+        videogame: () => jsonResponse(QLOO_FIXTURES.videogamesLanternfold),
       }),
     });
     const { projectId, cookie, revision } = await confirmedProject(h);
@@ -654,9 +654,9 @@ describe("POST /api/projects/:id/references", () => {
   it("keeps the other domain usable when one comes back with no usable context", async () => {
     const h = harness({
       transport: routedTransport({
-        search: () => jsonResponse(QLOO_FIXTURES.searchRadiohead),
+        search: () => jsonResponse(QLOO_FIXTURES.searchLanternfold),
         movie: () => jsonResponse({ success: true, results: { entities: [] } }),
-        videogame: () => jsonResponse(QLOO_FIXTURES.videogamesRadiohead),
+        videogame: () => jsonResponse(QLOO_FIXTURES.videogamesLanternfold),
       }),
     });
     const { projectId, cookie, revision } = await confirmedProject(h);
@@ -692,7 +692,7 @@ describe("POST /api/projects/:id/references", () => {
     };
     const h = harness({
       transport: routedTransport({
-        search: () => jsonResponse(QLOO_FIXTURES.searchRadiohead),
+        search: () => jsonResponse(QLOO_FIXTURES.searchLanternfold),
         movie: () => jsonResponse(identityOnly),
         videogame: () =>
           jsonResponse({
@@ -726,16 +726,16 @@ describe("POST /api/projects/:id/references", () => {
     expect(references.movie.skipped[0]?.reason).toBe("no_usable_context");
     expect(references.videogame.displayed).toEqual([]);
     const text = JSON.stringify(references);
-    expect(text).not.toContain("Children of Men");
+    expect(text).not.toContain("Ashfall Covenant");
   });
 
   it("fails the domain when the returned subtype contradicts the request", async () => {
     const h = harness({
       transport: routedTransport({
-        search: () => jsonResponse(QLOO_FIXTURES.searchRadiohead),
+        search: () => jsonResponse(QLOO_FIXTURES.searchLanternfold),
         // The silently-ignored-parameter case: a movie filter answered with games.
-        movie: () => jsonResponse(QLOO_FIXTURES.videogamesRadiohead),
-        videogame: () => jsonResponse(QLOO_FIXTURES.videogamesRadiohead),
+        movie: () => jsonResponse(QLOO_FIXTURES.videogamesLanternfold),
+        videogame: () => jsonResponse(QLOO_FIXTURES.videogamesLanternfold),
       }),
     });
     const { projectId, cookie, revision } = await confirmedProject(h);

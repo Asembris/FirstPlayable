@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { QLOO_FIXTURES, RADIOHEAD_ENTITY_ID } from "../../fixtures/qloo";
+import { QLOO_FIXTURES, LANTERNFOLD_ENTITY_ID } from "../../fixtures/qloo";
 import type { QlooEnv } from "../../src/server/config";
 import {
   ARTIST_SEARCH_TIMEOUT_MS,
@@ -87,11 +87,11 @@ function deps(
 
 describe("the three frozen request shapes", () => {
   it("sends exactly the verified artist-search URL and the key header", async () => {
-    const { fetchImpl, calls } = transport([() => json(QLOO_FIXTURES.searchRadiohead)]);
-    await resolveArtist("Radiohead", deps(fetchImpl));
+    const { fetchImpl, calls } = transport([() => json(QLOO_FIXTURES.searchLanternfold)]);
+    await resolveArtist("Lanternfold", deps(fetchImpl));
     expect(calls).toHaveLength(1);
     expect(calls[0]?.url).toBe(
-      "https://qloo.invalid/search?query=Radiohead&types=urn%3Aentity%3Aartist&take=5",
+      "https://qloo.invalid/search?query=Lanternfold&types=urn%3Aentity%3Aartist&take=5",
     );
     expect(calls[0]?.headers["x-api-key"]).toBe(ENV.apiKey);
   });
@@ -107,22 +107,22 @@ describe("the three frozen request shapes", () => {
   });
 
   it("sends the verified movie first-hop URL", async () => {
-    const { fetchImpl, calls } = transport([() => json(QLOO_FIXTURES.moviesRadiohead)]);
-    await getMovieReferences(RADIOHEAD_ENTITY_ID, deps(fetchImpl));
+    const { fetchImpl, calls } = transport([() => json(QLOO_FIXTURES.moviesLanternfold)]);
+    await getMovieReferences(LANTERNFOLD_ENTITY_ID, deps(fetchImpl));
     expect(calls[0]?.url).toBe(
       "https://qloo.invalid/v2/insights?filter.type=urn%3Aentity%3Amovie" +
-        `&signal.interests.entities=${RADIOHEAD_ENTITY_ID}&take=10`,
+        `&signal.interests.entities=${LANTERNFOLD_ENTITY_ID}&take=10`,
     );
   });
 
   it("sends urn:entity:videogame, the type that was actually verified", async () => {
-    const { fetchImpl, calls } = transport([() => json(QLOO_FIXTURES.videogamesRadiohead)]);
-    await getVideogameReferences(RADIOHEAD_ENTITY_ID.toLowerCase(), deps(fetchImpl));
+    const { fetchImpl, calls } = transport([() => json(QLOO_FIXTURES.videogamesLanternfold)]);
+    await getVideogameReferences(LANTERNFOLD_ENTITY_ID.toLowerCase(), deps(fetchImpl));
     const url = new URL(calls[0]?.url ?? "");
     expect(url.searchParams.get("filter.type")).toBe("urn:entity:videogame");
     expect(url.searchParams.get("filter.type")).not.toBe("urn:entity:video_game");
     // The confirmed UUID is sent in the canonical case the API returned.
-    expect(url.searchParams.get("signal.interests.entities")).toBe(RADIOHEAD_ENTITY_ID);
+    expect(url.searchParams.get("signal.interests.entities")).toBe(LANTERNFOLD_ENTITY_ID);
     expect(url.pathname).toBe("/v2/insights");
   });
 
@@ -141,14 +141,14 @@ describe("the three frozen request shapes", () => {
 
   it("never sends a trends, audience, popularity, or explainability parameter", async () => {
     const { fetchImpl, calls } = transport([
-      () => json(QLOO_FIXTURES.searchRadiohead),
-      () => json(QLOO_FIXTURES.moviesRadiohead),
-      () => json(QLOO_FIXTURES.videogamesRadiohead),
+      () => json(QLOO_FIXTURES.searchLanternfold),
+      () => json(QLOO_FIXTURES.moviesLanternfold),
+      () => json(QLOO_FIXTURES.videogamesLanternfold),
     ]);
     const shared = deps(fetchImpl);
-    await resolveArtist("Radiohead", shared);
-    await getMovieReferences(RADIOHEAD_ENTITY_ID, shared);
-    await getVideogameReferences(RADIOHEAD_ENTITY_ID, shared);
+    await resolveArtist("Lanternfold", shared);
+    await getMovieReferences(LANTERNFOLD_ENTITY_ID, shared);
+    await getVideogameReferences(LANTERNFOLD_ENTITY_ID, shared);
     for (const call of calls) {
       for (const forbidden of [
         "trends",
@@ -179,9 +179,9 @@ describe("timeouts, body caps, and quota headers", () => {
     let seen: RequestInit | undefined;
     const fetchImpl = (async (_input: RequestInfo | URL, init?: RequestInit) => {
       seen = init;
-      return json(QLOO_FIXTURES.searchRadiohead);
+      return json(QLOO_FIXTURES.searchLanternfold);
     }) as unknown as typeof fetch;
-    await resolveArtist("Radiohead", deps(fetchImpl));
+    await resolveArtist("Lanternfold", deps(fetchImpl));
     expect(seen?.signal).toBeInstanceOf(AbortSignal);
     expect(seen?.signal?.aborted).toBe(false);
     // A redirect to another host would move the key somewhere it must not go.
@@ -195,7 +195,7 @@ describe("timeouts, body caps, and quota headers", () => {
         throw new DOMException("aborted", "AbortError");
       },
     ]);
-    const error = await resolveArtist("Radiohead", deps(fetchImpl)).catch(
+    const error = await resolveArtist("Lanternfold", deps(fetchImpl)).catch(
       (cause: unknown) => cause,
     );
     expect(error).toBeInstanceOf(QlooError);
@@ -216,7 +216,7 @@ describe("timeouts, body caps, and quota headers", () => {
           },
         }),
     ]);
-    await expect(resolveArtist("Radiohead", deps(fetchImpl))).rejects.toThrow(
+    await expect(resolveArtist("Lanternfold", deps(fetchImpl))).rejects.toThrow(
       expect.objectContaining({ code: QLOO_ERROR_CODES.QLOO_RESPONSE_TOO_LARGE }) as Error,
     );
   });
@@ -234,7 +234,7 @@ describe("timeouts, body caps, and quota headers", () => {
           { status: 200, headers: { "content-type": "application/json" } },
         ),
     ]);
-    await expect(resolveArtist("Radiohead", deps(fetchImpl))).rejects.toThrow(
+    await expect(resolveArtist("Lanternfold", deps(fetchImpl))).rejects.toThrow(
       expect.objectContaining({ code: QLOO_ERROR_CODES.QLOO_RESPONSE_TOO_LARGE }) as Error,
     );
   });
@@ -242,7 +242,7 @@ describe("timeouts, body caps, and quota headers", () => {
   it("records the quota headers the API actually returned", async () => {
     const { fetchImpl } = transport([
       () =>
-        json(QLOO_FIXTURES.searchRadiohead, {
+        json(QLOO_FIXTURES.searchLanternfold, {
           headers: {
             "content-type": "application/json",
             "x-month-ratelimit-limit": "10000",
@@ -254,7 +254,7 @@ describe("timeouts, body caps, and quota headers", () => {
     ]);
     const observed: unknown[] = [];
     const result = await resolveArtist(
-      "Radiohead",
+      "Lanternfold",
       deps(fetchImpl, {
         onQuota: (quota) => {
           observed.push(quota);
@@ -272,8 +272,8 @@ describe("timeouts, body caps, and quota headers", () => {
   });
 
   it("leaves quota null when no header came back, rather than inventing a figure", async () => {
-    const { fetchImpl } = transport([() => json(QLOO_FIXTURES.searchRadiohead)]);
-    const result = await resolveArtist("Radiohead", deps(fetchImpl));
+    const { fetchImpl } = transport([() => json(QLOO_FIXTURES.searchLanternfold)]);
+    const result = await resolveArtist("Lanternfold", deps(fetchImpl));
     expect(result.diagnostics.quota).toBeNull();
   });
 
@@ -281,7 +281,7 @@ describe("timeouts, body caps, and quota headers", () => {
     const { fetchImpl, calls } = transport([
       () => new Response("<html>nope</html>", { status: 200 }),
     ]);
-    await expect(resolveArtist("Radiohead", deps(fetchImpl))).rejects.toThrow(
+    await expect(resolveArtist("Lanternfold", deps(fetchImpl))).rejects.toThrow(
       expect.objectContaining({ code: QLOO_ERROR_CODES.QLOO_MALFORMED_BODY }) as Error,
     );
     expect(calls).toHaveLength(1);
@@ -293,9 +293,9 @@ describe("the retry budget", () => {
     expect(MAX_ATTEMPTS_PER_CALL).toBe(2);
     const { fetchImpl, calls } = transport([
       () => new Response("", { status: 503 }),
-      () => json(QLOO_FIXTURES.searchRadiohead),
+      () => json(QLOO_FIXTURES.searchLanternfold),
     ]);
-    const result = await resolveArtist("Radiohead", deps(fetchImpl));
+    const result = await resolveArtist("Lanternfold", deps(fetchImpl));
     expect(calls).toHaveLength(2);
     expect(result.diagnostics.attempts).toBe(2);
     expect(result.diagnostics.retried).toBe(true);
@@ -303,7 +303,7 @@ describe("the retry budget", () => {
 
   it("stops after the retry and reports the upstream failure", async () => {
     const { fetchImpl, calls } = transport([() => new Response("", { status: 502 })]);
-    await expect(resolveArtist("Radiohead", deps(fetchImpl))).rejects.toThrow(
+    await expect(resolveArtist("Lanternfold", deps(fetchImpl))).rejects.toThrow(
       expect.objectContaining({ code: QLOO_ERROR_CODES.QLOO_UPSTREAM }) as Error,
     );
     expect(calls).toHaveLength(2);
@@ -313,10 +313,10 @@ describe("the retry budget", () => {
     const waits: number[] = [];
     const { fetchImpl, calls } = transport([
       () => new Response("", { status: 429, headers: { "retry-after": "1" } }),
-      () => json(QLOO_FIXTURES.moviesRadiohead),
+      () => json(QLOO_FIXTURES.moviesLanternfold),
     ]);
     await getMovieReferences(
-      RADIOHEAD_ENTITY_ID,
+      LANTERNFOLD_ENTITY_ID,
       deps(fetchImpl, {
         sleep: async (ms) => {
           waits.push(ms);
@@ -332,7 +332,7 @@ describe("the retry budget", () => {
     const { fetchImpl, calls } = transport([
       () => new Response("", { status: 429, headers: { "retry-after": "600" } }),
     ]);
-    await expect(getMovieReferences(RADIOHEAD_ENTITY_ID, deps(fetchImpl))).rejects.toThrow(
+    await expect(getMovieReferences(LANTERNFOLD_ENTITY_ID, deps(fetchImpl))).rejects.toThrow(
       expect.objectContaining({ code: QLOO_ERROR_CODES.QLOO_RATE_LIMITED }) as Error,
     );
     expect(calls).toHaveLength(1);
@@ -345,7 +345,7 @@ describe("the retry budget", () => {
       [403, QLOO_ERROR_CODES.QLOO_UNAUTHORIZED],
     ] as const) {
       const { fetchImpl, calls } = transport([() => new Response("", { status })]);
-      await expect(resolveArtist("Radiohead", deps(fetchImpl))).rejects.toThrow(
+      await expect(resolveArtist("Lanternfold", deps(fetchImpl))).rejects.toThrow(
         expect.objectContaining({ code }) as Error,
       );
       expect(calls, `status ${status}`).toHaveLength(1);
@@ -354,7 +354,7 @@ describe("the retry budget", () => {
 
   it("never retries a payload the normalizer refused", async () => {
     const { fetchImpl, calls } = transport([() => json({ success: false, error: "nope" })]);
-    await expect(resolveArtist("Radiohead", deps(fetchImpl))).rejects.toThrow(
+    await expect(resolveArtist("Lanternfold", deps(fetchImpl))).rejects.toThrow(
       expect.objectContaining({ code: QLOO_ERROR_CODES.QLOO_CONTRACT }) as Error,
     );
     expect(calls).toHaveLength(1);
@@ -368,7 +368,7 @@ describe("the retry budget", () => {
           headers: { "x-provider-detail": "do not echo me" },
         }),
     ]);
-    const error = await resolveArtist("Radiohead", deps(fetchImpl)).catch(
+    const error = await resolveArtist("Lanternfold", deps(fetchImpl)).catch(
       (cause: unknown) => cause,
     );
     expect(error).toBeInstanceOf(QlooError);
@@ -383,12 +383,12 @@ describe("the global launch guard", () => {
   it("takes a lease for every launch and releases it afterwards", async () => {
     const guard = countingGuard();
     const { fetchImpl } = transport([
-      () => json(QLOO_FIXTURES.searchRadiohead),
-      () => json(QLOO_FIXTURES.moviesRadiohead),
+      () => json(QLOO_FIXTURES.searchLanternfold),
+      () => json(QLOO_FIXTURES.moviesLanternfold),
     ]);
     const shared = deps(fetchImpl, { launch: guard });
-    await resolveArtist("Radiohead", shared);
-    await getMovieReferences(RADIOHEAD_ENTITY_ID, shared);
+    await resolveArtist("Lanternfold", shared);
+    await getMovieReferences(LANTERNFOLD_ENTITY_ID, shared);
     expect(guard.acquired).toEqual(["artist_search", "references_movie"]);
     expect(guard.released).toBe(2);
   });
@@ -397,9 +397,9 @@ describe("the global launch guard", () => {
     const guard = countingGuard();
     const { fetchImpl } = transport([
       () => new Response("", { status: 500 }),
-      () => json(QLOO_FIXTURES.searchRadiohead),
+      () => json(QLOO_FIXTURES.searchLanternfold),
     ]);
-    await resolveArtist("Radiohead", deps(fetchImpl, { launch: guard }));
+    await resolveArtist("Lanternfold", deps(fetchImpl, { launch: guard }));
     expect(guard.acquired).toEqual(["artist_search", "artist_search"]);
     expect(guard.released).toBe(2);
   });
@@ -407,7 +407,7 @@ describe("the global launch guard", () => {
   it("releases the lease even when the attempt throws", async () => {
     const guard = countingGuard();
     const { fetchImpl } = transport([() => new Response("", { status: 401 })]);
-    await resolveArtist("Radiohead", deps(fetchImpl, { launch: guard })).catch(() => undefined);
+    await resolveArtist("Lanternfold", deps(fetchImpl, { launch: guard })).catch(() => undefined);
     expect(guard.acquired).toHaveLength(1);
     expect(guard.released).toBe(1);
   });

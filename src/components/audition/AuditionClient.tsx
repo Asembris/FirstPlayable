@@ -127,10 +127,10 @@ export function AuditionClient({ savedResult, example, startLive = false }: { sa
       </nav>
       {!live && <>
         <section className="rt-audition__concept" aria-label="Game concept">
-          <span className="rt-label">Saved example · real Qloo capture · no live calls</span>
+          <span className="rt-label">Saved example · synthetic demonstration data · no live calls</span>
           <h2 className="rt-audition__h2">{example.title}</h2>
           <p>{example.concept}</p>
-          <p className="rt-audition__note">Comps chosen for isolation, first contact and exploration. The concept gives context; Qloo scores only the confirmed titles.</p>
+          <p className="rt-audition__note">Comps chosen for isolation, first contact and exploration. The titles, artists and affinities in this saved example are invented and shaped like a Qloo response; they are not Qloo data. Try your own for live Qloo scores of the titles you confirm.</p>
         </section>
         <AuditionResults result={savedResult} savedAt={example.captured_at} />
       </>}

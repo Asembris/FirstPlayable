@@ -94,7 +94,7 @@ test.describe("Phase 6 · the brief", () => {
     await expect(page.locator("body")).not.toContainText(/Phase \d|persistent shell|owner session/i);
   });
 
-  test("its failure is a finished paper state that leads to the Moon difference", async ({
+  test("its failure is a finished paper state that leads to the Halcyon Relay difference", async ({
     page,
   }) => {
     await page.goto("/studio");
@@ -113,7 +113,7 @@ test.describe("Phase 6 · the project desk", () => {
     await openProject(page);
     const steps = page.getByRole("navigation", { name: "Where this scene stands" });
     await expect(steps).toContainText("Brief");
-    await expect(steps).toContainText("Radiohead");
+    await expect(steps).toContainText("Lanternfold");
     await expect(steps).toContainText("1 approved");
     await expect(steps).toContainText("1 live link");
     // The record ids are kept, but behind a disclosure rather than in the head.
@@ -134,7 +134,7 @@ test.describe("Phase 6 · the project desk", () => {
   test("the artist results are catalogue slips; nothing is preselected", async ({ page }) => {
     await installPhase3Api(page);
     await page.goto(`/studio/${P3}`);
-    await page.getByTestId("artist-query").fill("Radiohead");
+    await page.getByTestId("artist-query").fill("Lanternfold");
     await page.getByTestId("artist-search-submit").click();
     const results = page.getByTestId("artist-results");
     await expect(results).toBeVisible();

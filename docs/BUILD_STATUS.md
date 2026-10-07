@@ -560,7 +560,7 @@ number below comes from a command that was actually run in this repository.
 | The five frozen Phase 3 routes | `src/server/api/{qloo,proposals,decisions}.ts` |
 | Artist confirmation, reference rows, decisions, provenance drawer | `src/components/studio/` |
 | One forward migration | `supabase/migrations/20261004085412_phase3_qloo.sql` |
-| Redacted real captures for deterministic tests | `fixtures/qloo/` |
+| Redacted real captures for deterministic tests (replaced by synthetic fixtures on 7 October 2026) | `fixtures/qloo/` |
 | Opt-in live smokes | `scripts/smoke-qloo.ts`, `scripts/smoke-proposal.ts` |
 
 ## Commands run, and their results
@@ -607,10 +607,10 @@ requested `filter.type`.
 
 | Fact | Value |
 |---|---|
-| Confirmed artist | Radiohead, `70CAE5BF-2F4C-445C-A3E5-4EDACFC3591C`, returned at rank 1 of 5 |
+| Confirmed artist | Radiohead, UUID *[redacted]*, returned at rank 1 of 5 |
 | Confirmation rule | explicit creator choice; the smoke confirms by exact name, never by position |
-| Movies, first three usable | Children of Men (2006), Being John Malkovich (1999), Moon (2009) |
-| Videogames, first three usable | Mass Effect 2 (2010), Dragon Age: Origins (2009), Mass Effect (2007) |
+| Movies, first three usable | *[titles redacted]* |
+| Videogames, first three usable | *[titles redacted]* |
 | Rows normalized per domain | 10 of 10, all usable, 0 duplicates, 0 malformed |
 | Uncached creation cost | **3 calls** — one search, two first hops |
 | Repeat of the identical retrieval | **0 calls**, including from a separate process |
@@ -621,12 +621,15 @@ All three historically observed titles per domain were still present. Nothing in
 the application injects them: the smoke reports the comparison rather than
 requiring it.
 
-A second artist was verified live — Taylor Swift,
-`4BBEF799-A0C4-4110-AB01-39216993C312` — returning a completely different
-neighbourhood, so the path is not Radiohead-specific.
+A second artist was verified live *[identity redacted]*, returning a
+completely different neighbourhood, so the path is not Radiohead-specific.
 
-**Moon's canonical context was recovered, not invented.** The
-duplicate-identity material is verbatim from `properties.plot_summary`.
+**The canonical reference's context was recovered, not invented.** The
+duplicate-identity material came from `properties.plot_summary`.
+
+*Redacted on 7 October 2026: Qloo identifiers, returned title lists and quoted
+Qloo text were removed from this entry; see "Public Qloo fixture cleanup"
+below.*
 
 ## Cache and rate policy, observed
 
@@ -2004,8 +2007,10 @@ pair are exactly those of Phase 6.
 | `e44ab20` | README leads with who it helps, the decision, the real example, and the direct comparison link; the Qloo claim is narrowed to the discovery source and recorded relationship it supplies |
 
 The artist's name is read from a constant keyed by the stored capture's Qloo
-entity id (`70CAE5BF-…`), recorded in `PHASE6_CANONICAL_PAIR.md`; a record with
+entity id *[redacted]*, recorded in `PHASE6_CANONICAL_PAIR.md`; a record with
 any other artist refuses to load. The stored pair files were not changed.
+*(Superseded on 7 October 2026: the saved example's Qloo layer is now a
+synthetic stand-in; see "Public Qloo fixture cleanup" below.)*
 
 ### Gates
 
@@ -2066,3 +2071,24 @@ stored versions remain, and both versions' scenes were re-read equal to
 git-ignored probe state files. No cookie value appears anywhere in git history.
 
 **FirstPlayable is ready for judging at `e44ab20`.**
+
+## Public Qloo fixture cleanup — 7 October 2026
+
+Real Qloo response data was removed from the current tree and replaced with
+synthetic data in the same schemas. Git history was not rewritten.
+
+| Removed or replaced | Now |
+|---|---|
+| `fixtures/qloo/search-radiohead.json`, `insights-movies-radiohead.json`, `insights-videogames-radiohead.json` (redacted real captures) | `search-lanternfold.json`, `insights-movies-lanternfold.json`, `insights-videogames-lanternfold.json`: an invented artist, films and games with patterned synthetic UUIDs, invented text, affinities and popularity |
+| `fixtures/qloo/audition/canonical.json`, `selection.json` (redacted real capture behind the saved `/audition`) | A synthetic record produced by the production normalizers and fingerprint functions, reproducing the same verdicts: movies reversal, reversal, close; games reversal, holds, close; a close top for the second audience |
+| `docs/phase6-canonical-pair/provenance.json` and the reference fields of the two version rows (renamed `with-influence` / `without-influence`) | Synthetic Qloo layer (Lanternfold → Halcyon Relay); stored scenes, creator decision, diff and witness unchanged |
+| Real Qloo ids, result lists, affinities and quoted Qloo text in browser mocks, tests and evidence docs | Synthetic values, or *[redacted]* in historical records |
+
+The saved `/audition` and `/difference` examples are labelled as synthetic
+deterministic demonstrations. The live path (`/audition?mode=live` and the
+studio) is unchanged and still uses real Qloo. `tests/engine/fixtures.test.ts`
+now fails if any id under `fixtures/qloo/` is not a synthetic patterned UUID or
+if a fixture names the real Qloo host.
+
+Gates: typecheck; full unit/server/presentation/engine suite; fixture checks;
+production build; source and built-asset secret scans; full Playwright suite.

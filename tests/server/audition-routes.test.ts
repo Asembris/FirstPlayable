@@ -11,7 +11,7 @@ import {
   MOON_SEQUEL_ID,
   O_BROTHER_ID,
   OUTER_WILDS_ID,
-  RADIOHEAD_ENTITY_ID,
+  LANTERNFOLD_ENTITY_ID,
 } from "../../fixtures/qloo/audition";
 import { clarificationSlotContext, type AuditionState, type InterpretResponse } from "../../src/domain/audition";
 import type { ScoreResponse } from "../../src/domain/audition-view";
@@ -34,7 +34,7 @@ import {
  * exactly the requested ids that appear here, as the candidate filter should.
  */
 const AFFINITY: Record<string, Record<string, number | null>> = {
-  [RADIOHEAD_ENTITY_ID]: { [MOON_ID]: 0.81, [ARRIVAL_ID]: 0.62, [O_BROTHER_ID]: 0.6, [OUTER_WILDS_ID]: 0.7, [DEATH_STRANDING_ID]: 0.69 },
+  [LANTERNFOLD_ENTITY_ID]: { [MOON_ID]: 0.81, [ARRIVAL_ID]: 0.62, [O_BROTHER_ID]: 0.6, [OUTER_WILDS_ID]: 0.7, [DEATH_STRANDING_ID]: 0.69 },
   [KENDRICK_ENTITY_ID]: { [MOON_ID]: 0.31, [ARRIVAL_ID]: 0.55, [O_BROTHER_ID]: 0.54, [OUTER_WILDS_ID]: 0.4, [DEATH_STRANDING_ID]: 0.6 },
   [METALLICA_ENTITY_ID]: { [MOON_ID]: 0.5, [ARRIVAL_ID]: 0.49 },
 };
@@ -58,7 +58,7 @@ function auditionTransport(overrides: Overrides = {}): Transport {
       const query = url.searchParams.get("query")?.toLowerCase() ?? "";
       const type = url.searchParams.get("types");
       const table: Record<string, unknown> = {
-        "urn:entity:artist|radiohead": QLOO_FIXTURES.searchRadiohead,
+        "urn:entity:artist|lanternfold": QLOO_FIXTURES.searchLanternfold,
         "urn:entity:artist|kendrick lamar": AUDITION_FIXTURES.searchKendrick,
         "urn:entity:artist|metallica": AUDITION_FIXTURES.searchMetallica,
         "urn:entity:movie|dune": { results: [] },
@@ -99,7 +99,7 @@ const OPENING = plan([
   ADD("movie", "Moon"),
   ADD("movie", "Arrival"),
   ADD("movie", "O Brother, Where Art Thou?"),
-  ADD("audience", "Radiohead"),
+  ADD("audience", "Lanternfold"),
   ADD("audience", "Kendrick Lamar"),
 ]);
 
@@ -131,7 +131,7 @@ function confirmFirst(response: InterpretResponse): AuditionState {
 
 async function opened(h: Harness) {
   const cookie = await owner(h);
-  const response = await interpret(h, cookie, "Compare Moon, Arrival and O Brother for Radiohead and Kendrick Lamar fans.", { slots: [] });
+  const response = await interpret(h, cookie, "Compare Moon, Arrival and O Brother for Lanternfold and Kendrick Lamar fans.", { slots: [] });
   expect(response.status).toBe(200);
   return { cookie, interpreted: await body<InterpretResponse>(response) };
 }
@@ -230,7 +230,7 @@ describe("POST /api/audition/interpret", () => {
       ["movie", "Moon"],
       ["movie", "Arrival"],
       ["movie", "O Brother, Where Art Thou?"],
-      ["audience", "Radiohead"],
+      ["audience", "Lanternfold"],
       ["audience", "Kendrick Lamar"],
     ]);
     expect(interpreted.state.slots.every((s) => s.search_capture_id !== null)).toBe(true);
@@ -267,8 +267,8 @@ describe("POST /api/audition/interpret", () => {
     const response = await interpret(h, cookie, "replace Kendrick with Metallica", confirmed);
     const result = await body<InterpretResponse>(response);
     const audiences = result.state.slots.filter((s) => s.kind === "audience");
-    expect(audiences.map((s) => s.query)).toEqual(["Radiohead", "Metallica"]);
-    expect(audiences[0]?.confirmed_entity_id).toBe(RADIOHEAD_ENTITY_ID);
+    expect(audiences.map((s) => s.query)).toEqual(["Lanternfold", "Metallica"]);
+    expect(audiences[0]?.confirmed_entity_id).toBe(LANTERNFOLD_ENTITY_ID);
     expect(audiences[1]?.confirmed_entity_id).toBeNull();
     expect(h.transport.calls.length - before).toBe(1);
     expect(result.searches.map((s) => s.slot_id)).toEqual([audiences[1]!.slot_id]);
@@ -330,13 +330,13 @@ describe("POST /api/audition/score", () => {
     expect(response.status).toBe(200);
     const result = await body<ScoreResponse>(response);
 
-    expect(result.audiences.map((a) => a.name)).toEqual(["Radiohead", "Kendrick Lamar"]);
+    expect(result.audiences.map((a) => a.name)).toEqual(["Lanternfold", "Kendrick Lamar"]);
     expect(result.domains.videogame).toBeNull();
     const movie = result.domains.movie!;
-    const [radiohead, kendrick] = movie.comparison.rankings;
-    expect(radiohead.ordered.map((r) => r.name)).toEqual(["Moon", "Arrival", "O Brother, Where Art Thou?"]);
+    const [lanternfold, kendrick] = movie.comparison.rankings;
+    expect(lanternfold.ordered.map((r) => r.name)).toEqual(["Moon", "Arrival", "O Brother, Where Art Thou?"]);
     expect(kendrick.ordered.map((r) => r.name)).toEqual(["Arrival", "O Brother, Where Art Thou?", "Moon"]);
-    expect(radiohead.top).toEqual({ status: "clear", leaders: [MOON_ID] });
+    expect(lanternfold.top).toEqual({ status: "clear", leaders: [MOON_ID] });
     // Arrival and O Brother sit within 0.03 for Kendrick Lamar: close, not a winner.
     expect(kendrick.top.status).toBe("close");
 
@@ -355,7 +355,7 @@ describe("POST /api/audition/score", () => {
       expect(url.searchParams.get("filter.results.entities")?.split(",").sort()).toEqual([MOON_ID, ARRIVAL_ID, O_BROTHER_ID].sort());
     }
     expect(movie.evidence.map((e) => e.request)).toEqual([
-      expect.stringContaining(`signal.interests.entities=${RADIOHEAD_ENTITY_ID}`),
+      expect.stringContaining(`signal.interests.entities=${LANTERNFOLD_ENTITY_ID}`),
       expect.stringContaining(`signal.interests.entities=${KENDRICK_ENTITY_ID}`),
     ]);
     expect(JSON.stringify(result)).not.toContain("qloo.invalid");
@@ -368,7 +368,7 @@ describe("POST /api/audition/score", () => {
         ADD("movie", "Arrival"),
         ADD("videogame", "Outer Wilds"),
         ADD("videogame", "Death Stranding"),
-        ADD("audience", "Radiohead"),
+        ADD("audience", "Lanternfold"),
         ADD("audience", "Kendrick Lamar"),
       ]),
     ]);
@@ -383,7 +383,7 @@ describe("POST /api/audition/score", () => {
     }
     expect(result.domains.movie?.comparison.comps.every((c) => c.domain === "movie")).toBe(true);
     expect(result.domains.videogame?.comparison.comps.every((c) => c.domain === "videogame")).toBe(true);
-    // Outer Wilds 0.70 vs Death Stranding 0.69 for Radiohead is close; no reversal claimed.
+    // Outer Wilds 0.70 vs Death Stranding 0.69 for Lanternfold is close; no reversal claimed.
     expect(result.domains.videogame?.comparison.pairs[0]?.verdict).toBe("close");
   });
 
@@ -439,7 +439,7 @@ describe("POST /api/audition/score", () => {
     expect((await score(h, cookie, forged)).status).toBe(422);
     // An artist search capture cannot stand in for a movie search.
     const crossed = structuredClone(state);
-    crossed.slots[0] = { ...crossed.slots[0]!, search_capture_id: audienceCapture, confirmed_entity_id: RADIOHEAD_ENTITY_ID };
+    crossed.slots[0] = { ...crossed.slots[0]!, search_capture_id: audienceCapture, confirmed_entity_id: LANTERNFOLD_ENTITY_ID };
     expect((await score(h, cookie, crossed)).status).toBe(422);
     // A movie search capture cannot stand in for a videogame comp.
     const wrongDomain = structuredClone(state);
@@ -544,7 +544,7 @@ describe("route security and validation", () => {
   it("refuses a model call when the spend cap is exhausted", async () => {
     const h = harness({ transport: auditionTransport(), model: [OPENING], budget: { modelCostCapMicros: 0 } });
     const cookie = await owner(h);
-    const response = await interpret(h, cookie, "Moon for Radiohead fans", { slots: [] });
+    const response = await interpret(h, cookie, "Moon for Lanternfold fans", { slots: [] });
     expect((await envelope(response)).code).toBe("BUDGET_EXHAUSTED");
     expect(h.model!.requests).toHaveLength(0);
   });

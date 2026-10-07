@@ -88,16 +88,16 @@ export const DISCOVERY_APPROVAL_PAYLOAD: ApprovedInfluencePayload = {
   approved_text: `Inspecting the letter reveals an identity contradiction, and it must be discussed before the letter is returned. ${SENTINELS.discoveryApproval}`,
   intended_effect: "Inspection unlocks a question; that question unlocks the return.",
   reference: {
-    reference_id: "ref.mv.moon",
-    name: "Moon",
+    reference_id: "ref.mv.halcyon",
+    name: "Halcyon Relay",
     domain: "movie",
     year: 2009,
   },
   evidence: [
     {
-      id: "ref.mv.moon#ev1",
+      id: "ref.mv.halcyon#ev1",
       field_path: "properties.plot_themes_description",
-      text: "Probes what makes someone human by exploring identity and memory under isolation.",
+      text: "Asks what makes a person the same person by setting two copies of one man against the record of a single life.",
     },
   ],
 };
@@ -108,14 +108,14 @@ export const COMMITMENT_APPROVAL_PAYLOAD: ApprovedInfluencePayload = {
   approved_text: `Naming what the promise costs is required before the promise can be made. ${SENTINELS.commitmentApproval}`,
   intended_effect: "Asking why she came back reveals the cost; the promise needs that cost named.",
   reference: {
-    reference_id: "ref.vg.dragonage",
-    name: "Dragon Age: Origins",
+    reference_id: "ref.vg.emberfall",
+    name: "Emberfall: Oaths",
     domain: "videogame",
     year: 2009,
   },
   evidence: [
     {
-      id: "ref.vg.dragonage#ev1",
+      id: "ref.vg.emberfall#ev1",
       field_path: "properties.description",
       text: "Alliances are won and lost by what you promise.",
     },
@@ -128,7 +128,7 @@ export function approvalRecord(payload: ApprovedInfluencePayload): ApprovedInflu
     approval_id: payload.approval_id,
     slot: payload.slot,
     reference_id: payload.reference.reference_id,
-    entity_id: "6BBB34F4-9345-4459-82AE-10991FA35CD2",
+    entity_id: "5B000000-0000-4000-8000-000000000003",
     reference_name: payload.reference.name,
     domain: payload.reference.domain,
     capture_id: "33333333-3333-4333-8333-333333333333",

@@ -88,12 +88,12 @@ export function routedTransport(routes: {
   return { fetchImpl, calls };
 }
 
-/** The happy path: the real redacted captures for Radiohead. */
+/** The happy path: the synthetic Lanternfold captures. */
 export function canonicalTransport(): Transport {
   return routedTransport({
-    search: () => jsonResponse(QLOO_FIXTURES.searchRadiohead),
-    movie: () => jsonResponse(QLOO_FIXTURES.moviesRadiohead),
-    videogame: () => jsonResponse(QLOO_FIXTURES.videogamesRadiohead),
+    search: () => jsonResponse(QLOO_FIXTURES.searchLanternfold),
+    movie: () => jsonResponse(QLOO_FIXTURES.moviesLanternfold),
+    videogame: () => jsonResponse(QLOO_FIXTURES.videogamesLanternfold),
   });
 }
 

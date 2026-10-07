@@ -89,7 +89,7 @@ export function CausalNote(props: CausalNoteProps): React.ReactElement {
 
       <ol className="rt-note__layers">
         <li className="rt-layer">
-          <p className="rt-layer__label">1 · Source · Qloo returned</p>
+          <p className="rt-layer__label">1 · Source · Qloo returned (synthetic stand-in)</p>
           <div className="rt-slip" data-testid="rt-layer-source">
             <div className="rt-slip__top">
               <span className="rt-slip__name">{source.name}</span>
@@ -138,7 +138,7 @@ export function CausalNote(props: CausalNoteProps): React.ReactElement {
       </ol>
 
       <p className="rt-note__foot">
-        Qloo supplied the reference. The interpretation is the creator’s.
+        Synthetic demonstration: the artist, the reference and its evidence are invented stand-ins in Qloo’s response shape, not a Qloo response. The interpretation is the creator’s.
         {causal.witness === null ? "" : " The scene's own check confirmed the change."}
       </p>
 
@@ -159,7 +159,7 @@ export function CausalNote(props: CausalNoteProps): React.ReactElement {
           </div>
           {source.tone === null ? null : (
             <div>
-              <dt>Tone Qloo returned for {source.name}</dt>
+              <dt>Tone in the synthetic capture for {source.name}</dt>
               <dd className="rt-slip__evidence">“{source.tone}”</dd>
             </div>
           )}

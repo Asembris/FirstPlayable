@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
-  MOON_ENTITY_ID,
+  HALCYON_RELAY_ENTITY_ID,
   QLOO_FIXTURES,
-  RADIOHEAD_ENTITY_ID,
+  LANTERNFOLD_ENTITY_ID,
 } from "../../fixtures/qloo";
 import {
   EVIDENCE_CONTEXT_CHARS_PER_CANDIDATE,
@@ -26,7 +26,7 @@ import {
 
 const RETRIEVED_AT = "2026-10-04T10:00:00.000Z";
 
-function searchInput(query = "Radiohead") {
+function searchInput(query = "Lanternfold") {
   const normalizedQuery = normalizeQuery(query);
   return {
     query,
@@ -39,10 +39,10 @@ function searchInput(query = "Radiohead") {
 function referencesInput(domain: "movie" | "videogame") {
   return {
     domain,
-    artistEntityId: RADIOHEAD_ENTITY_ID,
+    artistEntityId: LANTERNFOLD_ENTITY_ID,
     requestFingerprint: referenceFingerprint({
       host: "example.invalid",
-      artistEntityId: RADIOHEAD_ENTITY_ID,
+      artistEntityId: LANTERNFOLD_ENTITY_ID,
       domain,
     }),
     retrievedAt: RETRIEVED_AT,
@@ -69,30 +69,30 @@ function movieRow(overrides: Record<string, unknown> = {}): unknown {
 
 describe("query normalization and cache keys", () => {
   it("folds whitespace and case so one artist cannot cost two calls", () => {
-    expect(normalizeQuery("  RadioHead ")).toBe("radiohead");
-    expect(normalizeQuery("Radio  head")).toBe("radio head");
-    expect(normalizeQuery("Radiohead")).toBe(normalizeQuery("RADIOHEAD"));
+    expect(normalizeQuery("  LanternFold ")).toBe("lanternfold");
+    expect(normalizeQuery("Lantern  fold")).toBe("lantern fold");
+    expect(normalizeQuery("Lanternfold")).toBe(normalizeQuery("LANTERNFOLD"));
   });
 
   it("keys an artist search on the query, the artist type, and the normalizer version", () => {
-    const a = artistSearchFingerprint({ host: "h", normalizedQuery: "radiohead" });
+    const a = artistSearchFingerprint({ host: "h", normalizedQuery: "lanternfold" });
     expect(a).toContain(QLOO_NORMALIZER_VERSION);
-    expect(a).toBe(artistSearchFingerprint({ host: "h", normalizedQuery: "radiohead" }));
+    expect(a).toBe(artistSearchFingerprint({ host: "h", normalizedQuery: "lanternfold" }));
     expect(a).not.toBe(artistSearchFingerprint({ host: "h", normalizedQuery: "metallica" }));
     // A different host is a different key: a base-URL change cannot be served
     // out of a capture taken elsewhere.
-    expect(a).not.toBe(artistSearchFingerprint({ host: "other", normalizedQuery: "radiohead" }));
+    expect(a).not.toBe(artistSearchFingerprint({ host: "other", normalizedQuery: "lanternfold" }));
   });
 
   it("keys a first hop on the host, the artist, the domain, and the parameters", () => {
     const movie = referenceFingerprint({
       host: "h",
-      artistEntityId: RADIOHEAD_ENTITY_ID,
+      artistEntityId: LANTERNFOLD_ENTITY_ID,
       domain: "movie",
     });
     const game = referenceFingerprint({
       host: "h",
-      artistEntityId: RADIOHEAD_ENTITY_ID,
+      artistEntityId: LANTERNFOLD_ENTITY_ID,
       domain: "videogame",
     });
     expect(movie).not.toBe(game);
@@ -102,46 +102,46 @@ describe("query normalization and cache keys", () => {
     expect(movie).toBe(
       referenceFingerprint({
         host: "h",
-        artistEntityId: RADIOHEAD_ENTITY_ID.toLowerCase(),
+        artistEntityId: LANTERNFOLD_ENTITY_ID.toLowerCase(),
         domain: "movie",
       }),
     );
   });
 
   it("gives a reference an application address that is not a Qloo UUID", () => {
-    const id = referenceIdFor("movie", MOON_ENTITY_ID);
+    const id = referenceIdFor("movie", HALCYON_RELAY_ENTITY_ID);
     expect(id).toMatch(/^ref\.mv\.[0-9a-f]{16}$/);
-    expect(id).not.toContain(MOON_ENTITY_ID);
-    expect(id).not.toContain(MOON_ENTITY_ID.toLowerCase());
+    expect(id).not.toContain(HALCYON_RELAY_ENTITY_ID);
+    expect(id).not.toContain(HALCYON_RELAY_ENTITY_ID.toLowerCase());
     // Stable across captures, so an approval survives a refetch.
-    expect(id).toBe(referenceIdFor("movie", MOON_ENTITY_ID.toLowerCase()));
-    expect(id).not.toBe(referenceIdFor("videogame", MOON_ENTITY_ID));
+    expect(id).toBe(referenceIdFor("movie", HALCYON_RELAY_ENTITY_ID.toLowerCase()));
+    expect(id).not.toBe(referenceIdFor("videogame", HALCYON_RELAY_ENTITY_ID));
   });
 });
 
-describe("artist search normalization, against the real captured shape", () => {
-  it("preserves the returned order and the real identity", () => {
-    const snapshot = normalizeArtistSearch(QLOO_FIXTURES.searchRadiohead, searchInput());
+describe("artist search normalization, against the synthetic fixture shape", () => {
+  it("preserves the returned order and the confirmed identity", () => {
+    const snapshot = normalizeArtistSearch(QLOO_FIXTURES.searchLanternfold, searchInput());
     expect(snapshot.candidates).toHaveLength(5);
-    expect(snapshot.candidates[0]?.entity_id).toBe(RADIOHEAD_ENTITY_ID);
-    expect(snapshot.candidates[0]?.name).toBe("Radiohead");
+    expect(snapshot.candidates[0]?.entity_id).toBe(LANTERNFOLD_ENTITY_ID);
+    expect(snapshot.candidates[0]?.name).toBe("Lanternfold");
     expect(snapshot.candidates.map((c) => c.original_rank)).toEqual([1, 2, 3, 4, 5]);
     expect(snapshot.normalizer_version).toBe(QLOO_NORMALIZER_VERSION);
     expect(snapshot.retrieved_at).toBe(RETRIEVED_AT);
   });
 
   it("keeps enough context to disambiguate five artists with similar names", () => {
-    const snapshot = normalizeArtistSearch(QLOO_FIXTURES.searchRadiohead, searchInput());
-    // The real payload returns the band plus four acts named after it.
+    const snapshot = normalizeArtistSearch(QLOO_FIXTURES.searchLanternfold, searchInput());
+    // The synthetic payload returns the band plus four acts named after it.
     const names = snapshot.candidates.map((c) => c.name);
-    expect(names[0]).toBe("Radiohead");
-    expect(names.slice(1).every((name) => name !== "Radiohead")).toBe(true);
-    expect(snapshot.candidates[0]?.short_description).toContain("English rock band");
+    expect(names[0]).toBe("Lanternfold");
+    expect(names.slice(1).every((name) => name !== "Lanternfold")).toBe(true);
+    expect(snapshot.candidates[0]?.short_description).toContain("art-rock band");
     expect(snapshot.candidates[0]?.identity_hints).toContain("musicbrainz");
   });
 
   it("exposes catalogue names only, never a listener count or a popularity score", () => {
-    const snapshot = normalizeArtistSearch(QLOO_FIXTURES.searchRadiohead, searchInput());
+    const snapshot = normalizeArtistSearch(QLOO_FIXTURES.searchLanternfold, searchInput());
     const serialized = JSON.stringify(snapshot);
     expect(serialized).not.toContain("popularity");
     expect(serialized).not.toContain("listeners");
@@ -210,8 +210,8 @@ describe("artist search normalization, against the real captured shape", () => {
   });
 });
 
-describe("first-hop movie normalization, against the real captured shape", () => {
-  const capture = normalizeReferences(QLOO_FIXTURES.moviesRadiohead, referencesInput("movie"));
+describe("first-hop movie normalization, against the synthetic fixture shape", () => {
+  const capture = normalizeReferences(QLOO_FIXTURES.moviesLanternfold, referencesInput("movie"));
 
   it("normalizes all ten returned rows with their original ranks", () => {
     expect(capture.candidates).toHaveLength(10);
@@ -220,31 +220,31 @@ describe("first-hop movie normalization, against the real captured shape", () =>
     ]);
     expect(capture.kind).toBe("movies");
     expect(capture.domain).toBe("movie");
-    expect(capture.artist_entity_id).toBe(RADIOHEAD_ENTITY_ID);
+    expect(capture.artist_entity_id).toBe(LANTERNFOLD_ENTITY_ID);
     expect(capture.duplicates_dropped).toBe(0);
     expect(capture.malformed_rows).toBe(0);
   });
 
-  it("recovers the canonical Moon identity and its duplicate-identity context", () => {
-    const moon = capture.candidates.find((c) => c.name === "Moon");
-    expect(moon?.entity_id).toBe(MOON_ENTITY_ID);
-    expect(moon?.year).toBe(2009);
-    expect(moon?.usable).toBe(true);
-    const text = (moon?.evidence ?? []).map((item) => item.text).join(" ");
+  it("recovers the Halcyon Relay identity and its duplicate-identity context", () => {
+    const halcyon = capture.candidates.find((c) => c.name === "Halcyon Relay");
+    expect(halcyon?.entity_id).toBe(HALCYON_RELAY_ENTITY_ID);
+    expect(halcyon?.year).toBe(2009);
+    expect(halcyon?.usable).toBe(true);
+    const text = (halcyon?.evidence ?? []).map((item) => item.text).join(" ");
     // The context the specification cites comes from a returned field, not
     // from a model and not from this repository.
     expect(text).toMatch(/identical man|duplicate/i);
-    expect(moon?.evidence.some((item) => item.field_path === "properties.plot_summary")).toBe(
+    expect(halcyon?.evidence.some((item) => item.field_path === "properties.plot_summary")).toBe(
       true,
     );
   });
 
-  it("records the first three usable titles the live API actually returned", () => {
+  it("records the first three usable titles in returned order", () => {
     const names = capture.candidates
       .filter((c) => c.usable)
       .slice(0, 3)
       .map((c) => c.name);
-    expect(names).toEqual(["Children of Men", "Being John Malkovich", "Moon"]);
+    expect(names).toEqual(["Ashfall Covenant", "The Borrowed Window", "Halcyon Relay"]);
   });
 
   it("names the observed field path and hashes the full original text", () => {
@@ -314,17 +314,17 @@ describe("first-hop movie normalization, against the real captured shape", () =>
   });
 
   it("builds a card sentence only out of one returned field", () => {
-    const moon = capture.candidates.find((c) => c.name === "Moon")!;
-    const sentence = supportedContextSentence(toPublicCandidate(moon));
+    const halcyon = capture.candidates.find((c) => c.name === "Halcyon Relay")!;
+    const sentence = supportedContextSentence(toPublicCandidate(halcyon));
     expect(sentence).not.toBeNull();
-    const source = moon.evidence.find((item) => item.kind === "plot")!;
+    const source = halcyon.evidence.find((item) => item.kind === "plot")!;
     expect(source.text.startsWith(sentence!.replace(/…$/, ""))).toBe(true);
   });
 });
 
-describe("first-hop videogame normalization, against the real captured shape", () => {
+describe("first-hop videogame normalization, against the synthetic fixture shape", () => {
   const capture = normalizeReferences(
-    QLOO_FIXTURES.videogamesRadiohead,
+    QLOO_FIXTURES.videogamesLanternfold,
     referencesInput("videogame"),
   );
 
@@ -335,7 +335,7 @@ describe("first-hop videogame normalization, against the real captured shape", (
       .filter((c) => c.usable)
       .slice(0, 3)
       .map((c) => c.name);
-    expect(names).toEqual(["Mass Effect 2", "Dragon Age: Origins", "Mass Effect"]);
+    expect(names).toEqual(["Starward Accord II", "Emberfall: Oaths", "Starward Accord"]);
   });
 
   it("derives a year from the returned release date and never invents one", () => {

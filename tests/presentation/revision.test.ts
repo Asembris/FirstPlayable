@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import withMoonJson from "../../docs/phase6-canonical-pair/with-moon.version.json";
-import withoutMoonJson from "../../docs/phase6-canonical-pair/without-moon.version.json";
+import withInfluenceJson from "../../docs/phase6-canonical-pair/with-influence.version.json";
+import withoutInfluenceJson from "../../docs/phase6-canonical-pair/without-influence.version.json";
 import { parseScene } from "../../src/domain/scene";
 import {
   actionLabelIn,
@@ -11,17 +11,17 @@ import {
 } from "../../src/presentation/revision";
 
 /**
- * The revision summary in the creator's words, against the real stored
- * removal of Moon. The stored lines are the engine's; only their reading
+ * The revision summary in the creator's words, against the stored
+ * removal of Halcyon Relay. The stored lines are the engine's; only their reading
  * changes, and a line the reader does not recognise is shown as stored.
  */
 
-const withScene = parseScene(withMoonJson.scene);
-const withoutScene = parseScene(withoutMoonJson.scene);
+const withScene = parseScene(withInfluenceJson.scene);
+const withoutScene = parseScene(withoutInfluenceJson.scene);
 const scenes = [withoutScene, withScene];
-const stored = withoutMoonJson.revision_diff.summary;
+const stored = withoutInfluenceJson.revision_diff.summary;
 
-describe("the stored Moon removal, read for the creator", () => {
+describe("the stored Halcyon Relay removal, read for the creator", () => {
   it("names every changed action by its stored label, never by id", () => {
     const lines = humanizeSummary(stored, scenes);
     expect(lines).toEqual([

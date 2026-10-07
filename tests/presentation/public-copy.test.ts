@@ -11,10 +11,11 @@ import { describe, expect, it } from "vitest";
 const readme = readFileSync(new URL("../../README.md", import.meta.url), "utf8");
 
 describe("README judge-facing claims", () => {
-  it("leads with the real Radiohead → Qloo → Moon example and the direct comparison", () => {
-    expect(readme).toContain("Radiohead → Qloo → Moon");
+  it("leads with the synthetic Lanternfold → Qloo → Halcyon Relay example and the direct comparison", () => {
+    expect(readme).toContain("Lanternfold → Qloo → Halcyon Relay");
+    expect(readme).toContain("not a Qloo response");
     expect(readme).toContain("https://firstplayable.vercel.app/difference?view=compare");
-    const example = readme.indexOf("Radiohead → Qloo → Moon");
+    const example = readme.indexOf("Lanternfold → Qloo → Halcyon Relay");
     expect(example).toBeLessThan(readme.indexOf("## Verification and production evidence"));
     expect(example).toBeLessThan(readme.indexOf("## Architecture"));
   });

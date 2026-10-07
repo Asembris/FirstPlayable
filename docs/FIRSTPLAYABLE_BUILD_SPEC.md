@@ -1122,7 +1122,9 @@ Cache the comparator under a fingerprint of brief/base/model/prompt/schema/appro
 
 ### Observed Qloo evidence
 
-Use **Radiohead**, verified artist UUID `70CAE5BF-2F4C-445C-A3E5-4EDACFC3591C` [E2 §4]. The supplied reports observed these first three movie references: **Children of Men**, **Being John Malkovich**, **Moon**; and these first three games: **Mass Effect 2**, **Dragon Age: Origins**, **Mass Effect** [E1 §4; E2 §5].
+Use **Radiohead**, verified artist UUID *[redacted]* [E2 §4]. The supplied reports observed three first movie references, including **Moon**, and three first games *[other titles redacted]* [E1 §4; E2 §5].
+
+> **Note, 7 October 2026.** Real Qloo identifiers and returned result lists have been redacted from this specification. The committed saved example is now a synthetic deterministic demonstration: its Qloo layer uses the invented artist *Lanternfold* and the invented film *Halcyon Relay* in place of Radiohead and Moon, while its stored scenes, creator decision and diff are unchanged. The live path still uses real Qloo.
 
 The FirstPlayable report specifically records that the Moon packet describes a protagonist who discovers a duplicate of himself [E1 §10]. That is the source context for the proposed interpretation below. The reports do not provide all six reference UUIDs or complete game-context payloads. Recover the existing raw captures from the user's repository or make the two real first-hop calls in phase 3. Never fabricate those IDs, timestamps, or field paths.
 

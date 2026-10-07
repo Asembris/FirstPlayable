@@ -169,7 +169,7 @@ export function ErrorPanel({
         </Link>
       </div>
       <p className="rt-studio__note">
-        The saved example was generated from a real build. It is ready to play.
+        The saved example is a synthetic deterministic demonstration. It is ready to play.
       </p>
     </div>
   );

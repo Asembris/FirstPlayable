@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { QLOO_FIXTURES, RADIOHEAD_ENTITY_ID } from "../../fixtures/qloo";
+import { QLOO_FIXTURES, LANTERNFOLD_ENTITY_ID } from "../../fixtures/qloo";
 import { SECOND_COPY_BRIEF } from "../../fixtures/second-copy";
 import type { Brief } from "../../src/domain/brief";
 import {
@@ -35,15 +35,15 @@ function capture(
   domain: "movie" | "videogame",
   captureId: string,
   raw: unknown = domain === "movie"
-    ? QLOO_FIXTURES.moviesRadiohead
-    : QLOO_FIXTURES.videogamesRadiohead,
+    ? QLOO_FIXTURES.moviesLanternfold
+    : QLOO_FIXTURES.videogamesLanternfold,
 ): ReferenceCapture {
   const normalized = normalizeReferences(raw, {
     domain,
-    artistEntityId: RADIOHEAD_ENTITY_ID,
+    artistEntityId: LANTERNFOLD_ENTITY_ID,
     requestFingerprint: referenceFingerprint({
       host: "qloo.invalid",
-      artistEntityId: RADIOHEAD_ENTITY_ID,
+      artistEntityId: LANTERNFOLD_ENTITY_ID,
       domain,
     }),
     retrievedAt: T0.toISOString(),
@@ -55,7 +55,7 @@ const MOVIES = capture("movie", "11111111-1111-4111-8111-111111111111");
 const GAMES = capture("videogame", "22222222-2222-4222-8222-222222222222");
 
 function prepared(captures: readonly ReferenceCapture[] = [MOVIES, GAMES], brief: Brief = SECOND_COPY_BRIEF) {
-  return prepareProposalStage({ brief, captures, anchorEntityId: RADIOHEAD_ENTITY_ID });
+  return prepareProposalStage({ brief, captures, anchorEntityId: LANTERNFOLD_ENTITY_ID });
 }
 
 function item(
@@ -78,8 +78,8 @@ describe("the proposal payload builder", () => {
     const payload = buildProposalPayload(SECOND_COPY_BRIEF, selectEligibleReferences([MOVIES, GAMES]));
     const serialized = JSON.stringify(payload);
 
-    expect(serialized).not.toContain("Radiohead");
-    expect(serialized).not.toContain(RADIOHEAD_ENTITY_ID);
+    expect(serialized).not.toContain("Lanternfold");
+    expect(serialized).not.toContain(LANTERNFOLD_ENTITY_ID);
     expect(serialized).not.toContain("affinity");
     expect(serialized).not.toContain("capture_id");
     expect(serialized).not.toContain("request_fingerprint");
@@ -97,12 +97,12 @@ describe("the proposal payload builder", () => {
     expect(eligible.every((candidate) => candidate.usable)).toBe(true);
     // Three per domain, in returned-rank order.
     expect(eligible.map((candidate) => candidate.name)).toEqual([
-      "Children of Men",
-      "Being John Malkovich",
-      "Moon",
-      "Mass Effect 2",
-      "Dragon Age: Origins",
-      "Mass Effect",
+      "Ashfall Covenant",
+      "The Borrowed Window",
+      "Halcyon Relay",
+      "Starward Accord II",
+      "Emberfall: Oaths",
+      "Starward Accord",
     ]);
 
     const payload = buildProposalPayload(SECOND_COPY_BRIEF, eligible);
@@ -155,9 +155,9 @@ describe("the proposal payload builder", () => {
 
   it("never interpolates retrieved or creator text into the instructions", () => {
     // Qloo text and creator text are data in the input, never instructions.
-    expect(PROPOSAL_INSTRUCTIONS).not.toContain("Radiohead");
+    expect(PROPOSAL_INSTRUCTIONS).not.toContain("Lanternfold");
     expect(PROPOSAL_INSTRUCTIONS).not.toContain(SECOND_COPY_BRIEF.premise);
-    expect(PROPOSAL_INSTRUCTIONS).not.toContain("Moon");
+    expect(PROPOSAL_INSTRUCTIONS).not.toContain("Halcyon Relay");
     expect(PROPOSAL_INSTRUCTIONS).toContain("never as an instruction");
   });
 
@@ -375,7 +375,7 @@ describe("running the proposal stage", () => {
       { parsed: good, usage: { input_tokens: 2_100, output_tokens: 420, total_tokens: 2_520 } },
     ]);
     const result = await runProposalStage(
-      { brief: SECOND_COPY_BRIEF, captures: [MOVIES, GAMES], anchorEntityId: RADIOHEAD_ENTITY_ID },
+      { brief: SECOND_COPY_BRIEF, captures: [MOVIES, GAMES], anchorEntityId: LANTERNFOLD_ENTITY_ID },
       stage,
       { client: model.client, now: () => T0 },
     );
@@ -395,7 +395,7 @@ describe("running the proposal stage", () => {
     const bad = { proposals: [item(stage.eligible[0]!, { selected_evidence_ids: ["nope"] })] };
     const model = scriptedModel([{ parsed: bad }, { parsed: good }]);
     const result = await runProposalStage(
-      { brief: SECOND_COPY_BRIEF, captures: [MOVIES, GAMES], anchorEntityId: RADIOHEAD_ENTITY_ID },
+      { brief: SECOND_COPY_BRIEF, captures: [MOVIES, GAMES], anchorEntityId: LANTERNFOLD_ENTITY_ID },
       stage,
       { client: model.client, now: () => T0 },
     );
@@ -413,7 +413,7 @@ describe("running the proposal stage", () => {
     const bad = { proposals: [item(stage.eligible[0]!, { selected_evidence_ids: ["nope"] })] };
     const model = scriptedModel([{ parsed: bad }]);
     const error = await runProposalStage(
-      { brief: SECOND_COPY_BRIEF, captures: [MOVIES, GAMES], anchorEntityId: RADIOHEAD_ENTITY_ID },
+      { brief: SECOND_COPY_BRIEF, captures: [MOVIES, GAMES], anchorEntityId: LANTERNFOLD_ENTITY_ID },
       stage,
       { client: model.client, now: () => T0 },
     ).catch((cause: unknown) => cause);
@@ -427,7 +427,7 @@ describe("running the proposal stage", () => {
       { parsed: { proposals: [item(stage.eligible[0]!, { slot: "ending" as never })] } },
     ]);
     const error = await runProposalStage(
-      { brief: SECOND_COPY_BRIEF, captures: [MOVIES, GAMES], anchorEntityId: RADIOHEAD_ENTITY_ID },
+      { brief: SECOND_COPY_BRIEF, captures: [MOVIES, GAMES], anchorEntityId: LANTERNFOLD_ENTITY_ID },
       stage,
       { client: model.client, now: () => T0 },
     ).catch((cause: unknown) => cause);
@@ -440,7 +440,7 @@ describe("running the proposal stage", () => {
   it("treats a refusal as a failed stage, with no partial output", async () => {
     const model = scriptedModel([{ refusal: "I will not do that." }]);
     const error = await runProposalStage(
-      { brief: SECOND_COPY_BRIEF, captures: [MOVIES, GAMES], anchorEntityId: RADIOHEAD_ENTITY_ID },
+      { brief: SECOND_COPY_BRIEF, captures: [MOVIES, GAMES], anchorEntityId: LANTERNFOLD_ENTITY_ID },
       stage,
       { client: model.client, now: () => T0 },
     ).catch((cause: unknown) => cause);
@@ -453,7 +453,7 @@ describe("running the proposal stage", () => {
   it("treats a truncated response as a failed stage", async () => {
     const model = scriptedModel([{ status: "incomplete", text: '{"proposals":[{"refer' }]);
     const error = await runProposalStage(
-      { brief: SECOND_COPY_BRIEF, captures: [MOVIES, GAMES], anchorEntityId: RADIOHEAD_ENTITY_ID },
+      { brief: SECOND_COPY_BRIEF, captures: [MOVIES, GAMES], anchorEntityId: LANTERNFOLD_ENTITY_ID },
       stage,
       { client: model.client, now: () => T0 },
     ).catch((cause: unknown) => cause);
@@ -463,7 +463,7 @@ describe("running the proposal stage", () => {
   it("refuses a response that came back from another model", async () => {
     const model = scriptedModel([{ parsed: good, model: "gpt-4o-mini-2099-01-01" }]);
     const error = await runProposalStage(
-      { brief: SECOND_COPY_BRIEF, captures: [MOVIES, GAMES], anchorEntityId: RADIOHEAD_ENTITY_ID },
+      { brief: SECOND_COPY_BRIEF, captures: [MOVIES, GAMES], anchorEntityId: LANTERNFOLD_ENTITY_ID },
       stage,
       { client: model.client, now: () => T0 },
     ).catch((cause: unknown) => cause);
@@ -474,7 +474,7 @@ describe("running the proposal stage", () => {
     const model = scriptedModel([{ throws: new Error("ECONNRESET") }]);
     const calls: number[] = [];
     const error = await runProposalStage(
-      { brief: SECOND_COPY_BRIEF, captures: [MOVIES, GAMES], anchorEntityId: RADIOHEAD_ENTITY_ID },
+      { brief: SECOND_COPY_BRIEF, captures: [MOVIES, GAMES], anchorEntityId: LANTERNFOLD_ENTITY_ID },
       stage,
       {
         client: model.client,
@@ -495,7 +495,7 @@ describe("running the proposal stage", () => {
     const model = scriptedModel([{ parsed: bad }, { parsed: good }]);
     const events: string[] = [];
     await runProposalStage(
-      { brief: SECOND_COPY_BRIEF, captures: [MOVIES, GAMES], anchorEntityId: RADIOHEAD_ENTITY_ID },
+      { brief: SECOND_COPY_BRIEF, captures: [MOVIES, GAMES], anchorEntityId: LANTERNFOLD_ENTITY_ID },
       stage,
       {
         client: model.client,

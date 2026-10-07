@@ -16,7 +16,7 @@
  */
 
 import { expect } from "vitest";
-import { RADIOHEAD_ENTITY_ID } from "../../../fixtures/qloo";
+import { LANTERNFOLD_ENTITY_ID } from "../../../fixtures/qloo";
 import type { ProjectView, ProposalsResponse, ReferencesResponse } from "../../../src/domain/project";
 import type { PlayableView, SceneVersionSummary } from "../../../src/domain/compile";
 import type { Phase4Deps } from "../../../src/server/api/deps";
@@ -42,7 +42,7 @@ import {
 
 export type Slot = "discovery" | "commitment";
 
-/** One proposal per slot, citing real evidence out of the real captures. */
+/** One proposal per slot, citing evidence out of the synthetic captures. */
 function proposalAnswer(references: ReferencesResponse["references"]): unknown {
   const movie = references.movie.displayed[2] ?? references.movie.displayed[0]!;
   const game = references.videogame.displayed[0]!;
@@ -82,7 +82,7 @@ export type ApprovedProject = {
  * Walks the Phase 3 flow and approves one proposal per requested slot.
  *
  * Two harnesses are created because the proposal script has to cite reference
- * ids that only exist once the real captures have been normalized: the first
+ * ids that only exist once the synthetic captures have been normalized: the first
  * run discovers them, the second replays the whole flow with a script that
  * uses them. Both runs are offline.
  */
@@ -150,7 +150,7 @@ async function walkToReferences(h: Harness): Promise<{
   const search = await handleArtistSearch(
     mutation(`/api/projects/${projectId}/artist-search`, {
       cookie,
-      body: JSON.stringify({ query: "Radiohead" }),
+      body: JSON.stringify({ query: "Lanternfold" }),
     }),
     h.deps,
     projectId,
@@ -167,7 +167,7 @@ async function walkToReferences(h: Harness): Promise<{
       body: JSON.stringify({
         expected_revision: searched.project.revision,
         search_capture_id: searched.search.capture_id,
-        entity_id: RADIOHEAD_ENTITY_ID,
+        entity_id: LANTERNFOLD_ENTITY_ID,
       }),
     }),
     h.deps,
