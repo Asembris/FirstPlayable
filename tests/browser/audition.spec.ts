@@ -172,6 +172,10 @@ test("ask, confirm, score, and see the audience switch reverse a pair", async ({
 
   await page.getByTestId("evidence-movie").locator("summary").click();
   await expect(page.getByTestId("evidence-movie")).toContainText("filter.results.entities=");
+  await expect(page.getByTestId("evidence-movie").locator("summary")).toHaveText("Qloo evidence");
+  await expect(page.getByTestId("evidence-note-movie")).toContainText("Names come from the Qloo search result you confirmed");
+  await expect(page.getByTestId("evidence-movie")).toContainText(`Moon — Qloo ${MOON}`);
+  await expect(page.getByTestId("evidence-movie")).not.toContainText(/synthetic/i);
 
   expect(foreign).toEqual([]);
 });

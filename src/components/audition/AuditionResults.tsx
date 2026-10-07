@@ -54,7 +54,7 @@ function DecisionCard({ decision, saved }: { decision: DecisionResult; saved: bo
       <span className="rt-label">Decision{saved ? ' · fixed example question, no model call' : ''}</span>
       <p className="rt-audition__decision-ask" data-testid="decision-question">{decisionQuestion(decision)}</p>
       <p className="rt-audition__decision-answer" data-testid="decision-answer">{decisionAnswer(decision)}</p>
-      {decision.not_scored.length > 0 && <p className="rt-audition__note">Qloo returned no score for {decision.not_scored.map((c) => c.name).join(', ')}, so it took no part in this call.</p>}
+      {decision.not_scored.length > 0 && <p className="rt-audition__note">{saved ? 'The saved example has no score for' : 'Qloo returned no score for'} {decision.not_scored.map((c) => c.name).join(', ')}, so it took no part in this call.</p>}
       <p className="rt-audition__note" data-testid="decision-basis">
         Evidence: {saved ? `the synthetic saved affinities for ${decision.audience_name} fans, in Qloo’s response shape but not Qloo data,` : `Qloo audience affinity for ${decision.audience_name} fans,`} scored across your confirmed {scope} only. The call: this tool’s fixed rule — a lead needs a gap of at least {decision.threshold} over every other scored comp — not the assistant. Not a measure of project fit, demand or sales, and not statistical significance.
       </p>
@@ -110,23 +110,30 @@ function DomainPanel({ view, activeAudience, savedAt, audiences }: { view: Domai
         </ul>
       )}
       <details className="rt-audition__evidence" data-testid={`evidence-${view.domain}`}>
-        <summary>Qloo evidence</summary>
-        {savedAt && <p className="rt-audition__note">Synthetic saved example dated {savedAt.slice(0, 10)}: every name, entity ID and affinity below is invented in Qloo’s response shape and is not a Qloo response. Replayed locally; no provider calls.</p>}
-        <p className="rt-audition__note">
-          Names come from the Qloo search result you confirmed. Affinity is the value Qloo returned for each audience in
-          one request per audience, filtered to exactly your confirmed {view.domain === "movie" ? "movies" : "games"}.
-        </p>
+        <summary>{savedAt ? "Synthetic evidence" : "Qloo evidence"}</summary>
+        {savedAt ? (
+          <p className="rt-audition__note" data-testid={`evidence-note-${view.domain}`}>
+            Synthetic saved example dated {savedAt.slice(0, 10)}: every name, entity ID, affinity, capture and request record below is a synthetic stand-in written in this application’s production schema. None of it was returned by Qloo. Replayed locally; no provider calls.
+          </p>
+        ) : (
+          <p className="rt-audition__note" data-testid={`evidence-note-${view.domain}`}>
+            Names come from the Qloo search result you confirmed. Affinity is the value Qloo returned for each audience in
+            one request per audience, filtered to exactly your confirmed {view.domain === "movie" ? "movies" : "games"}.
+          </p>
+        )}
         <ul>
-          {audiences.map((a) => <li key={a.entity_id} className="rt-audition__fact">{a.name} — Qloo {a.entity_id}, search result {a.original_rank}, capture {a.search_capture_id}</li>)}
-          {view.comps.map((comp) => (
-            <li key={comp.entity_id} className="rt-audition__fact">
-              {comp.name} — Qloo {comp.entity_id}, search result {comp.original_rank}, capture {comp.search_capture_id}
+          {[...audiences, ...view.comps].map((entity) => (
+            <li key={entity.entity_id} className="rt-audition__fact" data-testid="evidence-entity">
+              {savedAt
+                ? `${entity.name} — synthetic entity id ${entity.entity_id}, synthetic search result ${entity.original_rank}, synthetic capture ${entity.search_capture_id}`
+                : `${entity.name} — Qloo ${entity.entity_id}, search result ${entity.original_rank}, capture ${entity.search_capture_id}`}
             </li>
           ))}
           {view.evidence.map((item) => (
-            <li key={item.audience_entity_id} className="rt-audition__fact">
-              {item.request} · {item.cache} · {item.retrieved_at}
-              {item.capture_id === null ? "" : ` · capture ${item.capture_id}`}
+            <li key={item.audience_entity_id} className="rt-audition__fact" data-testid="evidence-request">
+              {savedAt
+                ? `Synthetic request record: ${item.request} · dated ${item.retrieved_at}${item.capture_id === null ? "" : ` · synthetic capture ${item.capture_id}`}`
+                : `${item.request} · ${item.cache} · ${item.retrieved_at}${item.capture_id === null ? "" : ` · capture ${item.capture_id}`}`}
               {item.missing_entity_ids.length > 0 && ` · no score returned for ${item.missing_entity_ids.map((id) => names.get(id) ?? id).join(", ")}`}
             </li>
           ))}
