@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
-import record from '../../fixtures/audition/canonical.json';
+import record from '../../fixtures/qloo/audition/canonical.json';
+import { auditContrast } from './support/contrast';
 const radiohead = record.audiences[0]!.entity_id;
 const kendrick = record.audiences[1]!.entity_id;
 
@@ -86,4 +87,42 @@ test('failed session keeps live actions disabled and can be retried', async ({ p
   await page.getByRole('button', { name: 'Saved example', exact: true }).click();
   await expect(page.getByTestId('audition-results')).toBeVisible();
   expect(attempts).toBe(2);
+});
+
+test('main landing routes to saved audition first and keeps the thesis and real specimen', async ({ page, baseURL }) => {
+  const api: string[] = [];
+  page.on('request', (r) => { if (!r.url().startsWith(baseURL!) || new URL(r.url()).pathname.startsWith('/api/')) api.push(r.url()); });
+  await page.goto('/');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Choose the comps. Switch the audience. See what changes.');
+  await expect(page.locator('.rt-landing__lede')).toContainText('Qloo’s taste data');
+  await expect(page.getByTestId('rt-door-play')).toHaveAttribute('href', '/audition');
+  await expect(page.getByTestId('rt-door-create')).toHaveAttribute('href', '/audition?mode=live');
+  const specimen = page.getByTestId('rt-specimen');
+  await expect(specimen).toContainText('Moon / Arrival: reversed');
+  await expect(specimen.locator('.rt-specimen__cell').nth(0)).toContainText('1. Moon');
+  await expect(specimen.locator('.rt-specimen__cell').nth(1)).toContainText('1. Arrival');
+  await page.keyboard.press('Tab'); await page.keyboard.press('Tab');
+  await expect(page.getByTestId('rt-door-play')).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(/\/audition$/);
+  await expect(page.getByTestId('audition-results')).toBeVisible();
+  expect(api).toEqual([]);
+});
+
+
+for (const width of [1440, 390]) {
+  test(`judge comparison text remains readable at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/audition');
+    const failures = await auditContrast(page);
+    expect(failures).toEqual([]);
+  });
+}
+
+test('mobile landing opens the saved product without horizontal pan', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.getByTestId('rt-door-play').click();
+  await expect(page.getByTestId('audition-results')).toBeVisible();
 });

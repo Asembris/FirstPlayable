@@ -7,7 +7,7 @@ import withoutMoonJson from "../../docs/phase6-canonical-pair/without-moon.versi
 import { auditContrast } from "./support/contrast";
 
 /**
- * Browser behaviour of the Phase 6 judge path: landing → Play → Compare on
+ * Browser behaviour of the preserved Phase 6 scene path: Play → Compare on
  * the real canonical pair.
  *
  * Expected strings are read from the stored version files, never retyped, so
@@ -71,54 +71,6 @@ async function openCompare(page: Page): Promise<void> {
 }
 
 const row = (page: Page, id: string): Locator => page.getByTestId(`rt-row-${id}`);
-
-test.describe("Phase 6 · landing", () => {
-  test("exposes both judge paths as whole-row links, with the saved-build truth label", async ({
-    page,
-  }) => {
-    await page.goto("/");
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-      "Choose the influences. Play the consequences.",
-    );
-    // Who it is for, what they test, and the decision it serves.
-    await expect(page.locator(".rt-landing__lede")).toContainText("For narrative-game creators");
-    await expect(page.locator(".rt-landing__lede")).toContainText("decide whether to keep it");
-    const play = page.getByTestId("rt-door-play");
-    const create = page.getByTestId("rt-door-create");
-    await expect(play).toHaveAttribute("href", "/difference");
-    await expect(create).toHaveAttribute("href", "/studio");
-    await expect(play).toContainText("Play the difference");
-    await expect(play).toContainText("Saved example · generated from a real build");
-    await expect(play).toContainText("Plays instantly · nothing is generated live");
-    await expect(create).toContainText("Create your scene");
-
-    // The whole row is the target, and it is reachable by keyboard.
-    const box = await boxOf(play);
-    expect(box.height).toBeGreaterThanOrEqual(72);
-    await page.keyboard.press("Tab");
-    await page.keyboard.press("Tab");
-    await expect(play).toBeFocused();
-
-    const text = await page.locator("body").innerText();
-    expect(text).not.toMatch(RAW_ID);
-    expect(text).not.toMatch(/fixture|database|model|infrastructure/i);
-  });
-
-  test("its specimen is the real pair's changed row", async ({ page }) => {
-    await page.goto("/");
-    const specimen = page.getByTestId("rt-specimen");
-    await expect(specimen).toContainText(scene.title);
-    await expect(specimen).toContainText(label("core.give"));
-    await expect(specimen).toContainText("Locked · 2 new requirements");
-  });
-
-  test("Play the difference opens the saved example", async ({ page }) => {
-    await page.goto("/");
-    await page.getByTestId("rt-door-play").click();
-    await expect(page).toHaveURL(/\/difference/);
-    await expect(page.getByTestId("rt-title")).toHaveText(scene.title);
-  });
-});
 
 test.describe("Phase 6 · canonical Play", () => {
   test("renders the stored Moon version at the recorded point, verbatim", async ({

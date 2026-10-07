@@ -27,7 +27,7 @@ import "./rehearsal/landing.css";
 export const metadata: Metadata = {
   title: "FirstPlayable",
   description:
-    "Choose the influences. Play the consequences. Approve one cultural influence for a scene, then play it with and without that influence.",
+    "Choose the comps. Switch the audience. See what changes. Choose your game’s comps and compare how Qloo’s taste data orders them for two artist audiences.",
 };
 
 export const viewport: Viewport = {
