@@ -1,13 +1,14 @@
 # FirstPlayable — build status
 
 **Completed phases:** Phase 1 through **Phase 6**. Phase 6 — creative-tool
-polish and the canonical judge experience — is **complete**, and production is
-**frozen for submission** at commit
-`f15ed67dc7557ff5c2a4dc9e64776c5b310aa14c` (6 October 2026). See "Phase 6 —
-production closure" at the end of this file.
+polish and the canonical judge experience — is **complete**. Production was
+frozen at `f15ed67` on 6 October 2026, and the final submission pass on
+7 October 2026 deployed `e44ab202d8a84db33e5679b3b340614c748ada70`, which
+changes judge-facing copy only. See "Final submission readiness" at the end of
+this file.
 
 **Production:** `https://firstplayable.vercel.app` · deployed verifier
-**118 / 118** · unit tests **761** · browser tests **133** · judge path verified
+**118 / 118** · unit tests **767** · browser tests **134** · judge path verified
 end to end.
 
 Phase 5 was deployed to production and locked on 5 October 2026; its record,
@@ -1984,3 +1985,84 @@ closure records only the facts listed above.
 
 **Phase 6 is complete, and production is frozen for submission at
 `f15ed67`.**
+
+---
+
+# Final submission readiness — 7 October 2026
+
+A bounded pass on `main`, after the Phase 6 closure above, which is unchanged.
+It changed judge-facing copy and documentation only. No file under
+`src/engine/`, `src/domain/`, `src/server/`, `supabase/`, or `.github/` changed,
+and the model, prompts, validator, Qloo operations, budget cap, and canonical
+pair are exactly those of Phase 6.
+
+### Commits
+
+| Commit | Change |
+|---|---|
+| `2a55d4a` | The saved example names Radiohead (`Radiohead → Qloo → Moon`) and credits its edit and approval to the creator rather than the visitor; the landing says who it is for and the decision it serves |
+| `e44ab20` | README leads with who it helps, the decision, the real example, and the direct comparison link; the Qloo claim is narrowed to the discovery source and recorded relationship it supplies |
+
+The artist's name is read from a constant keyed by the stored capture's Qloo
+entity id (`70CAE5BF-…`), recorded in `PHASE6_CANONICAL_PAIR.md`; a record with
+any other artist refuses to load. The stored pair files were not changed.
+
+### Gates
+
+| Gate | Result |
+|---|---|
+| `npm run typecheck`, `npm run check:fixtures`, `npm run build` | **PASS** |
+| `npm test` | **PASS — 767** in 40 files (761 + 6 new) |
+| `npm run test:e2e` | **PASS — 134** (133 + 1 new) |
+| `npm run check:secrets` | **PASS** — 255 tracked files, 481 built assets |
+| CI, Security (full-history TruffleHog, dependency audit), CodeQL on `e44ab20` | **PASS** |
+
+### Production deployment
+
+| Fact | Value |
+|---|---|
+| Deployed commit | `e44ab202d8a84db33e5679b3b340614c748ada70` |
+| Deployment | `dpl_6MQF8RRpK9rVbSh3K6URm27rss6s`, `READY`, target `production` |
+| Production URL | `https://firstplayable.vercel.app`, unchanged; no new project, domain, alias, setting, or variable |
+| Upload set (`vercel deploy --prod --dry --json`) | 257 entries: 253 tracked files and 4 empty directory entries (`phase6-handoff`, `probes/out`, `supabase/.temp`, `test-results`; size 0). No `.env`, no file from `phase6-handoff/` or `probes/out/` |
+| `/.env`, `/.env.local`, `/phase6-handoff/…`, `/probes/out/…` on production | `404` |
+
+### Production verification
+
+| Check | Result |
+|---|---|
+| Deployed verifier, run 1 | **117 / 118** — the shared-link playthrough reached its ending but saw 2 requests during play; the URLs were not captured |
+| Deployed verifier, run 2, identical command | **118 / 118** — the same check saw **0** requests |
+| `tests/browser/phase6.spec.ts` against production | 26 / 27 on the first run; the failure was the auto-split timing test, which then passed **5 / 5** alone |
+| Landing, `/difference?view=compare`, `/studio`, unknown share link at 1440 and 390 px | Render with no horizontal overflow; the comparison names Radiohead and says "creator approved" |
+| Unknown share token | API `404`, page shows the unavailable state; no session `401` |
+
+Neither failure reproduced, and no code changed between the runs; both are
+recorded as transient, not as passes.
+
+### Model budget — cap left at $0.60
+
+| Measure | Value |
+|---|---|
+| Spend before this pass | $0.1052 of $0.60, over about 162 model calls recorded in `operations` since the cap row was created |
+| Two full verifier runs (creation, approval, build, revisions, ending copy, share, export) | $0.0152, about **$0.0076** each |
+| Spend after this pass | $0.1204; **$0.4796 remaining** |
+| A typical fresh creation (proposals, base, one or two modules) | about $0.003 |
+| Worst reasonable session under the current limits (every stage repaired once, eight revisions with a repair each, about 24 calls) | at most about $0.025 |
+
+The remaining budget covers about 60 verifier-sized sessions, or about 19
+worst-case ones, so the cap was **not** changed.
+
+### The retired test session
+
+The failed `fix/module-semantic-output` experiment (not merged) reused the
+anonymous owner session of the canonical project, and its cookie had been
+exposed during that local experiment. The session row was **expired in place**
+(`expires_at` set to the retirement time), the application's own lapse rule,
+so the cookie no longer authenticates. The row was not deleted, because
+deleting a session cascades to its projects; the canonical project and both
+stored versions remain, and both versions' scenes were re-read equal to
+`docs/phase6-canonical-pair/`. The cookie value was removed from the local,
+git-ignored probe state files. No cookie value appears anywhere in git history.
+
+**FirstPlayable is ready for judging at `e44ab20`.**

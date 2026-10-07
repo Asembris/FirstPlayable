@@ -282,21 +282,24 @@ Gameplay is local: a complete playthrough, every ending, and a reset make
 ## Verification and production evidence
 
 [![Production](https://img.shields.io/badge/production-firstplayable.vercel.app-141518?logo=vercel&logoColor=white)](https://firstplayable.vercel.app)
-[![Unit tests](https://img.shields.io/badge/unit_tests-761_passing-2F6F44)](#commands)
-[![Browser tests](https://img.shields.io/badge/browser_tests-133_passing-2F6F44)](#commands)
+[![Unit tests](https://img.shields.io/badge/unit_tests-767_passing-2F6F44)](#commands)
+[![Browser tests](https://img.shields.io/badge/browser_tests-134_passing-2F6F44)](#commands)
 [![Node 22.22](https://img.shields.io/badge/node-22.22-3A3D43?logo=nodedotjs&logoColor=white)](.nvmrc)
 
 Production at [firstplayable.vercel.app](https://firstplayable.vercel.app) is
-built from the frozen commit
-[`f15ed67`](https://github.com/Asembris/FirstPlayable/commit/f15ed67dc7557ff5c2a4dc9e64776c5b310aa14c).
+built from the final submission commit
+[`e44ab20`](https://github.com/Asembris/FirstPlayable/commit/e44ab202d8a84db33e5679b3b340614c748ada70).
+Its application code is the Phase 6 frozen build (`f15ed67`) plus judge-facing
+copy only; the engine, compiler, schemas, model, and Qloo layer are unchanged.
 
 | Gate | Result |
 |---|---|
 | Deployed verifier against production (`npm run verify:deployment`) | **118 / 118 PASS** |
 | Judge path on production, end to end | **Verified** |
-| Unit tests (`npm test`, Vitest) | **761 PASS** |
-| Browser tests (`npm run test:e2e`, Playwright) | **133 PASS** |
+| Unit tests (`npm test`, Vitest) | **767 PASS** |
+| Browser tests (`npm run test:e2e`, Playwright) | **134 PASS** |
 | CI on every pull request and push to `main` | Typecheck, unit tests, fixtures, build, secret scan, browser gate — with no repository secret |
+| Security and CodeQL on every push to `main` | Full-history TruffleHog scan, dependency audit, and CodeQL for JavaScript/TypeScript and workflows |
 
 The deployed verifier drives the real application over HTTP and in a real
 browser. Among its checks:
