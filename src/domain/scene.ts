@@ -182,6 +182,29 @@ export const OnActionSchema = z.strictObject({
   dialogue_id: IdSchema.nullable(),
 });
 
+/**
+ * One response of a dilemma: the module action that takes it, and the terminal
+ * action it secures.
+ */
+export const DilemmaResponseSchema = z.strictObject({
+  action_id: IdSchema,
+  secures_action_id: IdSchema,
+});
+
+/**
+ * A module's declaration that two of its actions are a dilemma.
+ *
+ * Pure structure, no prose: every word the player reads stays in the module's
+ * dialogue, labels, and gate text, where the narrative budget already counts
+ * it. Optional, and absent from every module written before it existed, so
+ * those modules parse and hash exactly as they did.
+ */
+export const DilemmaSchema = z.strictObject({
+  /** The hook whose line states the tension the two responses answer. */
+  tension_hook_id: IdSchema,
+  responses: z.tuple([DilemmaResponseSchema, DilemmaResponseSchema]),
+});
+
 export const InfluenceModuleSchema = z.strictObject({
   slot: SlotSchema,
   approval_id: IdSchema,
@@ -190,6 +213,7 @@ export const InfluenceModuleSchema = z.strictObject({
   dialogue: z.array(DialogueNodeSchema).max(BUDGET.module_dialogue),
   gates: z.array(GateSchema).max(BUDGET.module_gates),
   on_actions: z.array(OnActionSchema).max(BUDGET.module_on_actions),
+  dilemma: DilemmaSchema.optional(),
 });
 
 export const PortSchema = z.strictObject({
@@ -317,6 +341,8 @@ export type ImportantObject = z.infer<typeof ImportantObjectSchema>;
 export type CoreScene = z.infer<typeof CoreSceneSchema>;
 export type Gate = z.infer<typeof GateSchema>;
 export type OnAction = z.infer<typeof OnActionSchema>;
+export type DilemmaResponse = z.infer<typeof DilemmaResponseSchema>;
+export type Dilemma = z.infer<typeof DilemmaSchema>;
 export type InfluenceModule = z.infer<typeof InfluenceModuleSchema>;
 export type Port = z.infer<typeof PortSchema>;
 export type InfluenceReference = z.infer<typeof InfluenceReferenceSchema>;

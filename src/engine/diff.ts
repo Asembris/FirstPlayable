@@ -65,6 +65,7 @@ export function mechanicalSignature(scene: Scene): unknown {
             effects: signEffects(hook.effects),
             has_dialogue: hook.dialogue_id !== null,
           })),
+          dilemma: module.dilemma ?? null,
         },
       ];
     }),

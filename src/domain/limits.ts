@@ -84,6 +84,32 @@ export const FIXED_PORTS = {
   },
 } as const;
 
+/**
+ * The consequential dilemma (the one influence shape that is not a
+ * prerequisite).
+ *
+ * A dilemma is two mutually exclusive responses to one tension. Each response
+ * secures one of the three existing endings and, by excluding the other
+ * response, forfeits the ending that response would have secured. The trades
+ * are the three unordered pairs of terminal actions, so a dilemma reuses the
+ * existing endings and never adds one.
+ *
+ * Only the commitment slot may declare one, and a dilemma's gates may sit only
+ * on the two terminal actions it declares as its stakes. That is the single
+ * exception to the fixed port table, and it is not a port: `scene.ports` is
+ * unchanged, and the validator grants it only to a declared stake whose
+ * behaviour the graph analysis then proves (`src/engine/dilemma.ts`).
+ */
+export const DILEMMA_SLOT = "commitment" as const;
+
+export const DILEMMA_TRADES = {
+  return_or_keep: ["core.give", "core.withhold"],
+  return_or_walk_away: ["core.give", "core.leave"],
+  keep_or_walk_away: ["core.withhold", "core.leave"],
+} as const;
+
+export const DILEMMA_STAKE_ACTIONS = ["core.give", "core.withhold", "core.leave"] as const;
+
 export const REQUIRED_CORE_ACTIONS = {
   "core.inspect": "inspect",
   "core.ask_context": "ask",

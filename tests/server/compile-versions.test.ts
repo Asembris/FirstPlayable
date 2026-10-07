@@ -114,7 +114,7 @@ describe("the immutable scene version", () => {
     expect(row.compiler_identifier).toBe("fp-compiler-4.2");
     expect(row.prompt_identifier).toBe("fp-prompts-4.2");
     expect(row.schema_identifier).toBe("fp-model-schema-4.2");
-    expect(row.validator_identifier).toBe("fp-engine-validator-1.0");
+    expect(row.validator_identifier).toBe("fp-engine-validator-1.1");
     expect(row.operation_id).toBe(status.operation_id);
 
     const summary = row.validation_summary as {

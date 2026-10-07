@@ -45,6 +45,7 @@ import {
 import type { ExploreLimits, SceneGraph } from "./graph";
 import { exploreScene, isStrictSubset, sameSet } from "./graph";
 import { findMechanicalWitness, sceneHashes } from "./diff";
+import { checkDilemmaGraph, checkDilemmaStructure, isDeclaredStake } from "./dilemma";
 import type { MechanicalWitness, WitnessLimits } from "./diff";
 import { trueFlags } from "./interpreter";
 
@@ -148,6 +149,7 @@ export function validateScene(
       });
     } else {
       graph = checkGraph(view, explored.graph, findings);
+      checkDilemmas(scene, view, explored.graph, findings);
       if (settings.checkModuleWitnesses) {
         checkModuleWitnesses(scene, settings, findings, witnesses);
       }
@@ -338,7 +340,10 @@ function checkAuthority(
     for (const gate of module.gates) {
       if (!view.actionById.has(gate.action_id)) {
         add("GATE_ACTION_UNRESOLVED", `gate "${gate.id}" targets unknown action "${gate.action_id}"`, gate.id);
-      } else if (!port.gate_action_ids.includes(gate.action_id)) {
+      } else if (
+        !port.gate_action_ids.includes(gate.action_id) &&
+        !isDeclaredStake(module, gate.action_id)
+      ) {
         add(
           "GATE_PORT_INVALID",
           `the ${module.slot} slot may not gate "${gate.action_id}"`,
@@ -364,6 +369,10 @@ function checkAuthority(
       }
     }
   }
+
+  /* --- dilemma declarations --- */
+
+  for (const module of scene.modules) checkDilemmaStructure(module, add);
 
   /* --- unattached variables --- */
 
@@ -841,6 +850,24 @@ function checkGraph(
     consequential_edges: consequentialEdges,
     edges: graph.edges.length,
   };
+}
+
+/** Layer B for every declared dilemma, over the same explored graph. */
+function checkDilemmas(
+  scene: Scene,
+  view: ComposedView,
+  graph: SceneGraph,
+  findings: Finding[],
+): void {
+  const add = (code: string, message: string, where: string | null = null): void => {
+    findings.push({ code, layer: "graph", message, where });
+  };
+  for (const module of scene.modules) {
+    // Layer A already reported any unresolved declaration, and the graph only
+    // runs when layer A was clean, so this resolves without a second report.
+    const dilemma = checkDilemmaStructure(module, () => undefined);
+    if (dilemma !== null) checkDilemmaGraph(dilemma, view, graph, add);
+  }
 }
 
 function availabilityChanged(

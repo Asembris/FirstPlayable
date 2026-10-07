@@ -36,12 +36,16 @@ export const SCHEMA_IDENTIFIER = "fp-model-schema-4.2";
  * same `validateScene`, `validateSceneSubsets`, and `findMechanicalWitness`
  * decide every candidate.
  *
- * It is deliberately **unchanged** by both Phase 4 amendments, while the three
- * identifiers above moved twice. That is the claim "the validator was not
- * weakened to accommodate generated output", recorded where a stored version
- * can be read back and checked against it.
+ * It was deliberately **unchanged** by both Phase 4 amendments. `1.1` is the
+ * consequential dilemma, and it is recorded here because it is a real change:
+ * the validator gained the dilemma's structural and graph checks
+ * (`src/engine/dilemma.ts`), and it grants exactly one exemption from the fixed
+ * port table — a gate on a terminal action that a commitment module declares as
+ * a dilemma stake. A module that declares no dilemma is judged by precisely the
+ * rules of `1.0`, which is why every version stored before this still
+ * revalidates unchanged.
  */
-export const VALIDATOR_IDENTIFIER = "fp-engine-validator-1.0";
+export const VALIDATOR_IDENTIFIER = "fp-engine-validator-1.1";
 
 /**
  * The ending-copy prompt and its model-facing contract.
