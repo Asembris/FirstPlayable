@@ -1,0 +1,201 @@
+/*
+ * Comp audition vertical slice. Built on the `.rt` tokens: serif for the
+ * creator's question, sans for the instrument, mono for facts from Qloo.
+ * The revision accent is reserved for one thing here: a reversal, the change
+ * this surface exists to show.
+ */
+
+.rt-audition {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 32px 16px 64px;
+}
+
+.rt-audition__head {
+  margin-bottom: 24px;
+}
+
+.rt-audition__title {
+  font-family: var(--rt-font-scene);
+  font-weight: 400;
+  font-size: 32px;
+  line-height: 1.15;
+  margin: 12px 0 8px;
+}
+
+.rt-audition__lede,
+.rt-audition__note {
+  color: var(--rt-ink-2);
+  max-width: 68ch;
+}
+
+.rt-audition__note {
+  font-size: 12px;
+}
+
+.rt-audition__ask,
+.rt-audition__slots,
+.rt-audition__results {
+  background: var(--rt-sheet);
+  border: 1px solid var(--rt-rule);
+  border-radius: var(--rt-radius);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.rt-audition__label,
+.rt-audition__kind {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--rt-pencil);
+}
+
+.rt-audition__kind {
+  display: inline;
+}
+
+.rt-audition__input {
+  display: block;
+  width: 100%;
+  margin: 6px 0 10px;
+  font-family: var(--rt-font-scene);
+  font-size: 18px;
+  padding: 8px 10px;
+  border: 1px solid var(--rt-slip-edge);
+  border-radius: var(--rt-radius);
+  background: var(--rt-paper);
+  color: var(--rt-ink);
+}
+
+.rt-audition__transcript {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+  color: var(--rt-ink-2);
+}
+
+.rt-audition__failure {
+  color: var(--rt-ink);
+  border-left: 3px solid var(--rt-ink);
+  padding-left: 10px;
+}
+
+.rt-audition__h2 {
+  font-family: var(--rt-font-scene);
+  font-weight: 400;
+  font-size: 24px;
+  margin: 0 0 6px;
+}
+
+.rt-audition__h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 6px;
+}
+
+.rt-audition__h4 {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.rt-audition__slot {
+  border: 0;
+  border-top: 1px solid var(--rt-rule);
+  padding: 10px 0;
+  margin: 0;
+}
+
+.rt-audition__query {
+  font-family: var(--rt-font-scene);
+  font-size: 15px;
+}
+
+.rt-audition__candidates {
+  list-style: none;
+  padding: 0;
+  margin: 4px 0 0;
+}
+
+.rt-audition__hint,
+.rt-audition__fact {
+  font-family: var(--rt-font-fact);
+  font-size: 11px;
+  color: var(--rt-pencil);
+}
+
+.rt-audition__domains {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.rt-audition__panel {
+  border-top: 1px solid var(--rt-ink);
+  padding-top: 10px;
+  min-width: 0;
+}
+
+.rt-audition__headline {
+  font-family: var(--rt-font-scene);
+  font-size: 18px;
+  margin: 0 0 10px;
+}
+
+.rt-audition__columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.rt-audition__status {
+  font-size: 12px;
+  color: var(--rt-pencil);
+  margin: 2px 0 6px;
+}
+
+.rt-audition__order {
+  padding-left: 18px;
+  margin: 0;
+}
+
+.rt-audition__order li {
+  margin-bottom: 4px;
+}
+
+.rt-audition__lead .rt-audition__name {
+  font-weight: 600;
+}
+
+.rt-audition__close {
+  font-size: 11px;
+  color: var(--rt-pencil);
+}
+
+.rt-audition__pairs {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+}
+
+.rt-audition__pair--reversal strong {
+  color: var(--rt-rev-ink);
+}
+
+.rt-audition__evidence {
+  margin-top: 12px;
+}
+
+.rt-audition__evidence ul {
+  padding-left: 16px;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 760px) {
+  .rt-audition__domains,
+  .rt-audition__columns {
+    grid-template-columns: 1fr;
+  }
+}
