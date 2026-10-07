@@ -476,7 +476,7 @@ function revisionConflict(currentRevision: number): Error {
  * header or body, but it is still mapped rather than returned so the response
  * cannot acquire a field the frozen envelope does not have.
  */
-function toPublicError(error: unknown): unknown {
+export function toPublicError(error: unknown): unknown {
   if (!(error instanceof QlooError)) return error;
   switch (error.code) {
     case "QLOO_UNAUTHORIZED":

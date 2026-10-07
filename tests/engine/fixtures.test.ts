@@ -216,12 +216,14 @@ describe("no external service reaches the engine or the player", () => {
    * The frozen route surface, phase by phase. Phase 5 adds exactly its five
    * locked routes of specification section 11 and nothing else.
    */
-  it("declares only the phase 2 to phase 5 route subset", () => {
+  it("declares only the phase 2 to phase 5 route subset and the two comp audition routes", () => {
     const routes = walk(join(repoRoot, "src", "app"))
       .filter((file) => /route\.(ts|tsx)$/.test(file))
       .map((file) => relative(join(repoRoot, "src", "app"), file).split("\\").join("/"))
       .sort();
     expect(routes).toEqual([
+      "api/audition/interpret/route.ts",
+      "api/audition/score/route.ts",
       "api/operations/[id]/advance/route.ts",
       "api/operations/[id]/route.ts",
       "api/projects/[id]/activate/route.ts",
