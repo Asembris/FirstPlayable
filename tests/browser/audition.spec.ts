@@ -51,6 +51,7 @@ function interpretResponse(): InterpretResponse {
     applied: ids.map((id) => ({ op: "add", slot_id: id, kind: SEARCH[id]!.kind, query: SEARCH[id]!.query })),
     skipped: [],
     clarification: null,
+    decision: null,
     searches: ids.map((id, index) => ({
       slot_id: id,
       kind: SEARCH[id]!.kind,
@@ -107,6 +108,7 @@ function scoreResponse(state: AuditionState): ScoreResponse {
       videogame: null,
     },
     unconfirmed: [],
+    decision: null,
     upstream_calls: 2,
   };
 }

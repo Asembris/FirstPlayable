@@ -1,3 +1,4 @@
+import { decideForeground } from '@/domain/audition-decision';
 import { domainAuditionView } from '@/domain/audition-result';
 /**
  * The comp audition's two routes:
@@ -22,6 +23,9 @@ import { domainAuditionView } from '@/domain/audition-result';
  *   * Every displayed name is copied from that capture, never from the body.
  *   * Every affinity is read from a stored insights capture, and ordering,
  *     closeness, and reversals come from `compareAudiences` alone.
+ *   * A creator's decision question ("which movie comp should I foreground
+ *     for Radiohead fans?") is answered by `decideForeground` from that same
+ *     comparison. The agent only recorded the question.
  *
  * Task state lives in the request, not in the database: there are no
  * accounts, projects, or saved auditions in this slice. What persists is the
@@ -347,6 +351,7 @@ export async function handleInterpret(request: Request, deps: Phase3Deps): Promi
       applied: edited.applied,
       skipped: [...edited.skipped, ...searched.failures],
       clarification: edited.clarification,
+      decision: edited.decision,
       searches: searched.searches,
       model_calls: resolving ? 0 : 1,
       upstream_calls: searched.upstream,
@@ -472,9 +477,14 @@ export async function handleScore(request: Request, deps: Phase3Deps): Promise<R
       domains[domain] = view;
     }
 
+    const asked = input.state.decision_request;
+    const decisionAudience = asked === undefined ? undefined : audiences.find((a) => a.slot_id === asked.audience_slot_id);
+    if (asked !== undefined && decisionAudience === undefined) throw appErrors.refused("Confirm the audience your decision question names.");
+
     const response: ScoreResponse = {
       audiences: [audienceA, audienceB],
       domains,
+      decision: asked === undefined ? null : decideForeground(asked, domains[asked.domain], decisionAudience!),
       unconfirmed: input.state.slots
         .filter((slot) => slot.confirmed_entity_id === null)
         .map((slot) => ({ slot_id: slot.slot_id, kind: slot.kind, query: slot.query })),

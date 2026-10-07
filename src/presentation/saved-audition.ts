@@ -1,6 +1,7 @@
 /** Synthetic demonstration captures, in Qloo response shapes, are bundled server-side. Replay makes no provider call. */
 import record from '../../fixtures/qloo/audition/canonical.json';
 import { CompScoreCaptureSchema } from '../domain/audition';
+import { decideForeground } from '../domain/audition-decision';
 import { domainAuditionView } from '../domain/audition-result';
 import type { ConfirmedEntityView, ScoreResponse } from '../domain/audition-view';
 const entityView = (entity: (typeof record.comps)[number] | (typeof record.audiences)[number]): ConfirmedEntityView => ({
@@ -16,5 +17,7 @@ export function savedAuditionResult(): ScoreResponse {
     const captures = audiences.map((a) => CompScoreCaptureSchema.parse(record.captures.find((c) => c.domain === domain && c.audience_entity_id === a.entity_id)));
     domains[domain] = domainAuditionView(domain, comps, audiences, [captures[0]!, captures[1]!]);
   }
-  return { audiences, domains, unconfirmed: [], upstream_calls: 0 };
+  // A fixed example question, answered by the same deterministic code as the live path.
+  const decision = decideForeground({ action: 'foreground_comp', domain: 'movie', audience_slot_id: audiences[0].slot_id }, domains.movie, audiences[0]);
+  return { audiences, domains, unconfirmed: [], decision, upstream_calls: 0 };
 }
