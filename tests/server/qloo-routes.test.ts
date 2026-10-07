@@ -67,6 +67,39 @@ async function confirmedProject(
 }
 
 describe("POST /api/projects/:id/artist-search", () => {
+  it("refetches an expired search into a new immutable row and then reuses that fresh row", async () => {
+    const h = harness();
+    const cookie = await owner(h);
+    const projectId = await project(h, cookie);
+    const request = () => handleArtistSearch(mutation(`/api/projects/${projectId}/artist-search`, {
+      cookie, body: JSON.stringify({ query: "Radiohead" }),
+    }), h.deps, projectId);
+    const first = await body<SearchResponse>(await request());
+    const oldId = first.search.capture_id!;
+    const before = await h.gateway.findQlooCapturesByIds([oldId]);
+    h.advance(24 * 60 * 60 * 1000 + 1000);
+    const response = await request();
+    expect(response.status).toBe(200);
+    const fresh = await body<SearchResponse>(response);
+    expect(fresh.search.capture_id).not.toBe(oldId);
+    expect(h.transport.calls).toHaveLength(2);
+    expect(await h.gateway.findQlooCapturesByIds([oldId])).toEqual(before);
+    const [row] = await h.gateway.findQlooCapturesByIds([fresh.search.capture_id!]);
+    expect(row?.captured_at).toBe(fresh.search.retrieved_at);
+    expect(Date.parse(row!.cache_expires_at)).toBeGreaterThan(h.now().getTime());
+    expect((await h.gateway.findQlooCaptureByFingerprint(row!.request_fingerprint))?.id).toBe(row?.id);
+    const repeat = await body<SearchResponse>(await request());
+    expect(repeat.search.capture_id).toBe(fresh.search.capture_id);
+    expect(repeat.search.cache).toBe("cached");
+    expect(h.transport.calls).toHaveLength(2);
+    // An old search can still validate the historical creator choice.
+    const confirmation = await handleConfirmAnchor(mutation(`/api/projects/${projectId}/anchor`, {
+      method: "PUT", cookie, body: JSON.stringify({ expected_revision: first.project.revision,
+        search_capture_id: oldId, entity_id: RADIOHEAD_ENTITY_ID }),
+    }), h.deps, projectId);
+    expect(confirmation.status).toBe(200);
+  });
+
   it("returns every returned artist, in order, and selects none of them", async () => {
     const h = harness();
     const cookie = await owner(h);

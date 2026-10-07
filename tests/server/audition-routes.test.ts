@@ -461,3 +461,59 @@ describe("route security and validation", () => {
     expect(h.model!.requests).toHaveLength(0);
   });
 });
+
+
+describe("audition capture refresh provenance", () => {
+  it("refetches expired comp searches with new IDs, retaining old confirmations and fresh cache hits", async () => {
+    const h = setup();
+    const { cookie, interpreted } = await opened(h);
+    const ids = interpreted.state.slots.map((slot) => slot.search_capture_id!);
+    const before = await h.gateway.findQlooCapturesByIds(ids);
+    const calls = h.transport.calls.length;
+    h.advance(24 * 60 * 60 * 1000 + 1000);
+    const response = await interpret(h, cookie, "Compare the same references again", { slots: [] });
+    expect(response.status).toBe(200);
+    const fresh = await body<InterpretResponse>(response);
+    expect(fresh.state.slots.every((slot) => !ids.includes(slot.search_capture_id!))).toBe(true);
+    expect(fresh.upstream_calls).toBe(5);
+    expect(await h.gateway.findQlooCapturesByIds(ids)).toEqual(before);
+    const rows = await h.gateway.findQlooCapturesByIds(fresh.state.slots.map((slot) => slot.search_capture_id!));
+    for (const row of rows) {
+      expect(row.captured_at).toBe((row.results as { retrieved_at: string }).retrieved_at);
+      expect(Date.parse(row.cache_expires_at)).toBeGreaterThan(h.now().getTime());
+      expect((await h.gateway.findQlooCaptureByFingerprint(row.request_fingerprint))?.id).toBe(row.id);
+    }
+    const repeated = await body<InterpretResponse>(await interpret(h, cookie, "Compare again", { slots: [] }));
+    expect(repeated.upstream_calls).toBe(0);
+    expect(repeated.state.slots.map((slot) => slot.search_capture_id)).toEqual(fresh.state.slots.map((slot) => slot.search_capture_id));
+    expect(h.transport.calls).toHaveLength(calls + 5);
+    expect((await score(h, cookie, confirmFirst(interpreted))).status).toBe(200);
+  });
+
+  it("refetches expired scores into their own rows and reuses them without Qloo calls", async () => {
+    const h = setup();
+    const { cookie, interpreted } = await opened(h);
+    const state = confirmFirst(interpreted);
+    const first = await body<ScoreResponse>(await score(h, cookie, state));
+    const ids = first.domains.movie!.evidence.map((e) => e.capture_id!);
+    const before = await h.gateway.findQlooCapturesByIds(ids);
+    h.advance(7 * 24 * 60 * 60 * 1000 + 1000);
+    const response = await score(h, cookie, state);
+    expect(response.status).toBe(200);
+    const fresh = await body<ScoreResponse>(response);
+    expect(fresh.upstream_calls).toBe(2);
+    expect(fresh.domains.movie!.evidence.every((e) => !ids.includes(e.capture_id!))).toBe(true);
+    expect(await h.gateway.findQlooCapturesByIds(ids)).toEqual(before);
+    for (const evidence of fresh.domains.movie!.evidence) {
+      const [row] = await h.gateway.findQlooCapturesByIds([evidence.capture_id!]);
+      expect(row?.captured_at).toBe(evidence.retrieved_at);
+      expect(Date.parse(row!.cache_expires_at)).toBeGreaterThan(h.now().getTime());
+      expect((await h.gateway.findQlooCaptureByFingerprint(row!.request_fingerprint))?.id).toBe(row?.id);
+    }
+    const calls = h.transport.calls.length;
+    const repeat = await body<ScoreResponse>(await score(h, cookie, state));
+    expect(repeat.upstream_calls).toBe(0);
+    expect(repeat.domains.movie!.evidence.map((e) => e.capture_id)).toEqual(fresh.domains.movie!.evidence.map((e) => e.capture_id));
+    expect(h.transport.calls).toHaveLength(calls);
+  });
+});
