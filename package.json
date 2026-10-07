@@ -2,7 +2,7 @@
   "name": "firstplayable",
   "version": "0.1.0",
   "private": true,
-  "description": "FirstPlayable — playable-pitch studio. It compiles approved cultural influences into a validated, playable one-room scene the creator activates.",
+  "description": "FirstPlayable — audition game comps across cultural audiences with Qloo-powered affinity evidence and bounded agentic decisions.",
   "license": "MIT",
   "engines": {
     "node": ">=22.12.0"
