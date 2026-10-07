@@ -56,9 +56,7 @@ export function AuditionClient({ savedResult, example, startLive = false }: { sa
     return () => { active = false; };
   }, [live, sessionAttempt]);
 
-  const confirmedAudiences = state.slots.filter((s) => s.kind === "audience" && s.confirmed_entity_id !== null).length;
-  const confirmedComps = state.slots.filter((s) => s.kind !== "audience" && s.confirmed_entity_id !== null).length;
-  const canScore = confirmedAudiences === 2 && confirmedComps > 0 && busy === null && session === 'ready';
+  const canScore = scorable(state) && busy === null && session === 'ready';
 
   async function send(): Promise<void> {
     const text = message.trim();
@@ -87,10 +85,13 @@ export function AuditionClient({ savedResult, example, startLive = false }: { sa
       ),
       ...value.skipped.map((s) => `Agent: skipped — ${s}`),
       ...(value.clarification === null ? [] : [`Agent asks: ${value.clarification}`]),
+      ...(value.decision === null ? [] : [`Agent: noted your decision question — which ${value.decision.domain === "movie" ? "movie" : "game"} comp to foreground for the “${value.state.slots.find((s) => s.slot_id === value.decision!.audience_slot_id)?.query}” audience. Qloo scores and this tool’s fixed rule answer it, not the agent.`]),
     ];
     setTranscript((previous) => [...previous, ...lines]);
     setMessage("");
     setResult(null);
+    // A decision question over an already-confirmed set is answered at once.
+    if (value.decision !== null && scorable(value.state)) await score(value.state);
   }
 
   function confirm(slot: AuditionSlot, entityId: string | null): void {
@@ -101,11 +102,10 @@ export function AuditionClient({ savedResult, example, startLive = false }: { sa
     setResult(null);
   }
 
-  async function score(): Promise<void> {
-    if (!canScore) return;
+  async function score(scored: AuditionState): Promise<void> {
     setBusy("score");
     setFailure(null);
-    const response = await postJson<ScoreResponse>("/api/audition/score", { state });
+    const response = await postJson<ScoreResponse>("/api/audition/score", { state: scored });
     setBusy(null);
     if (!response.ok) setFailure(response.failure);
     else setResult(response.value);
@@ -159,6 +159,7 @@ export function AuditionClient({ savedResult, example, startLive = false }: { sa
         >
           {busy === "interpret" ? "Searching…" : "Send"}
         </button>
+        <p className="rt-audition__note">You can also ask a bounded decision, such as “Which movie comp should I foreground for Radiohead fans?”</p>
         {transcript.length > 0 && (
           <ol className="rt-audition__transcript" data-testid="audition-transcript">
             {transcript.map((line, index) => (
@@ -186,7 +187,7 @@ export function AuditionClient({ savedResult, example, startLive = false }: { sa
             className="rt-button rt-button--primary"
             data-testid="audition-score"
             disabled={!canScore}
-            onClick={() => void score()}
+            onClick={() => { if (canScore) void score(state); }}
           >
             {busy === "score" ? "Scoring with Qloo…" : "Score with Qloo"}
           </button>
@@ -200,6 +201,11 @@ export function AuditionClient({ savedResult, example, startLive = false }: { sa
       </>}
     </main>
   );
+}
+
+function scorable(state: AuditionState): boolean {
+  const confirmed = state.slots.filter((s) => s.confirmed_entity_id !== null);
+  return confirmed.filter((s) => s.kind === "audience").length === 2 && confirmed.some((s) => s.kind !== "audience");
 }
 
 function SlotRow({

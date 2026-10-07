@@ -13,6 +13,12 @@ test('saved judge path uses zero API calls, switches reading and exposes synthet
   await expect(page.getByText('Saved example · synthetic demonstration data · no live calls')).toBeVisible();
   const movies = page.getByTestId('panel-movie');
   const games = page.getByTestId('panel-videogame');
+  const decision = page.getByTestId('audition-decision');
+  await expect(decision).toContainText('fixed example question, no model call');
+  await expect(page.getByTestId('decision-question')).toHaveText(`Which movie comp should I foreground for ${record.audiences[0]!.name} fans?`);
+  await expect(page.getByTestId('decision-answer')).toHaveText('For this audience signal, Quiet Orbit is the clear lead among your confirmed movie comps.');
+  await expect(page.getByTestId('decision-basis')).toContainText('synthetic saved affinities');
+  await expect(page.getByTestId('decision-basis')).not.toContainText('Qloo audience affinity');
   await expect(movies.locator('[data-verdict="reversal"]')).toHaveCount(2);
   await expect(games.locator('[data-verdict="reversal"]')).toHaveCount(1);
   await expect(games.locator('[data-verdict="holds"]')).toContainText('Orrery Vale / Starward Accord: same order');

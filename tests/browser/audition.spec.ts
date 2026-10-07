@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import type { Page, Route } from "@playwright/test";
 import { clarificationSlotContext } from "../../src/domain/audition";
 import { compareAudiences } from "../../src/domain/audition-compare";
+import { decideForeground } from "../../src/domain/audition-decision";
 import type { AuditionState, InterpretResponse } from "../../src/domain/audition";
 import type { ConfirmedEntityView, ScoreResponse } from "../../src/domain/audition-view";
 
@@ -88,27 +89,26 @@ function scoreResponse(state: AuditionState): ScoreResponse {
     scores(audiences[0]!),
     scores(audiences[1]!),
   );
+  const movie = {
+    domain: "movie" as const,
+    comps,
+    // Maps do not survive JSON; the rendered comparison never needs them.
+    comparison,
+    evidence: audiences.map((a) => ({
+      audience_entity_id: a.entity_id,
+      capture_id: CAPTURE(9),
+      retrieved_at: "2026-10-07T10:00:01.000Z",
+      cache: "live" as const,
+      request: `GET /v2/insights?filter.type=urn:entity:movie&signal.interests.entities=${a.entity_id}&filter.results.entities=${[ARRIVAL, MOON].join(",")}&take=2`,
+      missing_entity_ids: [],
+    })),
+  };
+  const asked = state.decision_request;
   return {
     audiences: [audiences[0]!, audiences[1]!],
-    domains: {
-      movie: {
-        domain: "movie",
-        comps,
-        // Maps do not survive JSON; the rendered comparison never needs them.
-        comparison,
-        evidence: audiences.map((a) => ({
-          audience_entity_id: a.entity_id,
-          capture_id: CAPTURE(9),
-          retrieved_at: "2026-10-07T10:00:01.000Z",
-          cache: "live" as const,
-          request: `GET /v2/insights?filter.type=urn:entity:movie&signal.interests.entities=${a.entity_id}&filter.results.entities=${[ARRIVAL, MOON].join(",")}&take=2`,
-          missing_entity_ids: [],
-        })),
-      },
-      videogame: null,
-    },
+    domains: { movie, videogame: null },
     unconfirmed: [],
-    decision: null,
+    decision: asked === undefined ? null : decideForeground(asked, asked.domain === "movie" ? movie : null, audiences.find((a) => a.slot_id === asked.audience_slot_id)!),
     upstream_calls: 2,
   };
 }
@@ -238,4 +238,34 @@ test("pending Alien clarification survives browser state and confirmation, then 
   await expect(page.getByTestId("audition-transcript")).toContainText("You: Add the movie Arrival");
   expect(requests[3]!.state.pending_clarification).toBeUndefined();
   expect(requests[3]!.state.slots.map(slot => slot.query)).toEqual(["Dune", "Alien"]);
+});
+
+test("a bounded decision question is answered by the scored comparison, not the agent", async ({ page }) => {
+  const { scored } = await install(page);
+  await page.goto("/audition?mode=live");
+  await page.getByTestId("audition-send").click();
+  for (const slot of ["s1", "s2", "s3", "s4"]) await page.getByTestId(`confirm-${slot}-1`).check();
+  await page.getByTestId("audition-score").click();
+  await expect(page.getByTestId("audition-results")).toBeVisible();
+  await expect(page.getByTestId("audition-decision")).toHaveCount(0);
+
+  await page.route("**/api/audition/interpret", (route) => {
+    const { state } = route.request().postDataJSON() as { state: AuditionState };
+    const decision = { action: "foreground_comp" as const, domain: "movie" as const, audience_slot_id: "s3" };
+    const value: InterpretResponse = { ...interpretResponse(), state: { ...state, decision_request: decision }, applied: [], searches: [], decision, upstream_calls: 0 };
+    return route.fulfill({ json: value });
+  });
+  await page.getByTestId("audition-message").fill("Which movie comp should I foreground for Radiohead fans?");
+  await page.getByTestId("audition-send").click();
+  await expect(page.getByTestId("audition-transcript")).toContainText("noted your decision question");
+
+  const card = page.getByTestId("audition-decision");
+  await expect(card).toHaveAttribute("data-status", "clear_lead");
+  await expect(page.getByTestId("decision-question")).toHaveText("Which movie comp should I foreground for Radiohead fans?");
+  await expect(page.getByTestId("decision-answer")).toHaveText("For this audience signal, Moon is the clear lead among your confirmed movie comps.");
+  await expect(page.getByTestId("decision-basis")).toContainText("Qloo audience affinity for Radiohead fans");
+  await expect(page.getByTestId("decision-basis")).toContainText("not the assistant");
+  await expect(card).not.toContainText(/best comp/i);
+  expect(scored.at(-1)?.decision_request).toEqual({ action: "foreground_comp", domain: "movie", audience_slot_id: "s3" });
+  await expect(page.getByTestId(`ranking-movie-${RADIOHEAD}`)).toHaveAttribute("data-active", "true");
 });

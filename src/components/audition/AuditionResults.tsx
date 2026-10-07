@@ -2,18 +2,20 @@
 import { useMemo, useState } from 'react';
 import { AUDITION_CLOSE_THRESHOLD } from '@/domain/audition';
 import type { AudienceRanking, PairComparison } from '@/domain/audition-compare';
+import { decisionAnswer, decisionQuestion, type DecisionResult } from '@/domain/audition-decision';
 import type { DomainAuditionView, ScoreResponse } from '@/domain/audition-view';
 const DOMAIN_LABEL = { movie: 'Movies', videogame: 'Games' } as const;
 function formatAffinity(value: number): string { return value.toFixed(3); }
 export function AuditionResults({ result, savedAt }: { result: ScoreResponse; savedAt?: string | undefined }): React.JSX.Element {
   const [a, b] = result.audiences;
-  const [activeAudience, setActiveAudience] = useState(a.entity_id);
+  const [activeAudience, setActiveAudience] = useState(result.decision?.audience_entity_id ?? a.entity_id);
   return (
     <section className="rt-audition__results" aria-label="Audience comparison" data-testid="audition-results">
       <h2 className="rt-audition__h2">
         {a.name} vs {b.name}
       </h2>
       <p className="rt-audition__summary">Movies: {result.domains.movie?.comparison.reversals ?? 0} reversals · Games: {result.domains.videogame?.comparison.reversals ?? 0} reversals</p>
+      {result.decision !== null && <DecisionCard decision={result.decision} saved={savedAt !== undefined} />}
       <div className="rt-audition__switch" role="group" aria-label="Switch audience">
         {result.audiences.map((audience) => <button type="button" className="rt-button" key={audience.entity_id} aria-pressed={activeAudience === audience.entity_id} onClick={() => setActiveAudience(audience.entity_id)}>{audience.name} fans</button>)}
       </div>
@@ -41,6 +43,21 @@ export function AuditionResults({ result, savedAt }: { result: ScoreResponse; sa
           Not scored (unconfirmed): {result.unconfirmed.map((u) => `“${u.query}”`).join(", ")}
         </p>
       )}
+    </section>
+  );
+}
+
+function DecisionCard({ decision, saved }: { decision: DecisionResult; saved: boolean }): React.JSX.Element {
+  const scope = decision.domain === 'movie' ? 'movies' : 'games';
+  return (
+    <section className="rt-audition__decision" aria-label="Decision" data-testid="audition-decision" data-status={decision.outcome.status}>
+      <span className="rt-label">Decision{saved ? ' · fixed example question, no model call' : ''}</span>
+      <p className="rt-audition__decision-ask" data-testid="decision-question">{decisionQuestion(decision)}</p>
+      <p className="rt-audition__decision-answer" data-testid="decision-answer">{decisionAnswer(decision)}</p>
+      {decision.not_scored.length > 0 && <p className="rt-audition__note">Qloo returned no score for {decision.not_scored.map((c) => c.name).join(', ')}, so it took no part in this call.</p>}
+      <p className="rt-audition__note" data-testid="decision-basis">
+        Evidence: {saved ? `the synthetic saved affinities for ${decision.audience_name} fans, in Qloo’s response shape but not Qloo data,` : `Qloo audience affinity for ${decision.audience_name} fans,`} scored across your confirmed {scope} only. The call: this tool’s fixed rule — a lead needs a gap of at least {decision.threshold} over every other scored comp — not the assistant. Not a measure of project fit, demand or sales, and not statistical significance.
+      </p>
     </section>
   );
 }
