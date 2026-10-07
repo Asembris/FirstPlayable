@@ -208,7 +208,7 @@ test("pending Alien clarification survives browser state and confirmation, then 
     value.applied = [];
     if (requests.length === 2) {
       value.clarification = question;
-      value.state.pending_clarification = { message, question, slot_context: clarificationSlotContext(value.state.slots) };
+      value.state.pending_clarification = { action: { op: "add", slot_id: null, query: "Alien" }, ambiguity: "media_type", choices: ["movie", "videogame"], question, slot_context: clarificationSlotContext(value.state.slots) };
     }
     if (requests.length >= 3) {
       value.state.slots = [...input.state.slots];
@@ -229,7 +229,7 @@ test("pending Alien clarification survives browser state and confirmation, then 
   await page.getByTestId("audition-message").fill("The film");
   await page.getByTestId("audition-send").click();
   await expect(page.getByTestId("audition-transcript")).toContainText("You: The film");
-  expect(requests[2]!.state.pending_clarification).toMatchObject({ message, question });
+  expect(requests[2]!.state.pending_clarification).toMatchObject({ action: { op: "add", slot_id: null, query: "Alien" }, question });
   expect(requests[2]!.state.slots[0]!.confirmed_entity_id).toBe(MOON);
   await page.getByTestId("audition-message").fill("Add the movie Arrival");
   await page.getByTestId("audition-send").click();
