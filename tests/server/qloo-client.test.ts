@@ -126,10 +126,12 @@ describe("the three frozen request shapes", () => {
     expect(url.pathname).toBe("/v2/insights");
   });
 
-  it("documents the same three shapes it sends", () => {
+  it("documents the same shapes it sends", () => {
     const shapes = frozenRequestShapes(ENV.baseUrl);
     expect(Object.keys(shapes).sort()).toEqual([
       "artist_search",
+      "comp_scores",
+      "comp_search",
       "references_movie",
       "references_videogame",
     ]);

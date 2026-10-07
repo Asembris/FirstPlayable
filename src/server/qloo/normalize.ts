@@ -74,6 +74,8 @@ export const QLOO_NORMALIZE_CODES = {
   DOMAIN_MISMATCH: "QLOO_DOMAIN_MISMATCH",
   /** A returned entity type contradicted the requested search type. */
   SEARCH_TYPE_MISMATCH: "QLOO_SEARCH_TYPE_MISMATCH",
+  /** A candidate-filtered response returned an entity that was not requested. */
+  UNREQUESTED_ENTITY: "QLOO_UNREQUESTED_ENTITY",
 } as const;
 
 export type QlooNormalizeCode =

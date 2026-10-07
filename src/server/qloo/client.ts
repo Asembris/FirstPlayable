@@ -1,10 +1,12 @@
 /**
- * The three-operation Qloo adapter (specification section 6, "Typed surface").
+ * The Qloo adapter (specification section 6, "Typed surface").
  *
  * ```ts
  * resolveArtist(query)
  * getMovieReferences(artistId)
  * getVideogameReferences(artistId)
+ * searchComps(domain, query)                          // comp audition
+ * scoreComps({ audienceEntityId, domain, candidateEntityIds })  // comp audition
  * ```
  *
  * That is the whole surface. There is no `request(path, params)`, no caller
@@ -19,6 +21,9 @@
  * GET {base}/search?query=<encoded>&types=urn:entity:artist&take=5
  * GET {base}/v2/insights?filter.type=urn:entity:movie&signal.interests.entities=<uuid>&take=10
  * GET {base}/v2/insights?filter.type=urn:entity:videogame&signal.interests.entities=<uuid>&take=10
+ * GET {base}/search?query=<encoded>&types=urn:entity:movie|urn:entity:videogame&take=5
+ * GET {base}/v2/insights?filter.type=<domain type>&signal.interests.entities=<audience uuid>
+ *     &filter.results.entities=<confirmed uuid,...>&take=<count>
  * X-Api-Key: <server secret>
  * ```
  *
@@ -43,6 +48,7 @@ import { qlooEnv, type QlooEnv } from "../config";
 import {
   ARTIST_SEARCH_TAKE,
   type ArtistSearchSnapshot,
+  isQlooUuid,
   QLOO_ARTIST_TYPE,
   QLOO_DOMAIN_FILTER_TYPE,
   type QlooDomain,
@@ -50,6 +56,14 @@ import {
   type ReferenceCapture,
   REFERENCES_TAKE,
 } from "@/domain/qloo";
+import { COMP_SEARCH_TAKE, type CompScoreCapture, type CompSearchSnapshot } from "@/domain/audition";
+import {
+  canonicalCandidateIds,
+  compScoreFingerprint,
+  compSearchFingerprint,
+  normalizeCompScores,
+  normalizeCompSearch,
+} from "./audition";
 import { QUOTA_HEADERS } from "./contracts";
 import {
   artistSearchFingerprint,
@@ -539,6 +553,124 @@ export function getVideogameReferences(
   return getReferences("videogame", artistEntityId, deps);
 }
 
+// ---------------------------------------------------------------------------
+// The comp audition's two frozen operations
+// ---------------------------------------------------------------------------
+
+export type CompSearchResult = {
+  snapshot: Omit<CompSearchSnapshot, "capture_id" | "cache">;
+  diagnostics: QlooCallDiagnostics;
+};
+
+/**
+ * `GET /search?query=<encoded>&types=urn:entity:movie|urn:entity:videogame&take=5`
+ *
+ * The domain chooses the type; there is no caller-supplied type string. Like
+ * {@link resolveArtist}, it returns candidates and never picks one: the
+ * creator confirms.
+ */
+export async function searchComps(
+  domain: QlooDomain,
+  query: string,
+  deps: QlooClientDeps = {},
+): Promise<CompSearchResult> {
+  const env = deps.env ?? qlooEnv();
+  const requestFingerprint = compSearchFingerprint({
+    host: env.host,
+    domain,
+    normalizedQuery: normalizeQuery(query),
+  });
+  const url =
+    `${env.baseUrl}/search?query=${encodeURIComponent(query)}` +
+    `&types=${encodeURIComponent(QLOO_DOMAIN_FILTER_TYPE[domain])}` +
+    `&take=${COMP_SEARCH_TAKE}`;
+
+  const { outcome, diagnostics } = await getJson(url, {
+    label: domain === "movie" ? "comp_search_movie" : "comp_search_videogame",
+    timeoutMs: ARTIST_SEARCH_TIMEOUT_MS,
+    env,
+    deps,
+  });
+
+  try {
+    return {
+      snapshot: normalizeCompSearch(outcome.body, {
+        domain,
+        query,
+        requestFingerprint,
+        retrievedAt: (deps.now ?? (() => new Date()))().toISOString(),
+      }),
+      diagnostics,
+    };
+  } catch (cause) {
+    wrapNormalizeError(cause, diagnostics.attempts, diagnostics.quota);
+  }
+}
+
+export type CompScoreResult = {
+  capture: Omit<CompScoreCapture, "capture_id" | "cache">;
+  diagnostics: QlooCallDiagnostics;
+};
+
+/**
+ * `GET /v2/insights?filter.type=<domain type>&signal.interests.entities=<audience>
+ *  &filter.results.entities=<confirmed ids>&take=<count>`
+ *
+ * One audience, one domain, exactly the confirmed candidate ids. Movies and
+ * videogames are never requested together, and the response is refused if it
+ * returns an entity outside the requested set.
+ */
+export async function scoreComps(
+  input: { audienceEntityId: string; domain: QlooDomain; candidateEntityIds: readonly string[] },
+  deps: QlooClientDeps = {},
+): Promise<CompScoreResult> {
+  const env = deps.env ?? qlooEnv();
+  if (!isQlooUuid(input.audienceEntityId)) {
+    throw new QlooError(QLOO_ERROR_CODES.QLOO_BAD_REQUEST, "the audience id is not a Qloo UUID", 0);
+  }
+  let ids: string[];
+  try {
+    ids = canonicalCandidateIds(input.candidateEntityIds);
+  } catch (cause) {
+    wrapNormalizeError(cause, 0, null);
+  }
+  const audience = input.audienceEntityId.toUpperCase();
+  const requestFingerprint = compScoreFingerprint({
+    host: env.host,
+    domain: input.domain,
+    audienceEntityId: audience,
+    candidateIds: ids,
+  });
+  const url =
+    `${env.baseUrl}/v2/insights` +
+    `?filter.type=${encodeURIComponent(QLOO_DOMAIN_FILTER_TYPE[input.domain])}` +
+    `&signal.interests.entities=${encodeURIComponent(audience)}` +
+    `&filter.results.entities=${encodeURIComponent(ids.join(","))}` +
+    `&take=${ids.length}`;
+
+  const { outcome, diagnostics } = await getJson(url, {
+    label: input.domain === "movie" ? "comp_scores_movie" : "comp_scores_videogame",
+    timeoutMs: INSIGHTS_TIMEOUT_MS,
+    env,
+    deps,
+  });
+
+  try {
+    return {
+      capture: normalizeCompScores(outcome.body, {
+        domain: input.domain,
+        audienceEntityId: audience,
+        candidateIds: ids,
+        requestFingerprint,
+        retrievedAt: (deps.now ?? (() => new Date()))().toISOString(),
+      }),
+      diagnostics,
+    };
+  } catch (cause) {
+    wrapNormalizeError(cause, diagnostics.attempts, diagnostics.quota);
+  }
+}
+
 /** The exact request URLs, for the evidence record and for contract tests. */
 export function frozenRequestShapes(baseUrl: string): Record<string, string> {
   return {
@@ -550,5 +682,11 @@ export function frozenRequestShapes(baseUrl: string): Record<string, string> {
     references_videogame:
       `GET ${baseUrl}/v2/insights?filter.type=${QLOO_DOMAIN_FILTER_TYPE.videogame}` +
       `&signal.interests.entities=<uuid>&take=${REFERENCES_TAKE}`,
+    comp_search:
+      `GET ${baseUrl}/search?query=<encoded>&types=<${QLOO_DOMAIN_FILTER_TYPE.movie}|` +
+      `${QLOO_DOMAIN_FILTER_TYPE.videogame}>&take=${COMP_SEARCH_TAKE}`,
+    comp_scores:
+      `GET ${baseUrl}/v2/insights?filter.type=<domain type>&signal.interests.entities=<audience uuid>` +
+      `&filter.results.entities=<confirmed uuid,...>&take=<count>`,
   };
 }
