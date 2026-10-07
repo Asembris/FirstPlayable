@@ -5,9 +5,17 @@ import {
   SECOND_COPY_BRIEF,
   SECOND_COPY_DISCOVERY_V1,
 } from "../../../fixtures/second-copy";
+import type { Scene } from "../../../src/domain/scene";
 import { validateScene } from "../../../src/engine/validate";
+import {
+  assembleScene,
+  dilemmaModuleFromModelOutput,
+  sceneApprovalAllowlist,
+  worldFromBrief,
+} from "../../../src/server/compile/assemble";
 import { verifyCandidate } from "../../../src/server/compile/verify";
 import { sceneChangedFrom } from "../../../src/server/db/versions";
+import { COMMITMENT_APPROVAL, validCommitmentOutput } from "../../server/support/compile-fixtures";
 
 /**
  * A deterministic stand-in for this application's own Phase 4 API, installed
@@ -35,10 +43,36 @@ export const VERSION_ID = "9e3e4f60-7c8d-4ea0-9012-334455667788";
 
 const APPROVAL_ID = "approval_discovery_v1";
 
+/**
+ * The fixture foundation with one commitment dilemma, wired by the production
+ * assembler from a model-shaped output. Nothing about it is hand-written here.
+ */
+function dilemmaScene(): { scene: Scene; approvalIds: string[] } {
+  const assembled = assembleScene({
+    brief: SECOND_COPY_BRIEF,
+    inputHash: "e".repeat(48),
+    core: SECOND_COPY_BASE.core,
+    generatedTitle: SECOND_COPY_BASE.title,
+    modules: [
+      dilemmaModuleFromModelOutput(
+        validCommitmentOutput(),
+        "commitment",
+        COMMITMENT_APPROVAL.approval_id,
+        worldFromBrief(SECOND_COPY_BRIEF),
+      ),
+    ],
+    approvals: [COMMITMENT_APPROVAL],
+  });
+  if (!assembled.ok) throw new Error(JSON.stringify(assembled.findings));
+  return { scene: assembled.scene, approvalIds: sceneApprovalAllowlist([COMMITMENT_APPROVAL]) };
+}
+
 /** Computed once, by the real validator and the real witness search. */
-function playableFor(state: "pending" | "active") {
-  const scene = SECOND_COPY_DISCOVERY_V1;
-  const verdict = verifyCandidate(scene, SECOND_COPY_BRIEF, [APPROVAL_ID]);
+function playableFor(state: "pending" | "active", dilemma = false) {
+  const { scene, approvalIds } = dilemma
+    ? dilemmaScene()
+    : { scene: SECOND_COPY_DISCOVERY_V1, approvalIds: [APPROVAL_ID] };
+  const verdict = verifyCandidate(scene, SECOND_COPY_BRIEF, approvalIds);
   if (!verdict.ok) {
     throw new Error(
       `the phase 4 browser fixture must be valid: ${JSON.stringify(verdict.summary.finding_codes)}`,
@@ -78,6 +112,8 @@ export type Phase4Options = {
   interruptedAfter?: Stage;
   /** Answer every project read as another browser would see it. */
   foreign?: boolean;
+  /** Serve a build whose influence is a commitment dilemma. */
+  dilemma?: boolean;
 };
 
 export type Phase4State = { calls: string[] };
@@ -212,8 +248,8 @@ export async function installPhase4Api(
   }
 
   function playable() {
-    if (pendingVersion !== null) return playableFor("pending");
-    if (activeVersion !== null) return playableFor("active");
+    if (pendingVersion !== null) return playableFor("pending", options.dilemma === true);
+    if (activeVersion !== null) return playableFor("active", options.dilemma === true);
     return null;
   }
 

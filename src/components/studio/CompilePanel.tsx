@@ -38,8 +38,13 @@ import type {
 import type { ApprovedInfluence } from "@/domain/influence";
 import type { ProjectView } from "@/domain/project";
 import { numberWord } from "@/presentation/rehearsal";
-import { allEndingsReachable, BUILD_STATE_TEXT, observationsOf } from "@/presentation/review";
-import type { Observation } from "@/presentation/review";
+import {
+  allEndingsReachable,
+  BUILD_STATE_TEXT,
+  dilemmaAuditionOf,
+  observationsOf,
+} from "@/presentation/review";
+import type { DilemmaAudition, Observation } from "@/presentation/review";
 import { ScenePlayer } from "../player/ScenePlayer";
 import { PhraseText } from "../rehearsal/CausalNote";
 import { InlineFailure, postJson, type RequestFailure } from "./shared";
@@ -523,6 +528,59 @@ function ObservedColumn({
   );
 }
 
+/**
+ * The two directions a dilemma offers, side by side, so the creator can choose
+ * which to develop. Read from the engine's replay of this build; the creator
+ * still plays both below before deciding anything.
+ */
+function DilemmaCard({ audition }: { audition: DilemmaAudition }): React.JSX.Element {
+  return (
+    <section className="rt-dilemma" data-testid="dilemma-audition" aria-labelledby="dilemma-heading">
+      <h4 className="rt-review__column-head" id="dilemma-heading">
+        Which dramatic direction should I develop?
+      </h4>
+      <p className="rt-review__after">
+        {audition.routeLabels.length === 0
+          ? "At the start of the scene"
+          : `After ${audition.routeLabels.join(" → ")}`}
+        , {audition.tensionSpeaker} says:
+      </p>
+      <p className="rt-review__phrase" data-testid="dilemma-tension">
+        “{audition.tension}”
+      </p>
+      <p className="rt-studio__note">
+        The player can take only one of these answers. Each keeps one ending open and gives up
+        another for good.
+      </p>
+      <div className="rt-dilemma__sides">
+        {audition.sides.map((side, index) => (
+          <div key={side.responseId} className="rt-dilemma__side" data-testid={`dilemma-side-${index + 1}`}>
+            <p className="rt-dilemma__response">{side.response}</p>
+            {side.line === null ? null : <p className="rt-dilemma__line">“{side.line}”</p>}
+            <ul className="rt-dilemma__facts">
+              <li>
+                <strong>Keeps open</strong> {side.keeps.label} · {side.keeps.ending}
+              </li>
+              <li>
+                <strong>Gives up</strong> {side.givesUp.label} · {side.givesUp.ending}
+                {side.givesUp.shownAs === null ? null : (
+                  <>
+                    {" "}
+                    — shown as <q>{side.givesUp.shownAs}</q>
+                  </>
+                )}
+              </li>
+              <li>
+                <strong>Still reachable</strong> {side.endingsAfter.join(", ")}
+              </li>
+            </ul>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function Candidate({
   playable,
   prefix,
@@ -575,6 +633,7 @@ function ReviewBlock({
 }): React.JSX.Element {
   const candidateRef = useRef<HTMLElement | null>(null);
   const observations = observationsOf(playable, approvals);
+  const audition = dilemmaAuditionOf(playable.scene);
   const world = playable.scene.world;
   const endings = playable.scene.core.endings.length;
 
@@ -602,6 +661,8 @@ function ReviewBlock({
           <ObservedColumn observations={observations} heading="In this build · observed" />
         </div>
       )}
+
+      {audition === null ? null : <DilemmaCard audition={audition} />}
 
       <div className="rt-review__actions">
         <button

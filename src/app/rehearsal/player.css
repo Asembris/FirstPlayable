@@ -98,6 +98,13 @@
   color: var(--rt-ink);
 }
 
+.rt-player .choices__dilemma {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--rt-rule);
+  font: italic 400 15px/1.4 var(--rt-font-scene);
+  color: var(--rt-ink-2);
+}
+
 .rt-player .choices {
   display: flex;
   flex-direction: column;
@@ -125,6 +132,11 @@
   text-align: left;
   font: 400 21px/1.15 var(--rt-font-scene);
   color: var(--rt-ink);
+}
+
+.rt-player .button.choice.choice--dilemma {
+  padding-left: 12px;
+  border-left: 2px solid var(--rt-ink);
 }
 
 .rt-player .button.choice:hover:not(:disabled) {

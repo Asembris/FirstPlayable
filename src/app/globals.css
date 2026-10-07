@@ -277,8 +277,18 @@ a {
   border-style: dashed;
 }
 
+.choice--dilemma {
+  border-left-width: 3px;
+}
+
 .choice__lock {
   color: var(--neutral);
+}
+
+.choices__dilemma {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-dim);
 }
 
 .choice__reason {

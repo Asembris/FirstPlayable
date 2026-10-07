@@ -17,7 +17,9 @@
 import type { CompilationState, PlayableView } from "../domain/compile";
 import type { ApprovedInfluence } from "../domain/influence";
 import type { Id, Scene, Slot } from "../domain/scene";
-import { orderedSlots, removeModule } from "../engine/compose";
+import { orderedSlots, removeModule, viewOf } from "../engine/compose";
+import { describeDilemma } from "../engine/dilemma";
+import { speakerLabel } from "../engine/interpreter";
 import type { Availability } from "./canonical-pair";
 import {
   blockedTextsOf,
@@ -155,6 +157,71 @@ export function observationsOf(
       phrase: focus === null ? null : consequenceAt(pair, focus, prefix),
     };
   });
+}
+
+/* ------------------------------------------------------ dilemma audition */
+
+export type DilemmaSideReading = {
+  readonly responseId: Id;
+  /** The response as the player reads it on the choice. */
+  readonly response: string;
+  /** What taking it says or shows, or null when it has no line. */
+  readonly line: string | null;
+  /** The ending this response keeps open, by its choice label and title. */
+  readonly keeps: { readonly label: string; readonly ending: string };
+  /** The ending it gives up, with the reason the player is shown on it. */
+  readonly givesUp: {
+    readonly label: string;
+    readonly ending: string;
+    readonly shownAs: string | null;
+  };
+  /** Every ending still reachable after this response, by title. */
+  readonly endingsAfter: readonly string[];
+};
+
+export type DilemmaAudition = {
+  readonly tension: string;
+  readonly tensionSpeaker: string;
+  /** The choices that lead to the dilemma, as stored labels. */
+  readonly routeLabels: readonly string[];
+  readonly sides: readonly [DilemmaSideReading, DilemmaSideReading];
+};
+
+/**
+ * The two dramatic directions a dilemma offers, in the creator's words.
+ *
+ * Every field is read from the engine's own replay (`describeDilemma`): what a
+ * side keeps and gives up is the availability the player will actually meet,
+ * not a model's account of what it meant to build. The only prose is the
+ * scene's own — the tension, the responses, the lock text, the ending titles.
+ */
+export function dilemmaAuditionOf(scene: Scene): DilemmaAudition | null {
+  const report = describeDilemma(scene);
+  if (report === null) return null;
+  const view = viewOf(scene);
+  const title = (endingId: Id): string => view.endingById.get(endingId)?.title ?? endingId;
+  const label = (actionId: Id): string => view.actionById.get(actionId)?.action.label ?? actionId;
+  const side = (index: 0 | 1): DilemmaSideReading => {
+    const reading = report.sides[index];
+    return {
+      responseId: reading.response_action_id,
+      response: reading.response_label,
+      line: reading.response_line,
+      keeps: { label: reading.secures.label, ending: reading.secures.ending_title },
+      givesUp: {
+        label: reading.forfeits.label,
+        ending: reading.forfeits.ending_title,
+        shownAs: reading.forfeits.blocked_text,
+      },
+      endingsAfter: reading.endings_after.map(title),
+    };
+  };
+  return {
+    tension: report.tension_line,
+    tensionSpeaker: speakerLabel(scene, report.tension_speaker_id),
+    routeLabels: report.choice_prefix.map(label),
+    sides: [side(0), side(1)],
+  };
 }
 
 /** "All three endings are still reachable", only when the validator says so. */

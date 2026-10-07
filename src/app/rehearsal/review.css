@@ -275,3 +275,71 @@
     justify-content: center;
   }
 }
+
+/* ------------------------------------------------- dilemma audition */
+
+/* The two answers to one tension, side by side: each keeps one ending and
+   gives up another, so the creator can choose which direction to develop. */
+.rt-dilemma {
+  margin-top: 36px;
+  padding-top: 22px;
+  border-top: 1.5px solid var(--rt-ink);
+}
+
+.rt-dilemma__sides {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0 44px;
+}
+
+.rt-dilemma__side + .rt-dilemma__side {
+  padding-left: 44px;
+  border-left: 1px solid var(--rt-rule);
+}
+
+.rt-dilemma__response {
+  margin: 0;
+  font: 400 19px/1.25 var(--rt-font-scene);
+  color: var(--rt-ink);
+}
+
+.rt-dilemma__line {
+  margin: 8px 0 0;
+  font: italic 400 15px/1.4 var(--rt-font-scene);
+  color: var(--rt-ink-2);
+}
+
+.rt-dilemma__facts {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  font: 400 13.5px/1.5 var(--rt-font-ui);
+  color: var(--rt-ink-2);
+}
+
+.rt-dilemma__facts li + li {
+  margin-top: 6px;
+}
+
+.rt-dilemma__facts strong {
+  font-weight: 600;
+  color: var(--rt-ink);
+}
+
+.rt-dilemma__facts q {
+  font-style: italic;
+}
+
+@media (max-width: 760px) {
+  .rt-dilemma__sides {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+
+  .rt-dilemma__side + .rt-dilemma__side {
+    padding: 22px 0 0;
+    border-left: 0;
+    border-top: 1px solid var(--rt-rule);
+  }
+}

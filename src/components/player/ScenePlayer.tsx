@@ -19,6 +19,7 @@
 import { useCallback, useMemo, useState } from "react";
 import type { Id, Scene } from "../../domain/scene";
 import { viewOf } from "../../engine/compose";
+import { dilemmaMoment } from "../../engine/dilemma";
 import {
   availableActions,
   initialState,
@@ -127,6 +128,12 @@ export function ScenePlayer({
     [scene, play.state, sequence, taken, onPrefixChange],
   );
 
+  /** Where the player stands relative to a dilemma, from the same state. */
+  const moment = useMemo(
+    () => (play.endingId === null ? dilemmaMoment(scene, play.state.bits) : null),
+    [scene, play.state, play.endingId],
+  );
+
   const npc = scene.world.characters[0];
 
   return (
@@ -181,6 +188,13 @@ export function ScenePlayer({
       ) : (
         <div className="choices" data-testid={`${testIdPrefix}-choices`}>
           <h4 className="choices__heading">What do you do?</h4>
+          {moment === null ? null : (
+            <p className="choices__dilemma" data-testid={`${testIdPrefix}-dilemma`}>
+              {moment.kind === "open"
+                ? "The two marked answers rule each other out. Whichever you take closes the other."
+                : `You chose “${moment.response_label}”. That closed “${moment.forfeited_label}” for good.`}
+            </p>
+          )}
           {choices.length === 0 ? (
             <p className="line__text">Nothing is left to do here.</p>
           ) : null}
@@ -188,7 +202,11 @@ export function ScenePlayer({
             <button
               key={choice.action_id}
               type="button"
-              className={`button choice${choice.enabled ? "" : " choice--locked"}`}
+              className={`button choice${choice.enabled ? "" : " choice--locked"}${
+                moment?.kind === "open" && moment.response_action_ids.includes(choice.action_id)
+                  ? " choice--dilemma"
+                  : ""
+              }`}
               data-testid={`${testIdPrefix}-choice-${choice.action_id}`}
               disabled={!choice.enabled}
               onClick={() => take(choice.action_id, choice.label)}

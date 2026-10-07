@@ -32,6 +32,7 @@ import {
 } from "../../src/server/compile/assemble";
 import { DILEMMA_INSTRUCTIONS } from "../../src/server/compile/instructions";
 import { runModuleStage } from "../../src/server/compile/stages";
+import { dilemmaAuditionOf } from "../../src/presentation/review";
 import {
   COMMITMENT_APPROVAL,
   COMMITMENT_APPROVAL_PAYLOAD,
@@ -385,6 +386,36 @@ describe("deterministic replay explains the consequence", () => {
       response_label: output.second_response.action_label,
       forfeited_label: validBaseCopy().give_label,
     });
+  });
+});
+
+describe("the creator's audition", () => {
+  it("shows each direction's kept and forfeited ending exactly as play will meet them", () => {
+    const scene = build("return_or_walk_away");
+    const audition = dilemmaAuditionOf(scene)!;
+    const output = validCommitmentOutput();
+    const copy = validBaseCopy();
+    expect(audition.tension).toBe(output.tension_text);
+    expect(audition.tensionSpeaker).toBe(BRIEF.character.name);
+    expect(audition.routeLabels).toEqual([copy.inspect_label, copy.ask_context_label]);
+
+    const [first, second] = audition.sides;
+    expect(first.response).toBe(output.first_response.action_label);
+    expect(first.keeps).toEqual({ label: copy.give_label, ending: copy.give_ending_title });
+    expect(first.givesUp).toEqual({
+      label: copy.leave_label,
+      ending: copy.leave_ending_title,
+      shownAs: output.second_response.lock_text,
+    });
+    expect(second.keeps).toEqual({ label: copy.leave_label, ending: copy.leave_ending_title });
+    expect(second.givesUp.shownAs).toBe(output.first_response.lock_text);
+    // Keeping the object is the ending this trade leaves alone, so both keep it.
+    expect(first.endingsAfter).toContain(copy.keep_ending_title);
+    expect(second.endingsAfter).toContain(copy.keep_ending_title);
+  });
+
+  it("offers no audition for a scene without a dilemma", () => {
+    expect(dilemmaAuditionOf(build(null, true))).toBeNull();
   });
 });
 
