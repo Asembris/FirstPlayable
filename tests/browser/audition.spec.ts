@@ -131,7 +131,7 @@ test("ask, confirm, score, and see the audience switch reverse a pair", async ({
   });
   const { scored } = await install(page);
 
-  await page.goto("/audition");
+  await page.goto("/audition?mode=live");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
     "Choose the comps. Switch the audience. See what changes.",
   );
@@ -175,7 +175,7 @@ test("ask, confirm, score, and see the audience switch reverse a pair", async ({
 
 test("a creator choice other than Qloo's first result is the one sent", async ({ page }) => {
   const { scored } = await install(page);
-  await page.goto("/audition");
+  await page.goto("/audition?mode=live");
   await page.getByTestId("audition-send").click();
   await page.getByTestId("confirm-s1-2").check();
   for (const slot of ["s2", "s3", "s4"]) await page.getByTestId(`confirm-${slot}-1`).check();
