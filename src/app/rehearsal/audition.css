@@ -254,6 +254,8 @@
   .rt-audition__position { position: static; font-size: 22px; margin-right: 8px; }
   .rt-audition__name { display: block; font-size: 20px; line-height: 1.1; margin-top: 6px; }
   .rt-audition__fact { font-size: 10px; }
+  .rt-audition__concept .rt-audition__h2 { font-size: 20px; }
+  .rt-audition__decision-answer { font-size: 18px; }
 }
 .rt-audition__summary { font-family: var(--rt-font-fact); font-size: 12px; margin: 6px 0 12px; }
 .rt-audition__movement { display: block; font-family: var(--rt-font-fact); font-size: 11px; color: var(--rt-ink-2); margin-top: 4px; }
