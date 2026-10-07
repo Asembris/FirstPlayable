@@ -9,42 +9,27 @@
 
 *Choose the influences. Play the consequences.*
 
-<a href="https://firstplayable.vercel.app/difference"><img src="docs/readme/hero.svg" width="100%" alt="A saved comparison from a real FirstPlayable build. Qloo returned the film Moon; FirstPlayable proposed an interpretation; the creator edited and approved it. After the same two choices, in the same room with the same Nia and the same letter, Return the letter is open without the influence and locked with it, and Moon adds two choices: Ask Nia who the other name belongs to, and Examine the envelope closely. 3 changed, 3 unchanged." /></a>
+<a href="https://firstplayable.vercel.app/difference?view=compare"><img src="docs/readme/hero.svg" width="100%" alt="A saved comparison from a real FirstPlayable build. For the artist Radiohead, Qloo returned the film Moon; FirstPlayable proposed an interpretation; the creator edited and approved it. After the same two choices, in the same room with the same Nia and the same letter, Return the letter is open without the influence and locked with it, and Moon adds two choices: Ask Nia who the other name belongs to, and Examine the envelope closely. 3 changed, 3 unchanged." /></a>
 
 [![Live product](https://img.shields.io/badge/Live_product-141518?style=for-the-badge)](https://firstplayable.vercel.app)
-[![Play the difference](https://img.shields.io/badge/%E2%96%B6_Play_the_difference-B0154C?style=for-the-badge)](https://firstplayable.vercel.app/difference)
+[![Play the difference](https://img.shields.io/badge/%E2%96%B6_Play_the_difference-B0154C?style=for-the-badge)](https://firstplayable.vercel.app/difference?view=compare)
 [![Create your scene](https://img.shields.io/badge/Create_your_scene-3A3D43?style=for-the-badge)](https://firstplayable.vercel.app/studio)
 [![Qloo Agentic Hackathon](https://img.shields.io/badge/Qloo_Agentic_Hackathon-6B6E75?style=for-the-badge)](https://qloo.devpost.com/)
 
-[![Production](https://img.shields.io/badge/production-firstplayable.vercel.app-141518?logo=vercel&logoColor=white)](https://firstplayable.vercel.app)
-[![Unit tests](https://img.shields.io/badge/unit_tests-761_passing-2F6F44)](#commands)
-[![Browser tests](https://img.shields.io/badge/browser_tests-133_passing-2F6F44)](#commands)
 [![CI](https://github.com/Asembris/FirstPlayable/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Asembris/FirstPlayable/actions/workflows/ci.yml)
-[![Node 22.22](https://img.shields.io/badge/node-22.22-3A3D43?logo=nodedotjs&logoColor=white)](.nvmrc)
 [![License: MIT](https://img.shields.io/badge/license-MIT-6B6E75)](LICENSE)
 
 </div>
 
-**FirstPlayable turns one cultural influence you approve into a playable
-scene, then lets you play it with and without that influence and see exactly
-which choices it changed.**
+**FirstPlayable helps narrative-game creators test a cultural influence as a
+playable scene variation before deciding whether to keep it.**
 
-Every influence is traced in one order: **Qloo returned** a reference →
-**FirstPlayable proposed** an interpretation → **the creator approved** it, as
-proposed or after editing → **the build changed**. Qloo supplies the
-reference, never the mechanic, and the last step is drawn only from what the
-scene engine observed on the stored version.
-
-## At a glance
-
-| | |
-|---|---|
-| **Live product** | [firstplayable.vercel.app](https://firstplayable.vercel.app) — no sign-in |
-| **Fastest proof** | [`/difference`](https://firstplayable.vercel.app/difference): a saved, real build played with and without one approved Qloo influence |
-| **Frozen production commit** | [`f15ed67`](https://github.com/Asembris/FirstPlayable/commit/f15ed67dc7557ff5c2a4dc9e64776c5b310aa14c) |
-| **Deployed verifier against production** | **118 / 118** checks pass |
-| **Offline gates** | **761** unit tests and **133** browser tests pass; CI runs with no secrets |
-| **Status** | Feature-complete through Phase 6; production is frozen for submission |
+A creator discovers cultural material through Qloo, decides what one
+interpretation of it should mean for an interaction, makes that interpretation
+playable, and plays the scene with and without it — seeing exactly which
+choices changed — before deciding what to keep. The payoff is the creator's
+decision; the comparison shows its effect; the provenance shows where the
+material and the interpretation came from.
 
 ## What FirstPlayable is
 
@@ -55,42 +40,67 @@ scene. FirstPlayable compiles only the approved influences into a validated,
 deterministic, playable scene.
 
 The product's one claim is narrow and checkable: **this approved influence
-changed these choices in this scene.** The engine proves it by playing the
-same choices with and without the influence and reporting what differs.
+changed these choices in this scene.** The engine shows it by playing the same
+choices with and without the influence and reporting what differs.
 
-## Why Qloo is load-bearing
+## A real example: Radiohead → Qloo → Moon
 
-**Qloo does not generate mechanics.** The division of labour is fixed:
+The saved example comes from a real build of a one-room scene, *The Second
+Copy*: a station attendant, a visitor named Nia, and a sealed letter.
+
+1. **The creator confirmed an artist:** Radiohead.
+2. **Qloo returned** the film **Moon** (2009, Duncan Jones) among Radiohead's
+   film neighbours, with descriptive evidence about identity and memory under
+   isolation.
+3. **FirstPlayable proposed** an interpretation about memory and identity,
+   citing only that evidence.
+4. **The creator edited and approved** a concrete version of it: the envelope
+   is addressed to two names, and returning the letter stays locked until you
+   ask Nia who the other name belongs to.
+5. **The scene changed.** After the same two choices, *Return the letter* is
+   open without Moon and locked with it, and two new choices exist: **3
+   changed, 3 unchanged**, in the same room with the same Nia and the same
+   letter.
+
+**▶ [Open the comparison](https://firstplayable.vercel.app/difference?view=compare)**
+— saved from that build, no sign-in, nothing generated live. Its full record is
+[`docs/PHASE6_CANONICAL_PAIR.md`](docs/PHASE6_CANONICAL_PAIR.md).
+
+## How Qloo contributes
+
+**Qloo helps determine which cultural material enters the experiment.
+FirstPlayable helps the creator interpret it, make it playable, and decide what
+to keep.**
 
 | Step | Who | What they contribute |
 |---|---|---|
-| **Retrieve** | Qloo | The confirmed artist, and real movie and videogame references with their descriptive evidence |
+| **Retrieve** | Qloo | The confirmed artist, and movie and videogame references conditioned on that artist, with their descriptive evidence |
 | **Interpret** | FirstPlayable (model, bounded) | One proposed idea per reference, citing only evidence Qloo returned |
 | **Decide** | The creator | Approve, edit, dismiss, or replace. Nothing is approved by default |
 | **Compile** | FirstPlayable (model-selected, server-wired) | One module in the approved influence's own slot |
 | **Verify** | Deterministic engine | A mechanical witness: what the influence changed, observed by replay |
 | **Activate** | The creator | Nothing becomes current until they confirm it |
 
-Removing Qloo would leave the compiler and the player, but it would remove the
-auditable cultural-grounding layer that makes FirstPlayable's central claim
-possible:
+In this workflow, Qloo supplies the artist-conditioned film and videogame
+references, together with the evidence and the stored source record behind
+them. Removing Qloo removes this discovery source and the recorded
+relationship:
 
-- **The references stop being real.** A model asked for "films like this
-  artist" returns recall that nobody retrieved and nobody can audit. Qloo's
-  references are stored captures with entity ids and timestamps.
-- **The evidence chain breaks.** An approval must cite evidence ids that
-  resolve inside the stored Qloo capture; the compiler payload refuses to
-  build otherwise. Without a capture there is nothing to cite.
-- **The cross-domain step disappears.** The creator starts from music and
-  receives film and game references. That adjacency is Qloo's, not the
-  model's.
-- **Provenance loses its first layer.** "Qloo returned" is the root of every
-  chain the creator and the judge can inspect.
+- **The cross-domain step.** The creator starts from music and receives film
+  and game references retrieved for that artist, rather than a model's
+  unretrieved recall.
+- **The evidence chain.** An approval must cite evidence ids that resolve
+  inside the stored Qloo capture, with its entity ids and timestamps; the
+  compiler payload refuses to build otherwise.
+- **The first provenance layer.** "Qloo returned" is the root of every chain
+  the creator and the judge can inspect.
 
-What is **not** claimed: that Qloo recommended a mechanic, rated a reference,
-knows a creator's taste, or produced an idea a language model could not
-otherwise invent. Qloo's returned affinity is kept private and is never shown
-as creative confidence.
+What is **not** claimed: that Qloo generated the mechanic, rated a reference,
+knows a creator's taste, or makes the story objectively better; that a language
+model could not name a real film, or another catalogue could not hold the same
+works; or that the with / without comparison shows superiority over a model
+working alone. Qloo's returned affinity is kept private and is never shown as
+creative confidence.
 
 ## Judge demo path
 
@@ -270,6 +280,11 @@ Gameplay is local: a complete playthrough, every ending, and a reset make
 **zero** requests.
 
 ## Verification and production evidence
+
+[![Production](https://img.shields.io/badge/production-firstplayable.vercel.app-141518?logo=vercel&logoColor=white)](https://firstplayable.vercel.app)
+[![Unit tests](https://img.shields.io/badge/unit_tests-761_passing-2F6F44)](#commands)
+[![Browser tests](https://img.shields.io/badge/browser_tests-133_passing-2F6F44)](#commands)
+[![Node 22.22](https://img.shields.io/badge/node-22.22-3A3D43?logo=nodedotjs&logoColor=white)](.nvmrc)
 
 Production at [firstplayable.vercel.app](https://firstplayable.vercel.app) is
 built from the frozen commit
