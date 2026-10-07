@@ -89,8 +89,8 @@ function auditionTransport(overrides: Overrides = {}): Transport {
   return { fetchImpl, calls };
 }
 
-function plan(actions: unknown[], clarification: string | null = null, deferred_action: unknown = null): ModelScript {
-  return { parsed: { actions, clarification, deferred_action } };
+function plan(actions: unknown[], clarification: string | null = null, deferred_action: unknown = null, decision: unknown = null): ModelScript {
+  return { parsed: { actions, clarification, deferred_action, decision } };
 }
 
 const ADD = (kind: string, query: string) => ({ op: "add", kind, slot_id: null, query });
@@ -295,7 +295,7 @@ describe("POST /api/audition/interpret", () => {
   });
 
   it("rejects a model output that carries a score, and changes nothing", async () => {
-    const h = setup([{ parsed: { actions: [{ ...ADD("movie", "Moon"), affinity: 0.99 }], clarification: null, deferred_action: null } }]);
+    const h = setup([{ parsed: { actions: [{ ...ADD("movie", "Moon"), affinity: 0.99 }], clarification: null, deferred_action: null, decision: null } }]);
     const cookie = await owner(h);
     const response = await interpret(h, cookie, "Moon is the best", { slots: [] });
     expect(response.status).toBe(429);
@@ -603,5 +603,53 @@ describe("audition capture refresh provenance", () => {
     expect(repeat.upstream_calls).toBe(0);
     expect(repeat.domains.movie!.evidence.map((e) => e.capture_id)).toEqual(fresh.domains.movie!.evidence.map((e) => e.capture_id));
     expect(h.transport.calls).toHaveLength(calls);
+  });
+});
+
+describe("bounded foreground decision", () => {
+  const DECIDE = (domain: string | null, audience_query: string | null) => ({ action: "foreground_comp", domain, audience_query });
+  const withDecision = (response: InterpretResponse): AuditionState => ({ ...confirmFirst(response), ...(response.state.decision_request === undefined ? {} : { decision_request: response.state.decision_request }) });
+
+  it("records the question, then answers it from the same Qloo scores with no extra calls", async () => {
+    const h = setup([plan((OPENING.parsed as { actions: unknown[] }).actions, null, null, DECIDE("movie", "Lanternfold"))]);
+    const { cookie, interpreted } = await opened(h);
+    expect(interpreted.decision).toEqual({ action: "foreground_comp", domain: "movie", audience_slot_id: "s4" });
+    expect(interpreted.state.decision_request).toEqual(interpreted.decision);
+    const result = await body<ScoreResponse>(await score(h, cookie, withDecision(interpreted)));
+    const insightsCalls = h.transport.calls.filter((c) => new URL(c.url).pathname === "/v2/insights");
+    expect(insightsCalls).toHaveLength(2);
+    expect(result.decision).toMatchObject({ domain: "movie", audience_entity_id: LANTERNFOLD_ENTITY_ID, audience_name: "Lanternfold", threshold: 0.03, outcome: { status: "clear_lead", lead: { entity_id: MOON_ID, name: "Moon" } } });
+    expect(result.decision!.outcome).toMatchObject({ lead: { entity_id: result.domains.movie!.comparison.rankings[0].top.leaders[0] } });
+  });
+
+  it("answers a follow-up question without Qloo calls and never shows the model a score", async () => {
+    const h = setup([OPENING, plan([], null, null, DECIDE("movie", "Kendrick Lamar"))]);
+    const { cookie, interpreted } = await opened(h);
+    const confirmed = confirmFirst(interpreted);
+    await score(h, cookie, confirmed);
+    const calls = h.transport.calls.length;
+    const asked = await body<InterpretResponse>(await interpret(h, cookie, "Which movie comp should I foreground for Kendrick Lamar fans?", confirmed));
+    expect(asked.applied).toEqual([]);
+    expect(asked.upstream_calls).toBe(0);
+    expect(JSON.stringify(h.model!.requests[1])).not.toMatch(/0\.31|0\.55|0\.54|B0000000/);
+    expect(String(h.model!.requests[1]!["input"])).not.toMatch(/affinity|score|rank/);
+    const result = await body<ScoreResponse>(await score(h, cookie, asked.state));
+    expect(h.transport.calls).toHaveLength(calls);
+    expect(result.upstream_calls).toBe(0);
+    expect(result.decision?.outcome).toEqual({ status: "too_close", close: [{ entity_id: ARRIVAL_ID, name: "Arrival" }, { entity_id: O_BROTHER_ID, name: "O Brother, Where Art Thou?" }] });
+  });
+
+  it("answers a videogame question from videogame scores only", async () => {
+    const h = setup([plan([ADD("movie", "Moon"), ADD("videogame", "Outer Wilds"), ADD("videogame", "Death Stranding"), ADD("audience", "Lanternfold"), ADD("audience", "Kendrick Lamar")], null, null, DECIDE("videogame", "Kendrick Lamar"))]);
+    const { cookie, interpreted } = await opened(h);
+    const result = await body<ScoreResponse>(await score(h, cookie, withDecision(interpreted)));
+    expect(result.decision).toMatchObject({ domain: "videogame", outcome: { status: "clear_lead", lead: { entity_id: DEATH_STRANDING_ID } } });
+  });
+
+  it("refuses a decision that names a comp slot instead of an audience", async () => {
+    const h = setup();
+    const { cookie, interpreted } = await opened(h);
+    const response = await score(h, cookie, { ...confirmFirst(interpreted), decision_request: { action: "foreground_comp", domain: "movie", audience_slot_id: "s1" } });
+    expect((await envelope(response)).code).toBe("VALIDATION_FAILED");
   });
 });

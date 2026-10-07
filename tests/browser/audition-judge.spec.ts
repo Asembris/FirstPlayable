@@ -13,6 +13,12 @@ test('saved judge path uses zero API calls, switches reading and exposes synthet
   await expect(page.getByText('Saved example · synthetic demonstration data · no live calls')).toBeVisible();
   const movies = page.getByTestId('panel-movie');
   const games = page.getByTestId('panel-videogame');
+  const decision = page.getByTestId('audition-decision');
+  await expect(decision).toContainText('fixed example question, no model call');
+  await expect(page.getByTestId('decision-question')).toHaveText(`Which movie comp should I foreground for ${record.audiences[0]!.name} fans?`);
+  await expect(page.getByTestId('decision-answer')).toHaveText('For this audience signal, Quiet Orbit is the clear lead among your confirmed movie comps.');
+  await expect(page.getByTestId('decision-basis')).toContainText('synthetic saved affinities');
+  await expect(page.getByTestId('decision-basis')).not.toContainText('Qloo audience affinity');
   await expect(movies.locator('[data-verdict="reversal"]')).toHaveCount(2);
   await expect(games.locator('[data-verdict="reversal"]')).toHaveCount(1);
   await expect(games.locator('[data-verdict="holds"]')).toContainText('Orrery Vale / Starward Accord: same order');
@@ -29,7 +35,14 @@ test('saved judge path uses zero API calls, switches reading and exposes synthet
     await expect(evidence).toContainText('Replayed locally; no provider calls');
     await expect(evidence).toContainText('filter.results.entities=');
     await expect(evidence).toContainText('Synthetic saved example dated 2026-01-15');
-    await expect(evidence).toContainText('not a Qloo response');
+    await expect(evidence.locator('summary')).toHaveText('Synthetic evidence');
+    await expect(evidence).toContainText('None of it was returned by Qloo');
+    await expect(evidence.getByTestId('evidence-entity').first()).toContainText('synthetic entity id');
+    await expect(evidence.getByTestId('evidence-request').first()).toContainText('Synthetic request record');
+    // Saved mode must never present synthetic values as Qloo-returned or Qloo-identified.
+    await expect(evidence).not.toContainText('Names come from the Qloo');
+    await expect(evidence).not.toContainText('Qloo returned');
+    await expect(evidence).not.toContainText(/Qloo [0-9A-F]{8}-/);
     await expect(evidence).toContainText(lanternfold);
     await expect(evidence).toContainText(juno);
   }

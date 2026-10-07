@@ -105,6 +105,20 @@ export const PendingClarificationSchema = z.strictObject({
   slot_context: z.string().min(1).max(10000),
 });
 
+/**
+ * The one bounded decision a creator can ask for: which of their confirmed
+ * comps in one domain to foreground for one of their audiences. It names the
+ * question only. The answer is computed by `decideForeground` from Qloo
+ * affinities and the close rule; nothing here can carry a winner.
+ */
+export const DecisionRequestSchema = z.strictObject({
+  action: z.literal("foreground_comp"),
+  domain: QlooDomainSchema,
+  audience_slot_id: SlotIdSchema,
+});
+
+export type DecisionRequest = z.infer<typeof DecisionRequestSchema>;
+
 export function clarificationSlotContext(slots: readonly AuditionSlot[]): string {
   return JSON.stringify(slots.map(({ slot_id, kind, query }) => ({ slot_id, kind, query })));
 }
@@ -113,6 +127,7 @@ export const AuditionStateSchema = z
   .strictObject({
     slots: z.array(AuditionSlotSchema).max(MAX_SLOTS),
     pending_clarification: PendingClarificationSchema.optional(),
+    decision_request: DecisionRequestSchema.optional(),
   })
   .superRefine((state, context) => {
     if (state.pending_clarification !== undefined &&
@@ -122,6 +137,10 @@ export const AuditionStateSchema = z
     const target = state.pending_clarification?.action;
     if (target?.op === "replace" && !state.slots.some(slot => slot.slot_id === target.slot_id && slot.kind !== "audience")) {
       context.addIssue({ code: "custom", message: "invalid clarification target", path: ["pending_clarification"] });
+    }
+    const decision = state.decision_request;
+    if (decision !== undefined && !state.slots.some((slot) => slot.slot_id === decision.audience_slot_id && slot.kind === "audience")) {
+      context.addIssue({ code: "custom", message: "a decision must name an audience slot", path: ["decision_request"] });
     }
     const ids = new Set<string>();
     const counts: Record<SlotKind, number> = { movie: 0, videogame: 0, audience: 0 };
@@ -265,6 +284,8 @@ export type InterpretResponse = {
   applied: AppliedAction[];
   skipped: string[];
   clarification: string | null;
+  /** The decision question this message recorded, if any. Never an answer. */
+  decision: DecisionRequest | null;
   searches: SlotSearchView[];
   model_calls: number;
   upstream_calls: number;

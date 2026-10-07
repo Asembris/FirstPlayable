@@ -138,6 +138,24 @@
   min-width: 0;
 }
 
+.rt-audition__decision {
+  border-left: 2px solid var(--rt-ink);
+  padding: 4px 0 4px 12px;
+  margin: 0 0 16px;
+}
+
+.rt-audition__decision-ask {
+  color: var(--rt-ink-2);
+  margin: 6px 0 2px;
+}
+
+.rt-audition__decision-answer {
+  font-family: var(--rt-font-scene);
+  font-size: 20px;
+  line-height: 1.25;
+  margin: 0 0 6px;
+}
+
 .rt-audition__headline {
   font-family: var(--rt-font-scene);
   font-size: 18px;

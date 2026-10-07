@@ -7,6 +7,7 @@
  */
 
 import type { DomainComparison } from "./audition-compare";
+import type { DecisionResult } from "./audition-decision";
 import type { QlooDomain } from "./qloo";
 
 export type ConfirmedEntityView = {
@@ -42,5 +43,7 @@ export type ScoreResponse = {
   domains: Record<QlooDomain, DomainAuditionView | null>;
   /** Comps the creator has not confirmed. They were not scored. */
   unconfirmed: { slot_id: string; kind: string; query: string }[];
+  /** The answer to the creator's decision question, computed from `domains`. */
+  decision: DecisionResult | null;
   upstream_calls: number;
 };

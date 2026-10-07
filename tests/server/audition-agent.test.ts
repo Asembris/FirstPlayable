@@ -25,13 +25,13 @@ describe("the agent's output contract", () => {
 
   it("rejects an output that tries to add a score, a rank, or a winner", () => {
     const base = { op: "add", kind: "movie", slot_id: null, query: "Arrival" };
-    expect(AgentPlanSchema.safeParse({ actions: [], clarification: "Film or game?", deferred_action: null }).success).toBe(false);
+    expect(AgentPlanSchema.safeParse({ actions: [], clarification: "Film or game?", deferred_action: null, decision: null }).success).toBe(false);
     expect(AgentPlanSchema.safeParse({ actions: [], clarification: null, deferred_action: { op: "add", slot_id: null, query: "Alien" } }).success).toBe(false);
     for (const extra of [{ affinity: 0.9 }, { rank: 1 }, { score: "high" }]) {
-      expect(AgentPlanSchema.safeParse({ actions: [{ ...base, ...extra }], clarification: null, deferred_action: null }).success).toBe(false);
+      expect(AgentPlanSchema.safeParse({ actions: [{ ...base, ...extra }], clarification: null, deferred_action: null, decision: null }).success).toBe(false);
     }
-    expect(AgentPlanSchema.safeParse({ actions: [base], clarification: null, deferred_action: null, winner: "Arrival" }).success).toBe(false);
-    expect(AgentPlanSchema.safeParse({ actions: [base], clarification: null, deferred_action: null }).success).toBe(true);
+    expect(AgentPlanSchema.safeParse({ actions: [base], clarification: null, deferred_action: null, decision: null, winner: "Arrival" }).success).toBe(false);
+    expect(AgentPlanSchema.safeParse({ actions: [base], clarification: null, deferred_action: null, decision: null }).success).toBe(true);
     for (const extra of [{ affinity: 0.9 }, { rank: 1 }, { score: "high" }]) {
       expect(AgentPlanSchema.safeParse({ actions: [], clarification: "Film or game?", deferred_action: { op: "add", slot_id: null, query: "Alien", ...extra } }).success).toBe(false);
     }
@@ -63,7 +63,7 @@ describe("applyPlan", () => {
         { op: "add", kind: "movie", slot_id: null, query: " Arrival  " },
         { op: "add", kind: "audience", slot_id: null, query: "Radiohead" },
       ],
-      clarification: null, deferred_action: null,
+      clarification: null, deferred_action: null, decision: null,
     });
     expect(result.state.slots).toEqual([
       { slot_id: "s1", kind: "movie", query: "Moon", search_capture_id: null, confirmed_entity_id: null },
@@ -83,7 +83,7 @@ describe("applyPlan", () => {
     };
     const result = applyPlan(confirmed, {
       actions: [{ op: "replace", kind: null, slot_id: "s3", query: "Metallica" }],
-      clarification: null, deferred_action: null,
+      clarification: null, deferred_action: null, decision: null,
     });
     const audiences = result.state.slots.filter((slot) => slot.kind === "audience");
     expect(audiences.map((slot) => slot.query)).toEqual(["Radiohead", "Metallica"]);
@@ -96,7 +96,7 @@ describe("applyPlan", () => {
   });
 
   it("removes a slot by id", () => {
-    const result = applyPlan(STATE, { actions: [{ op: "remove", kind: null, slot_id: "s1", query: null }], clarification: null, deferred_action: null });
+    const result = applyPlan(STATE, { actions: [{ op: "remove", kind: null, slot_id: "s1", query: null }], clarification: null, deferred_action: null, decision: null });
     expect(result.state.slots.map((slot) => slot.slot_id)).toEqual(["s2", "s3"]);
   });
 
@@ -110,7 +110,7 @@ describe("applyPlan", () => {
         { op: "add", kind: "movie", slot_id: null, query: "moon" },
         { op: "add", kind: "audience", slot_id: null, query: "Metallica" },
       ],
-      clarification: null, deferred_action: null,
+      clarification: null, deferred_action: null, decision: null,
     });
     expect(result.state).toEqual(STATE);
     expect(result.applied).toEqual([]);
@@ -124,7 +124,7 @@ describe("applyPlan", () => {
       slot_id: null,
       query: `Game ${i}`,
     }));
-    const result = applyPlan({ slots: [] }, { actions, clarification: null, deferred_action: null });
+    const result = applyPlan({ slots: [] }, { actions, clarification: null, deferred_action: null, decision: null });
     expect(result.state.slots).toHaveLength(4);
     expect(result.skipped.at(-1)).toMatch(/Only the first/);
   });
@@ -151,12 +151,59 @@ describe("deterministic media clarification", () => {
       expect(result.state.pending_clarification).toBeUndefined();
     }
     const state = pending();
-    expect(resolveClarification("remove Moon and add Arrival", state)).toEqual({ state, applied: [], skipped: [], clarification: state.pending_clarification!.question });
+    expect(resolveClarification("remove Moon and add Arrival", state)).toEqual({ state, applied: [], skipped: [], decision: null, clarification: state.pending_clarification!.question });
   });
   it("replaces only the stored original target", () => {
     const result = resolveClarification("the game", pending("replace"));
     expect(result.applied).toEqual([{ op: "replace", slot_id: "s4", kind: "videogame", query: "Alien" }]);
     expect(result.state.slots.slice(1)).toEqual(STATE.slots.slice(1));
     expect(result.state.pending_clarification).toBeUndefined();
+  });
+});
+
+describe("bounded decision questions", () => {
+  const ask = (domain: "movie" | "videogame" | null, audience_query: string | null) =>
+    ({ actions: [], clarification: null, deferred_action: null, decision: { action: "foreground_comp" as const, domain, audience_query } });
+
+  it("can record only a question: a winner, rank, affinity, or comp cannot ride in it", () => {
+    const decision = { action: "foreground_comp", domain: "movie", audience_query: "Radiohead" };
+    const base = { actions: [], clarification: null, deferred_action: null };
+    expect(AgentPlanSchema.safeParse({ ...base, decision }).success).toBe(true);
+    for (const extra of [{ winner: "Moon" }, { entity_id: "B0000000-0000-4000-8000-0000000000B1" }, { rank: 1 }, { affinity: 0.8 }, { lead: "Moon" }]) {
+      expect(AgentPlanSchema.safeParse({ ...base, decision: { ...decision, ...extra } }).success).toBe(false);
+    }
+    expect(AgentPlanSchema.safeParse({ ...base, decision: { ...decision, action: "pick_best" } }).success).toBe(false);
+    expect(AGENT_INSTRUCTIONS).toMatch(/You only record the question\. Never answer it/);
+  });
+
+  it("resolves the audience wording to a slot, including one added in the same plan", () => {
+    const result = applyPlan(STATE, ask("movie", "radiohead"));
+    expect(result.decision).toEqual({ action: "foreground_comp", domain: "movie", audience_slot_id: "s2" });
+    expect(result.state.decision_request).toEqual(result.decision);
+    const fresh = applyPlan({ slots: [] }, { ...ask("videogame", "Metallica"), actions: [{ op: "add", kind: "audience", slot_id: null, query: "Metallica" }] });
+    expect(fresh.state.decision_request).toEqual({ action: "foreground_comp", domain: "videogame", audience_slot_id: "s1" });
+  });
+
+  it("records nothing when the domain or audience is unstated or unknown", () => {
+    for (const plan of [ask(null, "Radiohead"), ask("movie", null), ask("movie", "Metallica")]) {
+      const result = applyPlan(STATE, plan);
+      expect(result.decision).toBeNull();
+      expect(result.state.decision_request).toBeUndefined();
+      expect(result.skipped).toHaveLength(1);
+    }
+  });
+
+  it("keeps the question through later edits and clarification, and drops it with its audience", () => {
+    const asked = applyPlan(STATE, ask("movie", "Radiohead")).state;
+    const later = applyPlan(asked, { actions: [{ op: "add", kind: "movie", slot_id: null, query: "Arrival" }], clarification: null, deferred_action: null, decision: null });
+    expect(later.state.decision_request).toEqual(asked.decision_request);
+    expect(later.decision).toBeNull();
+    const pending = applyPlan(asked, { actions: [], clarification: "Film or game?", deferred_action: { op: "add", slot_id: null, query: "Alien" }, decision: null }).state;
+    expect(pending.pending_clarification).toBeDefined();
+    const resolved = resolveClarification("the film", pending);
+    expect(resolved.state.decision_request).toEqual(asked.decision_request);
+    expect(resolved.state.pending_clarification).toBeUndefined();
+    const replaced = applyPlan(asked, { actions: [{ op: "replace", kind: null, slot_id: "s2", query: "Metallica" }], clarification: null, deferred_action: null, decision: null });
+    expect(replaced.state.decision_request).toBeUndefined();
   });
 });

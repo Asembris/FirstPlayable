@@ -53,6 +53,12 @@ describe('synthetic saved audition', () => {
     expect(saved.domains.movie!.comparison.rankings.map((r) => r.ordered.map((c) => c.name))).toEqual([['Quiet Orbit', 'First Hello', 'Farther Than Light'], ['First Hello', 'Farther Than Light', 'Quiet Orbit']]);
     expect(saved.domains.videogame!.comparison.rankings[1].top.status).toBe('close');
   });
+  it('answers its fixed example decision from the replayed comparison, with zero provider calls', () => {
+    const saved = savedAuditionResult();
+    expect(saved.upstream_calls).toBe(0);
+    expect(saved.decision).toMatchObject({ domain: 'movie', audience_entity_id: saved.audiences[0].entity_id, outcome: { status: 'clear_lead', lead: { name: 'Quiet Orbit' } } });
+    expect(saved.decision!.outcome).toMatchObject({ lead: { entity_id: saved.domains.movie!.comparison.rankings[0].top.leaders[0] } });
+  });
   it('rejects a capture for a different audience or candidate set', () => {
     const result = savedAuditionResult(); const view = result.domains.movie!;
     const captures = record.captures.filter((c) => c.domain === 'movie').map((c) => CompScoreCaptureSchema.parse(c));
