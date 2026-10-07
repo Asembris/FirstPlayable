@@ -49,7 +49,7 @@ import {
   type QlooDomain,
 } from "@/domain/qloo";
 import type { CompScoreCapture, CompSearchSnapshot } from "@/domain/audition";
-import { applyPlan, planEdits } from "../audition/agent";
+import { applyPlan, planEdits, resolveClarification } from "../audition/agent";
 import {
   budgetExhaustedMessage,
   modelCallRecord,
@@ -228,9 +228,10 @@ type SearchOutcome = { slot: AuditionSlot; view: SlotSearchView };
 async function searchSlots(
   context: Context,
   state: AuditionState,
+  onlySlotIds?: ReadonlySet<string>,
 ): Promise<{ state: AuditionState; searches: SlotSearchView[]; failures: string[]; upstream: number }> {
   const env = context.deps.qlooEnv();
-  const pending = state.slots.filter((slot) => slot.search_capture_id === null);
+  const pending = state.slots.filter((slot) => slot.search_capture_id === null && (onlySlotIds === undefined || onlySlotIds.has(slot.slot_id)));
   const done: SearchOutcome[] = [];
   const misses: AuditionSlot[] = [];
 
@@ -282,7 +283,7 @@ async function searchSlots(
     .map((outcome) => outcome.view)
     .sort((a, b) => (order.get(a.slot_id) ?? 0) - (order.get(b.slot_id) ?? 0));
 
-  return { state: { slots }, searches, failures, upstream: spent };
+  return { state: { ...state, slots }, searches, failures, upstream: spent };
 }
 
 /**
@@ -331,17 +332,23 @@ export async function handleInterpret(request: Request, deps: Phase3Deps): Promi
     const input = validateBody(InterpretRequestSchema, body);
     await requireSession(context, request);
 
-    const plan = await runAgent(context, input.message, input.state);
-    const edited = applyPlan(input.state, plan);
-    const searched = await searchSlots(context, edited.state);
+    const resolving = input.state.pending_clarification !== undefined;
+    const plan = resolving ? null : await runAgent(context, input.message, input.state);
+    const edited = plan === null ? resolveClarification(input.message, input.state) : {
+      ...applyPlan(input.state, plan), clarification: plan.clarification,
+    };
+    const shouldSearch = resolving ? edited.applied.length > 0 : plan!.deferred_action === null;
+    const searched = shouldSearch
+      ? await searchSlots(context, edited.state, resolving ? new Set(edited.applied.map(action => action.slot_id)) : undefined)
+      : { state: edited.state, searches: [], failures: [], upstream: 0 };
 
     const response: InterpretResponse = {
       state: searched.state,
       applied: edited.applied,
       skipped: [...edited.skipped, ...searched.failures],
-      clarification: plan.clarification,
+      clarification: edited.clarification,
       searches: searched.searches,
-      model_calls: 1,
+      model_calls: resolving ? 0 : 1,
       upstream_calls: searched.upstream,
     };
     return json(response, requestId);

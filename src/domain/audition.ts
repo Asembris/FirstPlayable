@@ -85,9 +85,44 @@ export const AuditionSlotSchema = z.strictObject({
 
 export type AuditionSlot = z.infer<typeof AuditionSlotSchema>;
 
+/** The only deferred action supported: choosing a comp's media type. */
+export const DeferredMediaActionSchema = z.strictObject({
+  op: z.enum(["add", "replace"]),
+  slot_id: SlotIdSchema.nullable(),
+  query: z.string().trim().min(1).max(SLOT_QUERY_MAX),
+}).superRefine((action, context) => {
+  if ((action.op === "add") !== (action.slot_id === null)) {
+    context.addIssue({ code: "custom", message: "add has no target; replace requires a target", path: ["slot_id"] });
+  }
+});
+
+/** One deferred action, never conversation history or retrieved evidence. */
+export const PendingClarificationSchema = z.strictObject({
+  action: DeferredMediaActionSchema,
+  ambiguity: z.literal("media_type"),
+  choices: z.tuple([z.literal("movie"), z.literal("videogame")]),
+  question: z.string().trim().min(1).max(240),
+  slot_context: z.string().min(1).max(10000),
+});
+
+export function clarificationSlotContext(slots: readonly AuditionSlot[]): string {
+  return JSON.stringify(slots.map(({ slot_id, kind, query }) => ({ slot_id, kind, query })));
+}
+
 export const AuditionStateSchema = z
-  .strictObject({ slots: z.array(AuditionSlotSchema).max(MAX_SLOTS) })
+  .strictObject({
+    slots: z.array(AuditionSlotSchema).max(MAX_SLOTS),
+    pending_clarification: PendingClarificationSchema.optional(),
+  })
   .superRefine((state, context) => {
+    if (state.pending_clarification !== undefined &&
+        state.pending_clarification.slot_context !== clarificationSlotContext(state.slots)) {
+      context.addIssue({ code: "custom", message: "stale pending clarification", path: ["pending_clarification"] });
+    }
+    const target = state.pending_clarification?.action;
+    if (target?.op === "replace" && !state.slots.some(slot => slot.slot_id === target.slot_id && slot.kind !== "audience")) {
+      context.addIssue({ code: "custom", message: "invalid clarification target", path: ["pending_clarification"] });
+    }
     const ids = new Set<string>();
     const counts: Record<SlotKind, number> = { movie: 0, videogame: 0, audience: 0 };
     for (const slot of state.slots) {

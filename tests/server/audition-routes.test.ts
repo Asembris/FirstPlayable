@@ -13,7 +13,7 @@ import {
   OUTER_WILDS_ID,
   RADIOHEAD_ENTITY_ID,
 } from "../../fixtures/qloo/audition";
-import type { AuditionState, InterpretResponse } from "../../src/domain/audition";
+import { clarificationSlotContext, type AuditionState, type InterpretResponse } from "../../src/domain/audition";
 import type { ScoreResponse } from "../../src/domain/audition-view";
 import { handleInterpret, handleScore } from "../../src/server/api/audition";
 import { CREATOR_COMMAND_BODY_LIMIT_BYTES } from "../../src/server/security/request";
@@ -61,6 +61,9 @@ function auditionTransport(overrides: Overrides = {}): Transport {
         "urn:entity:artist|radiohead": QLOO_FIXTURES.searchRadiohead,
         "urn:entity:artist|kendrick lamar": AUDITION_FIXTURES.searchKendrick,
         "urn:entity:artist|metallica": AUDITION_FIXTURES.searchMetallica,
+        "urn:entity:movie|dune": { results: [] },
+        "urn:entity:movie|alien": { results: [] },
+        "urn:entity:videogame|alien": { results: [] },
         "urn:entity:movie|moon": AUDITION_FIXTURES.searchMoon,
         "urn:entity:movie|arrival": AUDITION_FIXTURES.searchArrival,
         "urn:entity:movie|o brother, where art thou?": AUDITION_FIXTURES.searchOBrother,
@@ -86,8 +89,8 @@ function auditionTransport(overrides: Overrides = {}): Transport {
   return { fetchImpl, calls };
 }
 
-function plan(actions: unknown[], clarification: string | null = null): ModelScript {
-  return { parsed: { actions, clarification } };
+function plan(actions: unknown[], clarification: string | null = null, deferred_action: unknown = null): ModelScript {
+  return { parsed: { actions, clarification, deferred_action } };
 }
 
 const ADD = (kind: string, query: string) => ({ op: "add", kind, slot_id: null, query });
@@ -134,6 +137,91 @@ async function opened(h: Harness) {
 }
 
 describe("POST /api/audition/interpret", () => {
+  it("keeps Dune while resolving the pending Alien request, then clears it", async () => {
+    const message = "Add Alien, but ask me whether I mean the film or the game before searching.";
+    const question = "Do you mean the film or the game?";
+    const h = setup([plan([ADD("movie", "Dune")]), plan([], question, { op: "add", slot_id: null, query: "Alien" }), plan([ADD("movie", "Arrival")])]);
+    const cookie = await owner(h);
+    const initial = await body<InterpretResponse>(await interpret(h, cookie, "Add the film Dune", { slots: [] }));
+    const dune = initial.state.slots[0]!;
+    expect(dune.confirmed_entity_id).toBeNull();
+    const before = h.transport.calls.length;
+    const asked = await body<InterpretResponse>(await interpret(h, cookie, message, initial.state));
+    expect(asked.applied).toEqual([]);
+    expect(asked.state.slots).toEqual([dune]);
+    expect(asked.state.pending_clarification).toMatchObject({ action: { op: "add", slot_id: null, query: "Alien" }, ambiguity: "media_type", choices: ["movie", "videogame"], question });
+    expect(asked.model_calls).toBe(1);
+    expect(h.transport.calls).toHaveLength(before);
+
+    // JSON round trip is the browser's state handoff between independent calls.
+    const returnedState = JSON.parse(JSON.stringify(asked.state)) as AuditionState;
+    const resolved = await body<InterpretResponse>(await interpret(h, cookie, "The film", returnedState));
+    const input = JSON.parse(String(h.model!.requests[1]!["input"]));
+    expect(input.message).toBe(message);
+    expect(Object.keys(input)).toEqual(["message", "slots"]);
+    expect(h.model!.requests).toHaveLength(2);
+    expect(resolved.model_calls).toBe(0);
+    expect(Object.keys(input.slots[0]).sort()).toEqual(["confirmed", "kind", "query", "slot_id"]);
+    expect(JSON.stringify(input)).not.toMatch(/affinity|score|rank|capture_id|entity_id/);
+    expect(resolved.applied).toEqual([{ op: "add", slot_id: "s2", kind: "movie", query: "Alien" }]);
+    expect(resolved.state.slots[0]).toEqual(dune);
+    expect(resolved.state.slots.map(({ kind, query }) => [kind, query])).toEqual([["movie", "Dune"], ["movie", "Alien"]]);
+    expect(resolved.state.pending_clarification).toBeUndefined();
+    expect(resolved.clarification).toBeNull();
+    const searches = h.transport.calls.slice(before).map(({ url }) => new URL(url));
+    expect(searches).toHaveLength(1);
+    expect(searches[0]!.pathname).toBe("/search");
+    expect(searches[0]!.searchParams.get("query")).toBe("Alien");
+    expect(searches[0]!.searchParams.get("types")).toBe("urn:entity:movie");
+
+    const later = await body<InterpretResponse>(await interpret(h, cookie, "Add the movie Arrival", resolved.state));
+    expect(JSON.parse(String(h.model!.requests[2]!["input"])).pending_clarification).toBeUndefined();
+    expect(later.model_calls).toBe(1);
+    expect(h.model!.requests).toHaveLength(3);
+    expect(later.applied).toEqual([{ op: "add", slot_id: "s3", kind: "movie", query: "Arrival" }]);
+    expect(later.state.slots.slice(0, 2)).toEqual(resolved.state.slots);
+  });
+
+  it("keeps unrelated free text pending and resolves the game without any model call", async () => {
+    const h = setup([]); // Any accidental model call fails: no scripted responses exist.
+    const cookie = await owner(h);
+    const slots: AuditionState["slots"] = [{ slot_id: "s1", kind: "movie", query: "Dune", search_capture_id: null, confirmed_entity_id: null }];
+    const state: AuditionState = { slots, pending_clarification: {
+      action: { op: "add", slot_id: null, query: "Alien" }, ambiguity: "media_type", choices: ["movie", "videogame"],
+      question: "Do you mean the film or the game?", slot_context: clarificationSlotContext(slots),
+    } };
+    const held = await body<InterpretResponse>(await interpret(h, cookie, "Remove Dune and add Arrival", state));
+    expect(held.state).toEqual(state);
+    expect(held.applied).toEqual([]);
+    expect(held.clarification).toBe(state.pending_clarification!.question);
+    expect(held.model_calls).toBe(0);
+    expect(held.upstream_calls).toBe(0);
+    const resolved = await body<InterpretResponse>(await interpret(h, cookie, "the game", held.state));
+    expect(resolved.state.slots[0]).toEqual(slots[0]); // Even unsearched Dune is untouched.
+    expect(resolved.applied).toEqual([{ op: "add", slot_id: "s2", kind: "videogame", query: "Alien" }]);
+    expect(resolved.state.pending_clarification).toBeUndefined();
+    expect(resolved.model_calls).toBe(0);
+    expect(h.model!.requests).toHaveLength(0);
+    expect(h.transport.calls).toHaveLength(1);
+    expect(new URL(h.transport.calls[0]!.url).searchParams.get("types")).toBe("urn:entity:videogame");
+  });
+
+  it("rejects malformed or stale clarification before any model or Qloo call", async () => {
+    const h = setup([]);
+    const cookie = await owner(h);
+    for (const pending_clarification of [
+      { question: "Film or game?" },
+      { action: { op: "add", slot_id: null, query: "Alien" }, ambiguity: "media_type", choices: ["movie", "videogame"], question: "Film or game?", slot_context: "stale" },
+      { action: { op: "replace", slot_id: "s1", query: "Alien" }, ambiguity: "media_type", choices: ["movie", "videogame"], question: "Film or game?", slot_context: "[]" },
+      { action: { op: "add", slot_id: "s1", query: "Alien" }, ambiguity: "media_type", choices: ["movie", "videogame"], question: "Film or game?", slot_context: "[]" },
+      { action: { op: "add", slot_id: null, query: "Alien", score: 0.9 }, ambiguity: "media_type", choices: ["movie", "videogame"], question: "Film or game?", slot_context: "[]" },
+    ]) {
+      const response = await interpret(h, cookie, "The film", { slots: [], pending_clarification } as AuditionState);
+      expect(response.status).toBe(422);
+    }
+    expect(h.model!.requests).toHaveLength(0);
+    expect(h.transport.calls).toHaveLength(0);
+  });
   it("turns a sentence into searched slots, and confirms nothing", async () => {
     const h = setup();
     const { interpreted } = await opened(h);
@@ -187,7 +275,7 @@ describe("POST /api/audition/interpret", () => {
   });
 
   it("passes a clarifying question through and adds nothing it was unsure of", async () => {
-    const h = setup([plan([], "Do you mean the Halo games or the Halo series?")]);
+    const h = setup([plan([], "Do you mean the Halo film or the Halo game?", { op: "add", slot_id: null, query: "Halo" })]);
     const cookie = await owner(h);
     const result = await body<InterpretResponse>(await interpret(h, cookie, "add Halo", { slots: [] }));
     expect(result.clarification).toMatch(/Halo/);
@@ -207,7 +295,7 @@ describe("POST /api/audition/interpret", () => {
   });
 
   it("rejects a model output that carries a score, and changes nothing", async () => {
-    const h = setup([{ parsed: { actions: [{ ...ADD("movie", "Moon"), affinity: 0.99 }], clarification: null } }]);
+    const h = setup([{ parsed: { actions: [{ ...ADD("movie", "Moon"), affinity: 0.99 }], clarification: null, deferred_action: null } }]);
     const cookie = await owner(h);
     const response = await interpret(h, cookie, "Moon is the best", { slots: [] });
     expect(response.status).toBe(429);

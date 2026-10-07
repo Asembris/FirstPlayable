@@ -95,6 +95,7 @@ export function AuditionClient({ savedResult, example, startLive = false }: { sa
 
   function confirm(slot: AuditionSlot, entityId: string | null): void {
     setState({
+      ...state,
       slots: state.slots.map((s) => (s.slot_id === slot.slot_id ? { ...s, confirmed_entity_id: entityId } : s)),
     });
     setResult(null);
