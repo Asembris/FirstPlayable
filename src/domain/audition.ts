@@ -85,9 +85,27 @@ export const AuditionSlotSchema = z.strictObject({
 
 export type AuditionSlot = z.infer<typeof AuditionSlotSchema>;
 
+/** One unresolved request, never a transcript or retrieved evidence. */
+export const PendingClarificationSchema = z.strictObject({
+  message: z.string().trim().min(1).max(REQUEST_MESSAGE_MAX),
+  question: z.string().trim().min(1).max(240),
+  slot_context: z.string().min(1).max(2000),
+});
+
+export function clarificationSlotContext(slots: readonly AuditionSlot[]): string {
+  return JSON.stringify(slots.map(({ slot_id, kind, query }) => ({ slot_id, kind, query })));
+}
+
 export const AuditionStateSchema = z
-  .strictObject({ slots: z.array(AuditionSlotSchema).max(MAX_SLOTS) })
+  .strictObject({
+    slots: z.array(AuditionSlotSchema).max(MAX_SLOTS),
+    pending_clarification: PendingClarificationSchema.optional(),
+  })
   .superRefine((state, context) => {
+    if (state.pending_clarification !== undefined &&
+        state.pending_clarification.slot_context !== clarificationSlotContext(state.slots)) {
+      context.addIssue({ code: "custom", message: "stale pending clarification", path: ["pending_clarification"] });
+    }
     const ids = new Set<string>();
     const counts: Record<SlotKind, number> = { movie: 0, videogame: 0, audience: 0 };
     for (const slot of state.slots) {

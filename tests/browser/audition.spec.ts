@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import type { Page, Route } from "@playwright/test";
+import { clarificationSlotContext } from "../../src/domain/audition";
 import { compareAudiences } from "../../src/domain/audition-compare";
 import type { AuditionState, InterpretResponse } from "../../src/domain/audition";
 import type { ConfirmedEntityView, ScoreResponse } from "../../src/domain/audition-view";
@@ -190,4 +191,49 @@ test("a creator choice other than Qloo's first result is the one sent", async ({
   await page.getByTestId("audition-score").click();
   await expect(page.getByTestId("audition-failure")).toContainText("Stopped for the test.");
   expect(scored.at(-1)?.slots[0]?.confirmed_entity_id).toBe(MOONRISE);
+});
+
+
+test("pending Alien clarification survives browser state and confirmation, then clears", async ({ page }) => {
+  const requests: { message: string; state: AuditionState }[] = [];
+  const message = "Add Alien, but ask me whether I mean the film or the game before searching.";
+  const question = "Do you mean the film or the game?";
+  await page.route("**/api/session", route => route.fulfill({ json: { established: true } }));
+  await page.route("**/api/audition/interpret", async route => {
+    const input = route.request().postDataJSON() as { message: string; state: AuditionState };
+    requests.push(input);
+    const value = interpretResponse();
+    value.state.slots = [ { ...value.state.slots[0]!, query: "Dune" } ];
+    value.searches = [ { ...value.searches[0]!, candidates: [{ entity_id: MOON, name: "Dune", hint: null, original_rank: 1 }] } ];
+    value.applied = [];
+    if (requests.length === 2) {
+      value.clarification = question;
+      value.state.pending_clarification = { message, question, slot_context: clarificationSlotContext(value.state.slots) };
+    }
+    if (requests.length >= 3) {
+      value.state.slots = [...input.state.slots];
+      if (requests.length === 3) value.state.slots.push({ slot_id: "s2", kind: "movie", query: "Alien", search_capture_id: CAPTURE(2), confirmed_entity_id: null });
+      value.searches = [];
+    }
+    await route.fulfill({ json: value });
+  });
+  await page.goto("/audition?mode=live");
+  await page.getByTestId("audition-message").fill("Add the film Dune");
+  await page.getByTestId("audition-send").click();
+  await expect(page.getByTestId("confirm-s1-1")).toBeVisible();
+  await page.getByTestId("audition-message").fill(message);
+  await page.getByTestId("audition-send").click();
+  await expect(page.getByTestId("audition-transcript")).toContainText(question);
+  // Creator identity confirmation must preserve pending context.
+  await page.getByTestId("confirm-s1-1").check();
+  await page.getByTestId("audition-message").fill("The film");
+  await page.getByTestId("audition-send").click();
+  await expect(page.getByTestId("audition-transcript")).toContainText("You: The film");
+  expect(requests[2]!.state.pending_clarification).toMatchObject({ message, question });
+  expect(requests[2]!.state.slots[0]!.confirmed_entity_id).toBe(MOON);
+  await page.getByTestId("audition-message").fill("Add the movie Arrival");
+  await page.getByTestId("audition-send").click();
+  await expect(page.getByTestId("audition-transcript")).toContainText("You: Add the movie Arrival");
+  expect(requests[3]!.state.pending_clarification).toBeUndefined();
+  expect(requests[3]!.state.slots.map(slot => slot.query)).toEqual(["Dune", "Alien"]);
 });

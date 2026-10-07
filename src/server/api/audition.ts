@@ -282,7 +282,7 @@ async function searchSlots(
     .map((outcome) => outcome.view)
     .sort((a, b) => (order.get(a.slot_id) ?? 0) - (order.get(b.slot_id) ?? 0));
 
-  return { state: { slots }, searches, failures, upstream: spent };
+  return { state: { ...state, slots }, searches, failures, upstream: spent };
 }
 
 /**
@@ -332,7 +332,7 @@ export async function handleInterpret(request: Request, deps: Phase3Deps): Promi
     await requireSession(context, request);
 
     const plan = await runAgent(context, input.message, input.state);
-    const edited = applyPlan(input.state, plan);
+    const edited = applyPlan(input.state, plan, input.message);
     const searched = await searchSlots(context, edited.state);
 
     const response: InterpretResponse = {
