@@ -1,3 +1,4 @@
+import { domainAuditionView } from '@/domain/audition-result';
 /**
  * The comp audition's two routes:
  *
@@ -36,19 +37,14 @@ import {
   type SlotSearchView,
 } from "@/domain/audition";
 import {
-  type AudienceScores,
   AuditionDomainError,
-  compareAudiences,
 } from "@/domain/audition-compare";
 import type {
   ConfirmedEntityView,
-  DomainAuditionView,
-  ScoreEvidenceView,
   ScoreResponse,
 } from "@/domain/audition-view";
 import {
   type ArtistSearchSnapshot,
-  QLOO_DOMAIN_FILTER_TYPE,
   QLOO_DOMAINS,
   type QlooDomain,
 } from "@/domain/qloo";
@@ -387,13 +383,6 @@ async function confirmedComp(gateway: DataGateway, slot: AuditionSlot, domain: Q
   };
 }
 
-function requestShape(domain: QlooDomain, audienceId: string, ids: readonly string[]): string {
-  return (
-    `GET /v2/insights?filter.type=${QLOO_DOMAIN_FILTER_TYPE[domain]}` +
-    `&signal.interests.entities=${audienceId}` +
-    `&filter.results.entities=${[...ids].sort().join(",")}&take=${ids.length}`
-  );
-}
 
 export async function handleScore(request: Request, deps: Phase3Deps): Promise<Response> {
   const requestId = newRequestId();
@@ -468,36 +457,11 @@ export async function handleScore(request: Request, deps: Phase3Deps): Promise<R
 
     const domains: ScoreResponse["domains"] = { movie: null, videogame: null };
     for (const [domain, comps] of compsByDomain) {
-      const scoresFor = (audience: ConfirmedEntityView): { scores: AudienceScores; capture: CompScoreCapture } => {
+      const capturesFor = (audience: ConfirmedEntityView): CompScoreCapture => {
         const job = jobs.find((entry) => entry.domain === domain && entry.audience.entity_id === audience.entity_id)!;
-        const capture = captures.get(job.fingerprint)!;
-        return {
-          capture,
-          scores: {
-            audience_entity_id: audience.entity_id,
-            audience_name: audience.name,
-            domain: capture.domain,
-            affinities: new Map(capture.scores.map((score) => [score.entity_id, score.affinity])),
-          },
-        };
+        return captures.get(job.fingerprint)!;
       };
-      const first = scoresFor(audienceA);
-      const second = scoresFor(audienceB);
-      const comparison = compareAudiences(
-        domain,
-        comps.map((comp) => ({ entity_id: comp.entity_id, name: comp.name, domain })),
-        first.scores,
-        second.scores,
-      );
-      const evidence: ScoreEvidenceView[] = [first, second].map(({ capture }) => ({
-        audience_entity_id: capture.audience_entity_id,
-        capture_id: capture.capture_id,
-        retrieved_at: capture.retrieved_at,
-        cache: capture.cache,
-        request: requestShape(domain, capture.audience_entity_id, capture.requested_entity_ids),
-        missing_entity_ids: capture.missing_entity_ids,
-      }));
-      const view: DomainAuditionView = { domain, comps, comparison, evidence };
+      const view = domainAuditionView(domain, comps, [audienceA, audienceB], [capturesFor(audienceA), capturesFor(audienceB)]);
       domains[domain] = view;
     }
 

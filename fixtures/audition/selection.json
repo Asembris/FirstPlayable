@@ -1,0 +1,556 @@
+{
+  "choices": [
+    [
+      "movie",
+      "Moon",
+      2009
+    ],
+    [
+      "movie",
+      "Arrival",
+      2016
+    ],
+    [
+      "movie",
+      "Interstellar",
+      2014
+    ],
+    [
+      "videogame",
+      "Outer Wilds",
+      2019
+    ],
+    [
+      "videogame",
+      "Death Stranding",
+      2019
+    ],
+    [
+      "videogame",
+      "Mass Effect",
+      2007
+    ]
+  ],
+  "comps": [
+    {
+      "entity_id": "6BBB34F4-9345-4459-82AE-10991FA35CD2",
+      "name": "Moon",
+      "domain": "movie",
+      "year": 2009,
+      "disambiguation": "2009",
+      "original_rank": 1,
+      "slot_id": "s1",
+      "search_capture_id": "62855f32-d455-4e62-9773-fbcb2719ec04",
+      "search": {
+        "kind": "comp_search",
+        "domain": "movie",
+        "query": "Moon",
+        "normalized_query": "moon",
+        "request_fingerprint": "audition-search|qloo-audition-1|2986dcd6b3b1d4f6c5ae96cca9411c4517f1a68ac75f0ffc6fdbec73282ac801",
+        "normalizer_version": "qloo-audition-1",
+        "retrieved_at": "2026-10-07T12:15:37.997Z",
+        "candidates": [
+          {
+            "entity_id": "6BBB34F4-9345-4459-82AE-10991FA35CD2",
+            "name": "Moon",
+            "domain": "movie",
+            "year": 2009,
+            "disambiguation": "2009",
+            "original_rank": 1
+          },
+          {
+            "entity_id": "A05E8A4F-EC69-4799-BB04-A82122DF8A5E",
+            "name": "Moon",
+            "domain": "movie",
+            "year": 2024,
+            "disambiguation": "2024",
+            "original_rank": 2
+          },
+          {
+            "entity_id": "2955F3C4-36AB-49F3-A818-3597F35EF46C",
+            "name": "Moonlight",
+            "domain": "movie",
+            "year": 2016,
+            "disambiguation": "2016",
+            "original_rank": 3
+          },
+          {
+            "entity_id": "79A98408-6B84-4416-99B4-A4B3563BEAFB",
+            "name": "Moonrise Kingdom",
+            "domain": "movie",
+            "year": 2012,
+            "disambiguation": "2012",
+            "original_rank": 4
+          },
+          {
+            "entity_id": "F265B3E1-0B53-4E67-996A-45F8F6DF54C0",
+            "name": "Moonstruck",
+            "domain": "movie",
+            "year": 1987,
+            "disambiguation": "1987",
+            "original_rank": 5
+          }
+        ]
+      }
+    },
+    {
+      "entity_id": "C7EC4CA9-1CCC-4991-B738-55F075441B3F",
+      "name": "Arrival",
+      "domain": "movie",
+      "year": 2016,
+      "disambiguation": "2016",
+      "original_rank": 1,
+      "slot_id": "s2",
+      "search_capture_id": "ee28e52c-adbb-414e-87f8-54e95b0bc01d",
+      "search": {
+        "kind": "comp_search",
+        "domain": "movie",
+        "query": "Arrival",
+        "normalized_query": "arrival",
+        "request_fingerprint": "audition-search|qloo-audition-1|26b213731f057efa9b5910ff110e16b9e25e3d03c5fbedfd6074cdc51dfb93b9",
+        "normalizer_version": "qloo-audition-1",
+        "retrieved_at": "2026-10-07T12:15:38.474Z",
+        "candidates": [
+          {
+            "entity_id": "C7EC4CA9-1CCC-4991-B738-55F075441B3F",
+            "name": "Arrival",
+            "domain": "movie",
+            "year": 2016,
+            "disambiguation": "2016",
+            "original_rank": 1
+          },
+          {
+            "entity_id": "D712CCE4-BA8F-4863-9529-C10E65F73DC3",
+            "name": "The Arrival",
+            "domain": "movie",
+            "year": 1996,
+            "disambiguation": "1996",
+            "original_rank": 2
+          },
+          {
+            "entity_id": "5399B84E-E8F7-4BF4-B0B0-CE534B838A9E",
+            "name": "The Arrival",
+            "domain": "movie",
+            "year": 2023,
+            "disambiguation": "2023",
+            "original_rank": 3
+          },
+          {
+            "entity_id": "E40427CC-EE52-47B1-900A-5574FBA3AF60",
+            "name": "Alien Arrival the Hidden Past",
+            "domain": "movie",
+            "year": 2026,
+            "disambiguation": "2026",
+            "original_rank": 4
+          },
+          {
+            "entity_id": "7A4134D0-1E97-471E-B828-18F687E0C8F8",
+            "name": "The Enigma of Arrival",
+            "domain": "movie",
+            "year": 2018,
+            "disambiguation": "2018",
+            "original_rank": 5
+          }
+        ]
+      }
+    },
+    {
+      "entity_id": "057DA9D9-399B-437E-8BCA-A80E499125EF",
+      "name": "Interstellar",
+      "domain": "movie",
+      "year": 2014,
+      "disambiguation": "2014",
+      "original_rank": 1,
+      "slot_id": "s3",
+      "search_capture_id": "f09db2e5-66c5-4340-b4e4-231aeabc5759",
+      "search": {
+        "kind": "comp_search",
+        "domain": "movie",
+        "query": "Interstellar",
+        "normalized_query": "interstellar",
+        "request_fingerprint": "audition-search|qloo-audition-1|d3fdf1049a472c553f71b4a61f9a1f38ba49b4f49ffef8f4548d52ffbafd61d0",
+        "normalizer_version": "qloo-audition-1",
+        "retrieved_at": "2026-10-07T12:15:38.937Z",
+        "candidates": [
+          {
+            "entity_id": "057DA9D9-399B-437E-8BCA-A80E499125EF",
+            "name": "Interstellar",
+            "domain": "movie",
+            "year": 2014,
+            "disambiguation": "2014",
+            "original_rank": 1
+          },
+          {
+            "entity_id": "B78D795F-8932-4BC9-BFDE-8A68C684D578",
+            "name": "Interstellar: Nolan's Odyssey",
+            "domain": "movie",
+            "year": 2014,
+            "disambiguation": "2014",
+            "original_rank": 2
+          },
+          {
+            "entity_id": "0A62BAA1-A0D4-4F0B-86CE-A889DD1AA697",
+            "name": "Interstellar Wars",
+            "domain": "movie",
+            "year": 2016,
+            "disambiguation": "2016",
+            "original_rank": 3
+          },
+          {
+            "entity_id": "019C713C-C0DA-4719-9228-47A4E4EA5258",
+            "name": "Interstellar Civil War: Shadows of the Empire",
+            "domain": "movie",
+            "year": 2017,
+            "disambiguation": "2017",
+            "original_rank": 4
+          },
+          {
+            "entity_id": "3D3B05AA-A859-41CB-973A-A4AAA52196FB",
+            "name": "The Science of Interstellar",
+            "domain": "movie",
+            "year": 2014,
+            "disambiguation": "2014",
+            "original_rank": 5
+          }
+        ]
+      }
+    },
+    {
+      "entity_id": "EA0D6B19-199B-439B-809D-B60B4412E405",
+      "name": "Outer Wilds",
+      "domain": "videogame",
+      "year": 2019,
+      "disambiguation": "2019-05-28, Mobius Digital, LLC",
+      "original_rank": 1,
+      "slot_id": "s4",
+      "search_capture_id": "3365b96b-05bf-4a4d-a94d-06b1f27b7ba0",
+      "search": {
+        "kind": "comp_search",
+        "domain": "videogame",
+        "query": "Outer Wilds",
+        "normalized_query": "outer wilds",
+        "request_fingerprint": "audition-search|qloo-audition-1|2993e250b6a62808999a7d0ed443c061e302275fdd041a38058c4163a82b4d27",
+        "normalizer_version": "qloo-audition-1",
+        "retrieved_at": "2026-10-07T12:15:39.478Z",
+        "candidates": [
+          {
+            "entity_id": "EA0D6B19-199B-439B-809D-B60B4412E405",
+            "name": "Outer Wilds",
+            "domain": "videogame",
+            "year": 2019,
+            "disambiguation": "2019-05-28, Mobius Digital, LLC",
+            "original_rank": 1
+          },
+          {
+            "entity_id": "6309B601-E181-4089-A3B4-4577F0EF5444",
+            "name": "Outer Wilds: Echoes of the Eye",
+            "domain": "videogame",
+            "year": 2021,
+            "disambiguation": "2021-09-28, Mobius Digital, LLC",
+            "original_rank": 2
+          },
+          {
+            "entity_id": "8B23E4DA-F56B-4682-B961-3C3FF1F03223",
+            "name": "Outer Wilds: Archaeologist Edition",
+            "domain": "videogame",
+            "year": 2023,
+            "disambiguation": "2023-12-07, Mobius Digital, LLC",
+            "original_rank": 3
+          },
+          {
+            "entity_id": "B32A4BFE-C5FA-4BB3-AC83-4A4EDBD57FE7",
+            "name": "The Outer Worlds",
+            "domain": "videogame",
+            "year": 2019,
+            "disambiguation": "2019-10-25, Obsidian Entertainment",
+            "original_rank": 4
+          },
+          {
+            "entity_id": "9C81A4D5-76F9-4926-AE49-14564EF10929",
+            "name": "The Outer Side",
+            "domain": "videogame",
+            "year": 2025,
+            "disambiguation": "2025-01-21, Aquatic Games",
+            "original_rank": 5
+          }
+        ]
+      }
+    },
+    {
+      "entity_id": "B061B95F-B940-4871-B80A-C12365E7A2A1",
+      "name": "Death Stranding",
+      "domain": "videogame",
+      "year": 2019,
+      "disambiguation": "2019-11-08, Kojima Productions",
+      "original_rank": 1,
+      "slot_id": "s5",
+      "search_capture_id": "2bbf4be1-52e2-46cb-bff3-2e79165ec08b",
+      "search": {
+        "kind": "comp_search",
+        "domain": "videogame",
+        "query": "Death Stranding",
+        "normalized_query": "death stranding",
+        "request_fingerprint": "audition-search|qloo-audition-1|668d4b563d6f6067e1a41f4e30313cf96d2540ef64b6e0457f9f08d4a21e628d",
+        "normalizer_version": "qloo-audition-1",
+        "retrieved_at": "2026-10-07T12:15:39.942Z",
+        "candidates": [
+          {
+            "entity_id": "B061B95F-B940-4871-B80A-C12365E7A2A1",
+            "name": "Death Stranding",
+            "domain": "videogame",
+            "year": 2019,
+            "disambiguation": "2019-11-08, Kojima Productions",
+            "original_rank": 1
+          },
+          {
+            "entity_id": "2C034199-1D23-4BBE-83A9-CDA472B69CD2",
+            "name": "Death Stranding: Director's Cut",
+            "domain": "videogame",
+            "year": 2021,
+            "disambiguation": "2021-09-24, Kojima Productions",
+            "original_rank": 2
+          },
+          {
+            "entity_id": "367762A6-E2BA-4095-914E-6C99E78F39E8",
+            "name": "Death Stranding 2: On The Beach",
+            "domain": "videogame",
+            "year": 1998,
+            "disambiguation": "1998-11-23, Kojima Productions",
+            "original_rank": 3
+          },
+          {
+            "entity_id": "F1D0A5B6-F682-4058-B3C3-B21D3C972DF5",
+            "name": "Death Roads: Tournament Prologue",
+            "domain": "videogame",
+            "year": 2023,
+            "disambiguation": "2023-06-06, The Knights of Unity",
+            "original_rank": 4
+          },
+          {
+            "entity_id": "653BEA22-AD1C-47DB-8CFE-3D4E69EFBC11",
+            "name": "End Of Death: Prison",
+            "domain": "videogame",
+            "year": 2024,
+            "disambiguation": "2024-09-20, Nava Dev",
+            "original_rank": 5
+          }
+        ]
+      }
+    },
+    {
+      "entity_id": "DB003E13-0C9F-4011-B928-43ADC2A59F26",
+      "name": "Mass Effect",
+      "domain": "videogame",
+      "year": 2007,
+      "disambiguation": "2007-11-20, BioWare",
+      "original_rank": 1,
+      "slot_id": "s6",
+      "search_capture_id": "1d2fa81a-02ef-4f0a-912e-ab1b6977231c",
+      "search": {
+        "kind": "comp_search",
+        "domain": "videogame",
+        "query": "Mass Effect",
+        "normalized_query": "mass effect",
+        "request_fingerprint": "audition-search|qloo-audition-1|655296b044c444c3880ed98cd6acdb00ea73539f7e2741bb412f647c1cf6ac1e",
+        "normalizer_version": "qloo-audition-1",
+        "retrieved_at": "2026-10-07T12:15:40.414Z",
+        "candidates": [
+          {
+            "entity_id": "DB003E13-0C9F-4011-B928-43ADC2A59F26",
+            "name": "Mass Effect",
+            "domain": "videogame",
+            "year": 2007,
+            "disambiguation": "2007-11-20, BioWare",
+            "original_rank": 1
+          },
+          {
+            "entity_id": "82D73A47-AFD0-42CB-81FC-907CB508662C",
+            "name": "Mass Effect 3: Citadel",
+            "domain": "videogame",
+            "year": 2013,
+            "disambiguation": "2013-03-05, BioWare",
+            "original_rank": 2
+          },
+          {
+            "entity_id": "54FAC5DD-F89C-4891-8CC1-57580200AFA6",
+            "name": "Mass Effect: Andromeda",
+            "domain": "videogame",
+            "year": 2017,
+            "disambiguation": "2017-03-21, BioWare",
+            "original_rank": 3
+          },
+          {
+            "entity_id": "0B9D33B0-5881-434F-AED7-B4F83EC1CA43",
+            "name": "Mass Effect Trilogy",
+            "domain": "videogame",
+            "year": 2012,
+            "disambiguation": "2012-12-04, BioWare",
+            "original_rank": 4
+          },
+          {
+            "entity_id": "8B63E812-B486-4070-BCF8-AC978AE51A1E",
+            "name": "Mass Effect 3",
+            "domain": "videogame",
+            "year": 2012,
+            "disambiguation": "2012-03-06, BioWare",
+            "original_rank": 5
+          }
+        ]
+      }
+    }
+  ],
+  "audiences": [
+    {
+      "entity_id": "70CAE5BF-2F4C-445C-A3E5-4EDACFC3591C",
+      "name": "Radiohead",
+      "short_description": "Radiohead is an English rock band known for their innovative and experimental approach to music.",
+      "disambiguation": "Radiohead",
+      "identity_hints": [
+        "facebook",
+        "instagram",
+        "lastfm",
+        "musicbrainz",
+        "spotify",
+        "twitter",
+        "wikidata"
+      ],
+      "original_rank": 1,
+      "slot_id": "s7",
+      "search_capture_id": "13017e67-cb6e-41ef-9188-20369f46cfcb",
+      "search": {
+        "query": "Radiohead",
+        "normalized_query": "radiohead",
+        "request_fingerprint": "search|qloo-norm-1|da9b9183ab1e9196704a5cca60156395adac12c55f71ffd0d2ac226f7f5a043e",
+        "normalizer_version": "qloo-norm-1",
+        "retrieved_at": "2026-10-07T12:15:40.875Z",
+        "candidates": [
+          {
+            "entity_id": "70CAE5BF-2F4C-445C-A3E5-4EDACFC3591C",
+            "name": "Radiohead",
+            "short_description": "Radiohead is an English rock band known for their innovative and experimental approach to music.",
+            "disambiguation": "Radiohead",
+            "identity_hints": [
+              "facebook",
+              "instagram",
+              "lastfm",
+              "musicbrainz",
+              "spotify",
+              "twitter",
+              "wikidata"
+            ],
+            "original_rank": 1
+          },
+          {
+            "entity_id": "99ECEFED-B982-40C2-A2ED-EB042E9545FA",
+            "name": "Radiohead Tribute",
+            "short_description": "A tribute band dedicated to performing the music of Radiohead.",
+            "disambiguation": "Radiohead Tribute",
+            "identity_hints": [],
+            "original_rank": 2
+          },
+          {
+            "entity_id": "BF711411-5659-4CEF-BC46-ADEAACEB52EA",
+            "name": "Dub Tribute To Radiohead",
+            "short_description": "A group performing dub reggae covers of Radiohead songs.",
+            "disambiguation": "Dub Tribute To Radiohead",
+            "identity_hints": [],
+            "original_rank": 3
+          },
+          {
+            "entity_id": "A754373E-0D89-4FD7-85B4-6F22F413D1D1",
+            "name": "The Bluegrass Tribute to Radiohead",
+            "short_description": "A bluegrass tribute band performing covers of Radiohead songs.",
+            "disambiguation": "The Bluegrass Tribute to Radiohead",
+            "identity_hints": [],
+            "original_rank": 4
+          },
+          {
+            "entity_id": "93D30F68-DA61-4CB3-A672-1C7983C79086",
+            "name": "Thom Yorke and Johnny Greenwood (Radiohead)",
+            "short_description": "Thom Yorke and Johnny Greenwood are key members of Radiohead, known for innovative alternative and experimental rock music.",
+            "disambiguation": "Thom Yorke and Johnny Greenwood (Radiohead)",
+            "identity_hints": [],
+            "original_rank": 5
+          }
+        ]
+      }
+    },
+    {
+      "entity_id": "C915A918-39C5-47A3-A101-D9FA1DECBD9C",
+      "name": "Kendrick Lamar",
+      "short_description": "An influential American rapper and songwriter known for his profound lyricism and storytelling.",
+      "disambiguation": "Kendrick Lamar",
+      "identity_hints": [
+        "facebook",
+        "instagram",
+        "lastfm",
+        "musicbrainz",
+        "spotify",
+        "twitter",
+        "wikidata"
+      ],
+      "original_rank": 1,
+      "slot_id": "s8",
+      "search_capture_id": "6e133970-76e8-4e4a-91a7-637d208a4eca",
+      "search": {
+        "query": "Kendrick Lamar",
+        "normalized_query": "kendrick lamar",
+        "request_fingerprint": "search|qloo-norm-1|e51eb10b5b1b2afeedd74f1fd0b09979c147f1d15537546c3b78fd3331256f5b",
+        "normalizer_version": "qloo-norm-1",
+        "retrieved_at": "2026-10-07T12:15:41.374Z",
+        "candidates": [
+          {
+            "entity_id": "C915A918-39C5-47A3-A101-D9FA1DECBD9C",
+            "name": "Kendrick Lamar",
+            "short_description": "An influential American rapper and songwriter known for his profound lyricism and storytelling.",
+            "disambiguation": "Kendrick Lamar",
+            "identity_hints": [
+              "facebook",
+              "instagram",
+              "lastfm",
+              "musicbrainz",
+              "spotify",
+              "twitter",
+              "wikidata"
+            ],
+            "original_rank": 1
+          },
+          {
+            "entity_id": "B8874D35-B38E-4932-AE48-BAA86948C8B8",
+            "name": "Kendrick Lamar, SZA",
+            "short_description": "American hip hop and R&B artists known for their profound lyrics and innovative music.",
+            "disambiguation": "Kendrick Lamar, SZA",
+            "identity_hints": [],
+            "original_rank": 2
+          },
+          {
+            "entity_id": "2B4A9D52-242D-440D-898E-1A7ADB5DE79A",
+            "name": "Kendrick Lamar, Travis Scott",
+            "short_description": "American rapper and songwriter known for his profound lyrics and storytelling.",
+            "disambiguation": "Kendrick Lamar, Travis Scott",
+            "identity_hints": [],
+            "original_rank": 3
+          },
+          {
+            "entity_id": "B16BCD64-A57E-4496-9419-368B0F3D63FF",
+            "name": "Kendrick Lamar, Zacari",
+            "short_description": "American rapper and songwriter known for his profound lyrics and storytelling.",
+            "disambiguation": "Kendrick Lamar, Zacari",
+            "identity_hints": [],
+            "original_rank": 4
+          },
+          {
+            "entity_id": "83052D30-913B-4546-AEB6-1C4EC966E95D",
+            "name": "Kendrick Lamar, U2",
+            "short_description": "American rapper and songwriter known for his profound lyrics and storytelling.",
+            "disambiguation": "Kendrick Lamar, U2",
+            "identity_hints": [],
+            "original_rank": 5
+          }
+        ]
+      }
+    }
+  ],
+  "frozen_at": "2026-10-07T12:15:41.374Z",
+  "policy": "One fixed candidate set; one audience pair; no selection probe or resampling."
+}
