@@ -9,16 +9,18 @@
 
 **Choose the comps. Switch the audience. See what changes.**
 
-[![Open the saved audition](https://img.shields.io/badge/%E2%96%B6_Open_the_saved_audition-B0154C?style=for-the-badge)](https://firstplayable.vercel.app/audition)
-[![Try your own comps](https://img.shields.io/badge/Try_your_own_comps-141518?style=for-the-badge)](https://firstplayable.vercel.app/audition?mode=live)
-[![Qloo Agentic Hackathon](https://img.shields.io/badge/Qloo_Agentic_Hackathon-6B6E75?style=for-the-badge)](https://qloo.devpost.com/)
+[![Watch 90s Demo](https://img.shields.io/badge/%E2%96%B6_Watch_90s_Demo-B0154C?style=for-the-badge)](https://youtu.be/2YhuPYuNKak)
+[![Try Live App](https://img.shields.io/badge/Try_Live_App-141518?style=for-the-badge)](https://firstplayable.vercel.app/audition?mode=live)
+
+[![Saved Interactive Demo](https://img.shields.io/badge/Saved_Interactive_Demo-6B6E75?style=for-the-badge)](https://firstplayable.vercel.app/audition)
+[![Devpost Submission](https://img.shields.io/badge/Devpost_Submission-6B6E75?style=for-the-badge)](https://devpost.com/software/firstplayable)
 
 [![CI](https://github.com/Asembris/FirstPlayable/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Asembris/FirstPlayable/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-6B6E75)](LICENSE)
 
 <a href="https://firstplayable.vercel.app/audition"><img src="docs/readme/audition-hero.png" width="100%" alt="The saved audition, synthetic demonstration data. Lanternfold vs Juno Kestrel. Decision: Which movie comp should I foreground for Lanternfold fans? For this audience signal, Quiet Orbit is the clear lead among your confirmed movie comps. Below, the same three movie comps ordered for each audience: Lanternfold fans put Quiet Orbit first at 0.913, Juno Kestrel fans put it last at 0.701 and lead with First Hello. Quiet Orbit / First Hello: reversed. Quiet Orbit / Farther Than Light: reversed. First Hello / Farther Than Light: close, no call." /></a>
 
-<sub>The saved example at <a href="https://firstplayable.vercel.app/audition"><code>/audition</code></a>. Every title, artist and affinity in it is invented synthetic data, not Qloo data.</sub>
+<sub>The saved example at <a href="https://firstplayable.vercel.app/audition"><code>/audition</code></a>. Every title, artist and affinity in it is invented synthetic data, not Qloo data. The 90-second video shows real Qloo-backed results; the screenshot above shows the synthetic saved demo.</sub>
 
 </div>
 
