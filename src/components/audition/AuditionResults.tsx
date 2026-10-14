@@ -2,7 +2,7 @@
 import { useMemo, useState } from 'react';
 import { AUDITION_CLOSE_THRESHOLD } from '@/domain/audition';
 import type { AudienceRanking, PairComparison } from '@/domain/audition-compare';
-import { decisionAnswer, decisionQuestion, type DecisionResult } from '@/domain/audition-decision';
+import { decisionAnswer, decisionForAudience, decisionQuestion, type DecisionResult } from '@/domain/audition-decision';
 import type { DomainAuditionView, ReplayProvenance, ScoreResponse } from '@/domain/audition-view';
 const DOMAIN_LABEL = { movie: 'Movies', videogame: 'Games' } as const;
 function formatAffinity(value: number): string { return value.toFixed(3); }
@@ -13,14 +13,30 @@ function formatAffinity(value: number): string { return value.toFixed(3); }
  */
 export function AuditionResults({ result, replay }: { result: ScoreResponse; replay?: ReplayProvenance | undefined }): React.JSX.Element {
   const [a, b] = result.audiences;
-  const [activeAudience, setActiveAudience] = useState(result.decision?.audience_entity_id ?? a.entity_id);
+  /**
+   * Which audience is being read. It starts on the one the creator's decision
+   * question named, and is re-anchored to the new result whenever a fresh
+   * score arrives, so a switch made against the previous comparison can never
+   * outlive it. The reading is held with its result for exactly that reason.
+   */
+  const anchor = result.decision?.audience_entity_id ?? a.entity_id;
+  const [reading, setReading] = useState({ result, audience: anchor });
+  if (reading.result !== result) setReading({ result, audience: anchor });
+  const activeAudience =
+    reading.result === result && result.audiences.some((audience) => audience.entity_id === reading.audience)
+      ? reading.audience
+      : anchor;
+  const setActiveAudience = (audience: string): void => setReading({ result, audience });
+  // The prominent call follows the reading: same question, same deterministic
+  // rule, same stored evidence, re-derived for this audience. No call is made.
+  const decision = useMemo(() => decisionForAudience(result, activeAudience), [result, activeAudience]);
   return (
     <section className="rt-audition__results" aria-label="Audience comparison" data-testid="audition-results">
       <h2 className="rt-audition__h2">
         {a.name} vs {b.name}
       </h2>
       <p className="rt-audition__summary">Movies: {result.domains.movie?.comparison.reversals ?? 0} reversals · Games: {result.domains.videogame?.comparison.reversals ?? 0} reversals</p>
-      {result.decision !== null && <DecisionCard decision={result.decision} replay={replay} />}
+      {decision !== null && <DecisionCard decision={decision} replay={replay} />}
       <div className="rt-audition__switch" role="group" aria-label="Switch audience">
         {result.audiences.map((audience) => <button type="button" className="rt-button" key={audience.entity_id} aria-pressed={activeAudience === audience.entity_id} onClick={() => setActiveAudience(audience.entity_id)}>{audience.name} fans</button>)}
       </div>
@@ -61,7 +77,7 @@ function DecisionCard({ decision, replay }: { decision: DecisionResult; replay?:
       ? `the recorded Qloo audience affinity for ${decision.audience_name} fans, retrieved ${replay.captured_at.slice(0, 10)},`
       : `Qloo audience affinity for ${decision.audience_name} fans,`;
   return (
-    <section className="rt-audition__decision" aria-label="Decision" data-testid="audition-decision" data-status={decision.outcome.status}>
+    <section className="rt-audition__decision" aria-label="Decision" data-testid="audition-decision" data-status={decision.outcome.status} data-audience={decision.audience_entity_id}>
       <span className="rt-label">Decision{replay === undefined ? '' : ' · fixed example question, no model call'}</span>
       <p className="rt-audition__decision-ask" data-testid="decision-question">{decisionQuestion(decision)}</p>
       <p className="rt-audition__decision-answer" data-testid="decision-answer">{decisionAnswer(decision)}</p>
