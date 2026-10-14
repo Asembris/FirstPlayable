@@ -252,6 +252,10 @@ test("a bounded decision question is answered by the scored comparison, not the 
   await page.getByTestId("audition-score").click();
   await expect(page.getByTestId("audition-results")).toBeVisible();
   await expect(page.getByTestId("audition-decision")).toHaveCount(0);
+  // No question was asked, so switching the reading invents no call.
+  await page.getByRole("button", { name: "Kendrick Lamar fans", exact: true }).click();
+  await expect(page.getByTestId(`ranking-movie-${KENDRICK}`)).toHaveAttribute("data-active", "true");
+  await expect(page.getByTestId("audition-decision")).toHaveCount(0);
 
   await page.route("**/api/audition/interpret", (route) => {
     const { state } = route.request().postDataJSON() as { state: AuditionState };
@@ -271,5 +275,26 @@ test("a bounded decision question is answered by the scored comparison, not the 
   await expect(page.getByTestId("decision-basis")).toContainText("not the assistant");
   await expect(card).not.toContainText(/best comp/i);
   expect(scored.at(-1)?.decision_request).toEqual({ action: "foreground_comp", domain: "movie", audience_slot_id: "s3" });
+  await expect(page.getByTestId(`ranking-movie-${RADIOHEAD}`)).toHaveAttribute("data-active", "true");
+  await expect(card).toHaveAttribute("data-audience", RADIOHEAD);
+
+  // Switching the audience re-answers the same question from the scores
+  // already returned, with no further request to the application at all.
+  const requests = scored.length;
+  await page.getByRole("button", { name: "Kendrick Lamar fans", exact: true }).click();
+  await expect(card).toHaveAttribute("data-audience", KENDRICK);
+  await expect(page.getByTestId("decision-question")).toHaveText("Which movie comp should I foreground for Kendrick Lamar fans?");
+  await expect(page.getByTestId("decision-answer")).toHaveText("For this audience signal, Arrival is the clear lead among your confirmed movie comps.");
+  await expect(page.getByTestId("decision-basis")).toContainText("Qloo audience affinity for Kendrick Lamar fans");
+  await expect(page.getByTestId(`ranking-movie-${KENDRICK}`)).toHaveAttribute("data-active", "true");
+  expect(scored.length).toBe(requests);
+
+  // A fresh score re-anchors the reading on the question that was asked, so no
+  // call from the previous comparison survives it.
+  await page.getByTestId("audition-score").click();
+  await expect.poll(() => scored.length).toBe(requests + 1);
+  await expect(card).toHaveAttribute("data-audience", RADIOHEAD);
+  await expect(page.getByTestId("decision-question")).toHaveText("Which movie comp should I foreground for Radiohead fans?");
+  await expect(page.getByTestId("decision-answer")).toHaveText("For this audience signal, Moon is the clear lead among your confirmed movie comps.");
   await expect(page.getByTestId(`ranking-movie-${RADIOHEAD}`)).toHaveAttribute("data-active", "true");
 });

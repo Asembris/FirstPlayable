@@ -41,6 +41,24 @@ test('recorded judge path uses zero API calls, switches reading and exposes real
   await expect(movies.getByTestId(`ranking-movie-${kendrick}`)).toHaveAttribute('data-active', 'true');
   await expect(movies.getByTestId(`ranking-movie-${radiohead}`)).toHaveAttribute('data-active', 'false');
   await expect(movies.getByTestId(`ranking-movie-${kendrick}`).getByTestId('ranked').last()).toContainText('Position 1 → 3');
+  // The prominent call follows the reading: same question, same recorded
+  // capture, re-answered for Kendrick Lamar. Qloo's movie leader changes.
+  await expect(decision).toHaveAttribute('data-audience', kendrick);
+  await expect(page.getByTestId('decision-question')).toHaveText('Which movie comp should I foreground for Kendrick Lamar fans?');
+  await expect(page.getByTestId('decision-answer')).toHaveText('For this audience signal, Arrival is the clear lead among your confirmed movie comps.');
+  await expect(page.getByTestId('decision-basis')).toContainText('the recorded Qloo audience affinity for Kendrick Lamar fans, retrieved 2026-10-07');
+  await expect(page.getByTestId('decision-answer')).not.toContainText('Moon');
+  // The games panel is read for the same audience, and declines the call.
+  await expect(games.getByTestId(`ranking-videogame-${kendrick}`)).toHaveAttribute('data-active', 'true');
+  await expect(games.getByTestId(`ranking-videogame-${kendrick}`).getByTestId('top-status')).toHaveAttribute('data-status', 'close');
+  await expect(games.getByTestId(`ranking-videogame-${radiohead}`).getByTestId('top-status')).toHaveAttribute('data-status', 'clear');
+  await expect(games.getByTestId(`ranking-videogame-${radiohead}`).getByTestId('ranked').first()).toContainText('Mass Effect');
+  // Switching back restores the question the record actually asked.
+  await page.getByRole('button', { name: 'Radiohead fans', exact: true }).click();
+  await expect(decision).toHaveAttribute('data-audience', radiohead);
+  await expect(page.getByTestId('decision-question')).toHaveText('Which movie comp should I foreground for Radiohead fans?');
+  await expect(page.getByTestId('decision-answer')).toHaveText('For this audience signal, Moon is the clear lead among your confirmed movie comps.');
+  await page.getByRole('button', { name: 'Kendrick Lamar fans', exact: true }).click();
   for (const domain of ['movie', 'videogame']) {
     const evidence = page.getByTestId(`evidence-${domain}`);
     await evidence.locator('summary').click();

@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import record from "../../evidence/qloo/audition/recorded-2026-10-07.json";
 import { AUDITION_NORMALIZER_VERSION, CompScoreCaptureSchema } from "../../src/domain/audition";
 import { compareAudiences } from "../../src/domain/audition-compare";
-import { decideForeground } from "../../src/domain/audition-decision";
+import { decideForeground, decisionForAudience } from "../../src/domain/audition-decision";
 import { domainAuditionView } from "../../src/domain/audition-result";
 import {
   evidenceDigest,
@@ -310,6 +310,67 @@ describe("the recorded comparison is derived by the production logic", () => {
     });
     // The lead is the ranking's own leader, so the card can never disagree.
     expect(result.domains.movie!.comparison.rankings[0].top.leaders).toEqual([ENTITY.moon]);
+  });
+
+  /**
+   * Reading the other audience re-answers the same question from the same
+   * recorded capture. All four recorded outcomes — a clear lead for each
+   * audience in movies, a clear lead and a declined call in games — come out
+   * of one stored record, with no second request of any kind.
+   */
+  it("re-answers the question for the switched audience in both domains", () => {
+    const result = replay.result;
+    const [radiohead, kendrick] = result.audiences;
+
+    expect(decisionForAudience(result, radiohead.entity_id)).toBe(result.decision);
+    const switchedMovie = decisionForAudience(result, kendrick.entity_id)!;
+    expect(switchedMovie).toMatchObject({
+      domain: "movie",
+      audience_entity_id: ENTITY.kendrick,
+      audience_name: "Kendrick Lamar",
+      outcome: { status: "clear_lead", lead: { entity_id: ENTITY.arrival, name: "Arrival" } },
+    });
+    expect(switchedMovie).toEqual(
+      decideForeground(
+        { action: "foreground_comp", domain: "movie", audience_slot_id: kendrick.slot_id },
+        result.domains.movie,
+        kendrick,
+      ),
+    );
+
+    // The same question asked about games: Mass Effect leads Radiohead fans
+    // clearly, and Kendrick Lamar's top two sit inside the display threshold.
+    const asGames = {
+      ...result,
+      decision: decideForeground(
+        { action: "foreground_comp", domain: "videogame", audience_slot_id: radiohead.slot_id },
+        result.domains.videogame,
+        radiohead,
+      ),
+    };
+    expect(asGames.decision.outcome).toEqual({
+      status: "clear_lead",
+      lead: { entity_id: ENTITY.massEffect, name: "Mass Effect" },
+    });
+    const switchedGame = decisionForAudience(asGames, kendrick.entity_id)!;
+    expect(switchedGame.domain).toBe("videogame");
+    expect(switchedGame.outcome).toEqual({
+      status: "too_close",
+      close: [
+        { entity_id: ENTITY.deathStranding, name: "Death Stranding" },
+        { entity_id: ENTITY.massEffect, name: "Mass Effect" },
+      ],
+    });
+
+    // Every switched call is the leader its own ranking already names.
+    for (const call of [switchedMovie, asGames.decision, switchedGame]) {
+      const ranking = result.domains[call.domain]!.comparison.rankings
+        .find((row) => row.audience_entity_id === call.audience_entity_id)!;
+      const named = call.outcome.status === "clear_lead" ? [call.outcome.lead.entity_id]
+        : call.outcome.status === "too_close" ? call.outcome.close.map((comp) => comp.entity_id)
+        : [];
+      expect(named).toEqual(ranking.top.leaders);
+    }
   });
 
   it("exposes the request shape without a host or a credential", () => {
