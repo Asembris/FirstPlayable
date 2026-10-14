@@ -224,7 +224,7 @@ flowchart LR
 
 ## Run it locally
 
-Requires Node `22.22.0` (see [`.nvmrc`](.nvmrc); `>=22.12` is accepted).
+Requires Node `22.22.0` (see [`.nvmrc`](.nvmrc); any `22.x` release is accepted).
 
 ```bash
 npm ci
