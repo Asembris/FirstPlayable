@@ -1,0 +1,287 @@
+{
+  "evidence": "recorded_qloo",
+  "schema": "firstplayable-recorded-audition-1",
+  "provider": {
+    "name": "Qloo",
+    "host": "hackathon.api.qloo.com",
+    "artist_search": "GET /search?query=<encoded>&types=urn:entity:artist&take=5",
+    "comp_search": "GET /search?query=<encoded>&types=<domain type>&take=5",
+    "comp_scores": "GET /v2/insights?filter.type=<domain type>&signal.interests.entities=<audience uuid>&filter.results.entities=<confirmed uuid,...>&take=<count>"
+  },
+  "normalizer_version": "qloo-audition-1",
+  "retrieval": {
+    "first_at": "2026-10-07T12:15:37.997Z",
+    "last_at": "2026-10-07T12:15:43.366Z",
+    "upstream_calls": 12
+  },
+  "redaction": "Only original provider fields consumed by identity/affinity normalization are retained. Images, tags, marketing and unrelated descriptive metadata are omitted. Original wire-body hashes remain provenance only.",
+  "content_digest": "f1f8b75e4038e7e57f08048f04fc3a2b1fa98963d1e7aee1271e7aaa8a4e3452",
+  "title": "The Last Signal",
+  "concept": "A small exploration game: decode a signal from an abandoned orbital station, deliver its final message, and piece together who sent it.",
+  "selection": "Creator-selected comps for isolation, first contact, exploration and a journey through space. These are creative references, not Qloo project-fit claims.",
+  "decision_example": {
+    "action": "foreground_comp",
+    "domain": "movie",
+    "audience_slot_id": "s7"
+  },
+  "audiences": [
+    {
+      "slot_id": "s7",
+      "entity_id": "70CAE5BF-2F4C-445C-A3E5-4EDACFC3591C",
+      "name": "Radiohead",
+      "original_rank": 1,
+      "search_capture_id": "13017e67-cb6e-41ef-9188-20369f46cfcb",
+      "search_query": "Radiohead",
+      "search_normalized_query": "radiohead",
+      "search_request_fingerprint": "search|qloo-norm-1|da9b9183ab1e9196704a5cca60156395adac12c55f71ffd0d2ac226f7f5a043e",
+      "search_retrieved_at": "2026-10-07T12:15:40.875Z",
+      "response_sha256": "2f936d6fdeed093611cb6bdd4061b3e9e8175a9e3fe5a6deb814cd4cb4a510ae"
+    },
+    {
+      "slot_id": "s8",
+      "entity_id": "C915A918-39C5-47A3-A101-D9FA1DECBD9C",
+      "name": "Kendrick Lamar",
+      "original_rank": 1,
+      "search_capture_id": "6e133970-76e8-4e4a-91a7-637d208a4eca",
+      "search_query": "Kendrick Lamar",
+      "search_normalized_query": "kendrick lamar",
+      "search_request_fingerprint": "search|qloo-norm-1|e51eb10b5b1b2afeedd74f1fd0b09979c147f1d15537546c3b78fd3331256f5b",
+      "search_retrieved_at": "2026-10-07T12:15:41.374Z",
+      "response_sha256": "a960b31ed0627ddf3e2f1488226484d80ca53fc0770fc8463e9735840eb0d42f"
+    }
+  ],
+  "comps": [
+    {
+      "slot_id": "s1",
+      "entity_id": "6BBB34F4-9345-4459-82AE-10991FA35CD2",
+      "name": "Moon",
+      "domain": "movie",
+      "year": 2009,
+      "disambiguation": "2009",
+      "original_rank": 1,
+      "search_capture_id": "62855f32-d455-4e62-9773-fbcb2719ec04",
+      "search_query": "Moon",
+      "search_normalized_query": "moon",
+      "search_request_fingerprint": "audition-search|qloo-audition-1|2986dcd6b3b1d4f6c5ae96cca9411c4517f1a68ac75f0ffc6fdbec73282ac801",
+      "search_retrieved_at": "2026-10-07T12:15:37.997Z",
+      "response_sha256": "ed977ff7236e39f4886e9dd8f5aa90b5fdd610cd93df759fd382adcfaea56832"
+    },
+    {
+      "slot_id": "s2",
+      "entity_id": "C7EC4CA9-1CCC-4991-B738-55F075441B3F",
+      "name": "Arrival",
+      "domain": "movie",
+      "year": 2016,
+      "disambiguation": "2016",
+      "original_rank": 1,
+      "search_capture_id": "ee28e52c-adbb-414e-87f8-54e95b0bc01d",
+      "search_query": "Arrival",
+      "search_normalized_query": "arrival",
+      "search_request_fingerprint": "audition-search|qloo-audition-1|26b213731f057efa9b5910ff110e16b9e25e3d03c5fbedfd6074cdc51dfb93b9",
+      "search_retrieved_at": "2026-10-07T12:15:38.474Z",
+      "response_sha256": "738d33551f22a9be50f5b1f7c8a855723e22684fd51b264be4a072ae26981b45"
+    },
+    {
+      "slot_id": "s3",
+      "entity_id": "057DA9D9-399B-437E-8BCA-A80E499125EF",
+      "name": "Interstellar",
+      "domain": "movie",
+      "year": 2014,
+      "disambiguation": "2014",
+      "original_rank": 1,
+      "search_capture_id": "f09db2e5-66c5-4340-b4e4-231aeabc5759",
+      "search_query": "Interstellar",
+      "search_normalized_query": "interstellar",
+      "search_request_fingerprint": "audition-search|qloo-audition-1|d3fdf1049a472c553f71b4a61f9a1f38ba49b4f49ffef8f4548d52ffbafd61d0",
+      "search_retrieved_at": "2026-10-07T12:15:38.937Z",
+      "response_sha256": "7be06c1efaf49896b6af4b9a9b7750eeb16785897f6d169494ba7c3398c2ea8f"
+    },
+    {
+      "slot_id": "s4",
+      "entity_id": "EA0D6B19-199B-439B-809D-B60B4412E405",
+      "name": "Outer Wilds",
+      "domain": "videogame",
+      "year": 2019,
+      "disambiguation": "2019-05-28, Mobius Digital, LLC",
+      "original_rank": 1,
+      "search_capture_id": "3365b96b-05bf-4a4d-a94d-06b1f27b7ba0",
+      "search_query": "Outer Wilds",
+      "search_normalized_query": "outer wilds",
+      "search_request_fingerprint": "audition-search|qloo-audition-1|2993e250b6a62808999a7d0ed443c061e302275fdd041a38058c4163a82b4d27",
+      "search_retrieved_at": "2026-10-07T12:15:39.478Z",
+      "response_sha256": "a31b98428000cecb9e26b12206d03505a8e031eb0ac59cb4c9f7d357fe488a8b"
+    },
+    {
+      "slot_id": "s5",
+      "entity_id": "B061B95F-B940-4871-B80A-C12365E7A2A1",
+      "name": "Death Stranding",
+      "domain": "videogame",
+      "year": 2019,
+      "disambiguation": "2019-11-08, Kojima Productions",
+      "original_rank": 1,
+      "search_capture_id": "2bbf4be1-52e2-46cb-bff3-2e79165ec08b",
+      "search_query": "Death Stranding",
+      "search_normalized_query": "death stranding",
+      "search_request_fingerprint": "audition-search|qloo-audition-1|668d4b563d6f6067e1a41f4e30313cf96d2540ef64b6e0457f9f08d4a21e628d",
+      "search_retrieved_at": "2026-10-07T12:15:39.942Z",
+      "response_sha256": "2b38290d6ef0fbf0ad1f0e7f23d191e324486f9fe0265a8c13929e20842df940"
+    },
+    {
+      "slot_id": "s6",
+      "entity_id": "DB003E13-0C9F-4011-B928-43ADC2A59F26",
+      "name": "Mass Effect",
+      "domain": "videogame",
+      "year": 2007,
+      "disambiguation": "2007-11-20, BioWare",
+      "original_rank": 1,
+      "search_capture_id": "1d2fa81a-02ef-4f0a-912e-ab1b6977231c",
+      "search_query": "Mass Effect",
+      "search_normalized_query": "mass effect",
+      "search_request_fingerprint": "audition-search|qloo-audition-1|655296b044c444c3880ed98cd6acdb00ea73539f7e2741bb412f647c1cf6ac1e",
+      "search_retrieved_at": "2026-10-07T12:15:40.414Z",
+      "response_sha256": "475639d85dc8ef98817fcde86b693d63ee972d6fba4b1666a56d4f8130788b22"
+    }
+  ],
+  "captures": [
+    {
+      "capture_id": "98bb5931-f045-4f7b-a850-0a356cf18986",
+      "response_sha256": "1d45d317d266eb93251e912ce790fdb868b3ca2a649c04b462f95f4e37fbebaf",
+      "capture": {
+        "kind": "comp_scores",
+        "domain": "movie",
+        "audience_entity_id": "70CAE5BF-2F4C-445C-A3E5-4EDACFC3591C",
+        "requested_entity_ids": [
+          "057DA9D9-399B-437E-8BCA-A80E499125EF",
+          "6BBB34F4-9345-4459-82AE-10991FA35CD2",
+          "C7EC4CA9-1CCC-4991-B738-55F075441B3F"
+        ],
+        "request_fingerprint": "audition-scores|qloo-audition-1|a960b1e4574c3b884bc3def0ae5bc4ff605d9392b6b562d20a427809c1709b4c",
+        "normalizer_version": "qloo-audition-1",
+        "retrieved_at": "2026-10-07T12:15:41.886Z",
+        "scores": [
+          {
+            "entity_id": "6BBB34F4-9345-4459-82AE-10991FA35CD2",
+            "name": "Moon",
+            "affinity": 0.9277100856231865
+          },
+          {
+            "entity_id": "C7EC4CA9-1CCC-4991-B738-55F075441B3F",
+            "name": "Arrival",
+            "affinity": 0.8355442500541155
+          },
+          {
+            "entity_id": "057DA9D9-399B-437E-8BCA-A80E499125EF",
+            "name": "Interstellar",
+            "affinity": 0.8118546029570369
+          }
+        ],
+        "missing_entity_ids": []
+      }
+    },
+    {
+      "capture_id": "1b9485cd-bd8c-42c9-bd3e-ad6bd1051f48",
+      "response_sha256": "0a0112986475d28e8e6bc22363a61902a208c2550ada2df2f3f66c9f745d9fe7",
+      "capture": {
+        "kind": "comp_scores",
+        "domain": "movie",
+        "audience_entity_id": "C915A918-39C5-47A3-A101-D9FA1DECBD9C",
+        "requested_entity_ids": [
+          "057DA9D9-399B-437E-8BCA-A80E499125EF",
+          "6BBB34F4-9345-4459-82AE-10991FA35CD2",
+          "C7EC4CA9-1CCC-4991-B738-55F075441B3F"
+        ],
+        "request_fingerprint": "audition-scores|qloo-audition-1|ef5eff52518e6a520752a19b7830e1fcf2aaa3c186fb6fa1baf44de14b59f5cd",
+        "normalizer_version": "qloo-audition-1",
+        "retrieved_at": "2026-10-07T12:15:42.397Z",
+        "scores": [
+          {
+            "entity_id": "C7EC4CA9-1CCC-4991-B738-55F075441B3F",
+            "name": "Arrival",
+            "affinity": 0.8226596028849298
+          },
+          {
+            "entity_id": "057DA9D9-399B-437E-8BCA-A80E499125EF",
+            "name": "Interstellar",
+            "affinity": 0.7558787030186511
+          },
+          {
+            "entity_id": "6BBB34F4-9345-4459-82AE-10991FA35CD2",
+            "name": "Moon",
+            "affinity": 0.7220932085293376
+          }
+        ],
+        "missing_entity_ids": []
+      }
+    },
+    {
+      "capture_id": "053eefaa-139b-4bb6-b62b-75dacced9996",
+      "response_sha256": "d4079fbd752fca9673026cc6bf0efd0b778994f741dad6383dbb404db7cf43f8",
+      "capture": {
+        "kind": "comp_scores",
+        "domain": "videogame",
+        "audience_entity_id": "70CAE5BF-2F4C-445C-A3E5-4EDACFC3591C",
+        "requested_entity_ids": [
+          "B061B95F-B940-4871-B80A-C12365E7A2A1",
+          "DB003E13-0C9F-4011-B928-43ADC2A59F26",
+          "EA0D6B19-199B-439B-809D-B60B4412E405"
+        ],
+        "request_fingerprint": "audition-scores|qloo-audition-1|7211cb39febada70d709fd8703a39923b9330aaa501a933c0089beb3741728c9",
+        "normalizer_version": "qloo-audition-1",
+        "retrieved_at": "2026-10-07T12:15:42.882Z",
+        "scores": [
+          {
+            "entity_id": "DB003E13-0C9F-4011-B928-43ADC2A59F26",
+            "name": "Mass Effect",
+            "affinity": 0.8809011942786064
+          },
+          {
+            "entity_id": "EA0D6B19-199B-439B-809D-B60B4412E405",
+            "name": "Outer Wilds",
+            "affinity": 0.6703367393438057
+          },
+          {
+            "entity_id": "B061B95F-B940-4871-B80A-C12365E7A2A1",
+            "name": "Death Stranding",
+            "affinity": 0.537879723429959
+          }
+        ],
+        "missing_entity_ids": []
+      }
+    },
+    {
+      "capture_id": "f4c2e318-ad2f-43f4-9794-738eb12c7ef5",
+      "response_sha256": "3c6b9503dc0a258e91ef00d390907a267c7e9f90b675e951cdaca51f3a1caf9c",
+      "capture": {
+        "kind": "comp_scores",
+        "domain": "videogame",
+        "audience_entity_id": "C915A918-39C5-47A3-A101-D9FA1DECBD9C",
+        "requested_entity_ids": [
+          "B061B95F-B940-4871-B80A-C12365E7A2A1",
+          "DB003E13-0C9F-4011-B928-43ADC2A59F26",
+          "EA0D6B19-199B-439B-809D-B60B4412E405"
+        ],
+        "request_fingerprint": "audition-scores|qloo-audition-1|55811369017dba259754d3d4e960e499ab33f390ccd9699fce4f553c5f11f147",
+        "normalizer_version": "qloo-audition-1",
+        "retrieved_at": "2026-10-07T12:15:43.366Z",
+        "scores": [
+          {
+            "entity_id": "B061B95F-B940-4871-B80A-C12365E7A2A1",
+            "name": "Death Stranding",
+            "affinity": 0.6392810706221489
+          },
+          {
+            "entity_id": "DB003E13-0C9F-4011-B928-43ADC2A59F26",
+            "name": "Mass Effect",
+            "affinity": 0.612591001814321
+          },
+          {
+            "entity_id": "EA0D6B19-199B-439B-809D-B60B4412E405",
+            "name": "Outer Wilds",
+            "affinity": 0.5180356788147933
+          }
+        ],
+        "missing_entity_ids": []
+      }
+    }
+  ]
+}
