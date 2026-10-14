@@ -15,7 +15,7 @@
     "upstream_calls": 12
   },
   "redaction": "Only original provider fields consumed by identity/affinity normalization are retained. Images, tags, marketing and unrelated descriptive metadata are omitted. Original wire-body hashes remain provenance only.",
-  "content_digest": "f1f8b75e4038e7e57f08048f04fc3a2b1fa98963d1e7aee1271e7aaa8a4e3452",
+  "content_digest": "6548ec409103b4edc26ed141d586730d2c109038a53ddf246886a7cfab056d8f",
   "title": "The Last Signal",
   "concept": "A small exploration game: decode a signal from an abandoned orbital station, deliver its final message, and piece together who sent it.",
   "selection": "Creator-selected comps for isolation, first contact, exploration and a journey through space. These are creative references, not Qloo project-fit claims.",

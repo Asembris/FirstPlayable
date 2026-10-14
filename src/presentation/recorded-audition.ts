@@ -54,6 +54,46 @@ function insist(condition: boolean, detail: string): void {
 const { content_digest: DIGEST, ...CONTENTS } = record;
 
 /**
+ * How many decimals of a returned affinity the digest covers.
+ *
+ * Qloo returns affinities at full double precision (sixteen significant
+ * digits). A bundler is entitled to re-emit such a literal as the nearest
+ * double it round-trips to, and Turbopack does: the last unit in the last
+ * place of `0.9277100856231865` arrives in the browser bundle as
+ * `0.9277100856231864`. A digest over the raw doubles would therefore pass
+ * under the test runner and fail in the built application, for a difference
+ * twelve orders of magnitude below the 0.03 display threshold.
+ *
+ * So the digest pins each affinity to twelve decimals. Anything that could
+ * change an ordering, a close call, a reversal or a displayed value — which
+ * is shown to three decimals — is far above that and is still caught. The
+ * exact returned values stay in the record, and
+ * `tests/presentation/recorded-audition.test.ts` pins them there to full
+ * precision, where it reads the file rather than a bundle.
+ */
+const DIGEST_DECIMALS = 12;
+
+/**
+ * What the digest is taken over: the whole record, with every affinity
+ * rendered at {@link DIGEST_DECIMALS}. Nothing else is transformed.
+ */
+export function evidenceDigest(contents: Omit<typeof record, "content_digest">): string {
+  return hashCanonical({
+    ...contents,
+    captures: contents.captures.map((row) => ({
+      ...row,
+      capture: {
+        ...row.capture,
+        scores: row.capture.scores.map((score) => ({
+          ...score,
+          affinity: score.affinity === null ? null : score.affinity.toFixed(DIGEST_DECIMALS),
+        })),
+      },
+    })),
+  });
+}
+
+/**
  * The integrity gate. It runs once, at module load, before any view exists.
  *
  * The digest covers every field of the record except the digest itself, so it
@@ -70,7 +110,7 @@ function verifiedRecord(): typeof record {
     record.normalizer_version === AUDITION_NORMALIZER_VERSION,
     `the record was normalized by ${record.normalizer_version}, not ${AUDITION_NORMALIZER_VERSION}`,
   );
-  const recomputed = hashCanonical(CONTENTS);
+  const recomputed = evidenceDigest(CONTENTS);
   insist(recomputed === DIGEST, "the recorded evidence digest does not match its contents");
   insist(record.audiences.length === 2, "a comparison needs exactly two audiences");
   insist(record.comps.length > 0, "the record carries no confirmed comps");
@@ -186,6 +226,13 @@ export function recordedAuditionReplay(): AuditionReplay {
     result: recordedAuditionResult(),
   };
 }
+
+/**
+ * The whole gate runs at load, not at render: a record that cannot produce a
+ * comparison must never reach a surface, so the capture cross-checks and the
+ * example decision are exercised here and the result is discarded.
+ */
+recordedAuditionResult();
 
 /** Retrieval provenance, for the evidence note and the docs. */
 export const RECORDED_AUDITION = {
