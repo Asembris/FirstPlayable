@@ -47,3 +47,38 @@ export type ScoreResponse = {
   decision: DecisionResult | null;
   upstream_calls: number;
 };
+
+// ---------------------------------------------------------------------------
+// Replay provenance
+// ---------------------------------------------------------------------------
+
+/**
+ * Where a replayed comparison's evidence came from.
+ *
+ *   * `recorded_qloo` — real Qloo search and insights evidence, retrieved once
+ *     through the production client and stored under `evidence/qloo/`. Every
+ *     identity and affinity is Qloo's; nothing about it is authored.
+ *   * `synthetic` — invented values written in Qloo's response shapes, for
+ *     tests and for the offline demonstration. Never Qloo data.
+ *
+ * A live scoring run carries no provenance of this kind: it is neither
+ * replayed nor recorded, and the surface labels it from the capture's own
+ * `cache` status instead.
+ */
+export type ReplayKind = "recorded_qloo" | "synthetic";
+
+export type ReplayProvenance = {
+  kind: ReplayKind;
+  /** Retrieval time for recorded evidence; authoring time for synthetic. */
+  captured_at: string;
+};
+
+/** One replayable comparison: the concept it belongs to and its evidence. */
+export type AuditionReplay = {
+  provenance: ReplayProvenance;
+  title: string;
+  concept: string;
+  /** How the comps were chosen. A creative note, never a Qloo claim. */
+  selection: string;
+  result: ScoreResponse;
+};
