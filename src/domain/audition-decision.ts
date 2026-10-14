@@ -19,7 +19,7 @@
  */
 
 import { AUDITION_CLOSE_THRESHOLD, type DecisionRequest } from "./audition";
-import type { ConfirmedEntityView, DomainAuditionView } from "./audition-view";
+import type { ConfirmedEntityView, DomainAuditionView, ScoreResponse } from "./audition-view";
 import type { QlooDomain } from "./qloo";
 
 type Named = { entity_id: string; name: string };
@@ -89,4 +89,35 @@ export function decisionAnswer(result: DecisionResult): string {
           ? `Only one confirmed ${noun} comp has a Qloo score for this audience, so there is nothing to call it against.`
           : `Qloo returned no scores for your confirmed ${noun} comps for this audience, so this tool makes no call.`;
   }
+}
+
+/**
+ * The same bounded question, answered for whichever audience the reader has in
+ * focus.
+ *
+ * A comparison carries two audiences and the decision the creator actually
+ * asked. Switching the reading audience may not leave the prominent call
+ * answering the other one, so the call is re-derived here — for the asked
+ * action and the asked domain, by the very same {@link decideForeground} over
+ * the very same stored evidence. Nothing new is fetched, nothing is authored:
+ * the recomputation reads the rankings already in `result.domains`.
+ *
+ * Returns `null` when no decision was asked, so a live run never grows a call
+ * the creator did not ask for. For the asked audience the asked decision is
+ * returned unchanged, and an audience outside this comparison falls back to
+ * it rather than inventing one.
+ */
+export function decisionForAudience(
+  result: Pick<ScoreResponse, "audiences" | "domains" | "decision">,
+  audienceEntityId: string,
+): DecisionResult | null {
+  const asked = result.decision;
+  if (asked === null) return null;
+  const audience = result.audiences.find((entity) => entity.entity_id === audienceEntityId);
+  if (audience === undefined || audience.entity_id === asked.audience_entity_id) return asked;
+  return decideForeground(
+    { action: asked.action, domain: asked.domain, audience_slot_id: audience.slot_id },
+    result.domains[asked.domain],
+    audience,
+  );
 }
