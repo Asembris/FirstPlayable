@@ -47,9 +47,21 @@ bodies stay private; their hashes are provenance only.
 ## Integrity
 
 `content_digest` is a SHA-256 over the canonical form of every other field of
-the record. `src/presentation/recorded-audition.ts` recomputes it at load and
-refuses to serve a record whose digest does not match, so no edit to a name,
-an id, an affinity or a timestamp can reach a browser surface. Each capture is
+the record, with each affinity pinned to twelve decimals.
+`src/presentation/recorded-audition.ts` recomputes it at load and refuses to
+serve a record whose digest does not match, so no edit to a name, an id, an
+affinity or a timestamp can reach a browser surface.
+
+The twelve decimals are there because a bundler may re-emit a sixteen-digit
+double as the neighbouring one, and Turbopack does — `0.9277100856231865`
+reaches the built application as `0.9277100856231864`. That window is twelve
+orders of magnitude below the 0.03 display threshold and below the three
+decimals the page shows, so it cannot hide a change to any ordering, close
+call or displayed value. The exact returned values stay in this file, and
+`tests/presentation/recorded-audition.test.ts` pins them to full precision
+there, where it reads the file rather than a bundle.
+
+Each capture is
 additionally re-checked against the confirmed identities, and the ordering,
 close calls, reversals and decision are derived at render time by the same
 `compareAudiences` and `decideForeground` the live path uses. No ranking,

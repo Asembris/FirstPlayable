@@ -12,15 +12,15 @@
 [![Watch 90s Demo](https://img.shields.io/badge/%E2%96%B6_Watch_90s_Demo-B0154C?style=for-the-badge)](https://youtu.be/2YhuPYuNKak)
 [![Try Live App](https://img.shields.io/badge/Try_Live_App-141518?style=for-the-badge)](https://firstplayable.vercel.app/audition?mode=live)
 
-[![Saved Interactive Demo](https://img.shields.io/badge/Saved_Interactive_Demo-6B6E75?style=for-the-badge)](https://firstplayable.vercel.app/audition)
+[![Recorded Qloo Demo](https://img.shields.io/badge/Recorded_Qloo_Demo-6B6E75?style=for-the-badge)](https://firstplayable.vercel.app/audition)
 [![Devpost Submission](https://img.shields.io/badge/Devpost_Submission-6B6E75?style=for-the-badge)](https://devpost.com/software/firstplayable)
 
 [![CI](https://github.com/Asembris/FirstPlayable/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Asembris/FirstPlayable/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-6B6E75)](LICENSE)
 
-<a href="https://firstplayable.vercel.app/audition"><img src="docs/readme/audition-hero.png" width="100%" alt="The saved audition, synthetic demonstration data. Lanternfold vs Juno Kestrel. Decision: Which movie comp should I foreground for Lanternfold fans? For this audience signal, Quiet Orbit is the clear lead among your confirmed movie comps. Below, the same three movie comps ordered for each audience: Lanternfold fans put Quiet Orbit first at 0.913, Juno Kestrel fans put it last at 0.701 and lead with First Hello. Quiet Orbit / First Hello: reversed. Quiet Orbit / Farther Than Light: reversed. First Hello / Farther Than Light: close, no call." /></a>
+<a href="https://firstplayable.vercel.app/audition"><img src="docs/readme/audition-hero.png" width="100%" alt="The recorded Qloo audition. Radiohead vs Kendrick Lamar. Decision: Which movie comp should I foreground for Radiohead fans? For this audience signal, Moon is the clear lead among your confirmed movie comps. Below, the same three movie comps ordered for each audience: Radiohead fans put Moon first at 0.928, Kendrick Lamar fans put it last at 0.722 and lead with Arrival. Moon / Arrival: reversed. Moon / Interstellar: reversed. Arrival / Interstellar: close, no call." /></a>
 
-<sub>The saved example at <a href="https://firstplayable.vercel.app/audition"><code>/audition</code></a>. Every title, artist and affinity in it is invented synthetic data, not Qloo data. The 90-second video shows real Qloo-backed results; the screenshot above shows the synthetic saved demo.</sub>
+<sub>The default example at <a href="https://firstplayable.vercel.app/audition"><code>/audition</code></a>. Every title, artist and affinity in it is <strong>real Qloo evidence</strong>, retrieved on 7 October 2026 and replayed with no provider call. The invented demonstration record is still reachable at <a href="https://firstplayable.vercel.app/audition?mode=synthetic"><code>?mode=synthetic</code></a>.</sub>
 
 </div>
 
@@ -44,28 +44,29 @@ general audience-research tool, a source of new comps, or marketing advice.
 
 ## The example: one comp list, two audiences
 
-The saved example, *The Last Signal*, is an exploration game about decoding an
-abandoned orbital station's final message. Its creator chose three movie comps
-and three game comps, and two artist audiences. **All of these names and
-numbers are invented** (see [Saved vs live](#saved-demonstration-vs-live-workflow)).
+The default example, *The Last Signal*, is an exploration game about decoding
+an abandoned orbital station's final message. Its creator chose three movie
+comps and three game comps, and two artist audiences. **Every affinity below
+is a value Qloo returned**, in one bounded run on 7 October 2026 (see
+[Recorded vs live](#recorded-demonstration-vs-live-workflow)).
 
-| Movie comp | Lanternfold fans | Juno Kestrel fans |
+| Movie comp | Radiohead fans | Kendrick Lamar fans |
 |---|---|---|
-| Quiet Orbit | **1st** · 0.913 | 3rd · 0.701 |
-| First Hello | 2nd · 0.846 | **1st** · 0.809 |
-| Farther Than Light | 3rd · 0.830 | 2nd · 0.744 |
+| Moon | **1st** · 0.928 | 3rd · 0.722 |
+| Arrival | 2nd · 0.836 | **1st** · 0.823 |
+| Interstellar | 3rd · 0.812 | 2nd · 0.756 |
 
-- **Switch the audience and the order changes.** Quiet Orbit leads for
-  Lanternfold fans and falls to last for Juno Kestrel fans: Quiet Orbit /
-  First Hello and Quiet Orbit / Farther Than Light are **reversed**.
-- **Not every difference is a call.** First Hello / Farther Than Light is
-  **close — no call**: for Lanternfold fans their gap is under 0.03.
+- **Switch the audience and the order changes.** Moon leads for Radiohead fans
+  and falls to last for Kendrick Lamar fans: Moon / Arrival and Moon /
+  Interstellar are **reversed**.
+- **Not every difference is a call.** Arrival / Interstellar is
+  **close — no call**: for Radiohead fans their gap is under 0.03.
 - **The decision is bounded.** *"Which movie comp should I foreground for
-  Lanternfold fans?"* → **Quiet Orbit is the clear lead among your confirmed
-  movie comps**, because it beats every other scored movie comp by at least
-  0.03. For Juno Kestrel fans the games section shows the other outcome:
-  Courier of Ash and Starward Accord sit within 0.03 at the top, so the tool
-  says **close at the top — no single lead** rather than picking one.
+  Radiohead fans?"* → **Moon is the clear lead among your confirmed movie
+  comps**, because it beats every other scored movie comp by at least 0.03.
+  For Kendrick Lamar fans the games section shows the other outcome: Death
+  Stranding and Mass Effect sit within 0.03 at the top, so the tool says
+  **close at the top — no single lead** rather than picking one.
 
 Movies and games are always ranked separately; a movie affinity is never set
 against a game affinity.
@@ -99,38 +100,51 @@ decision is [`src/domain/audition-decision.ts`](src/domain/audition-decision.ts)
 The 0.03 threshold is a **product convention** chosen for readability. It is
 not statistical significance and not a confidence value supplied by Qloo.
 
-## Saved demonstration vs live workflow
+## Recorded demonstration vs live workflow
 
-| | Saved example — [`/audition`](https://firstplayable.vercel.app/audition) | Live — [`/audition?mode=live`](https://firstplayable.vercel.app/audition?mode=live) |
-|---|---|---|
-| Data | **Synthetic.** Invented titles, artists, entity ids, affinities and timestamps, written in Qloo's response shapes. Not Qloo data | **Real.** Live Qloo search and insights for the comps and audiences you confirm |
-| Model | None. The decision question is fixed | Real OpenAI call to interpret each message |
-| Provider calls | **Zero.** No session, database, Qloo or model call | One Qloo search per new name, then up to four insights requests (two domains × two audiences); responses are cached |
-| Comparison and decision | The same deterministic functions as live | The same deterministic functions |
+| | Recorded — [`/audition`](https://firstplayable.vercel.app/audition) | Synthetic — [`?mode=synthetic`](https://firstplayable.vercel.app/audition?mode=synthetic) | Live — [`?mode=live`](https://firstplayable.vercel.app/audition?mode=live) |
+|---|---|---|---|
+| Data | **Real Qloo evidence.** Qloo's own entity ids, titles, artist names and affinities, from one bounded run on 7 October 2026 | **Synthetic.** Invented titles, artists, entity ids, affinities and timestamps, written in Qloo's response shapes. Not Qloo data | **Real.** Live Qloo search and insights for the comps and audiences you confirm |
+| Model | None. The decision question is fixed | None. The decision question is fixed | Real OpenAI call to interpret each message |
+| Provider calls | **Zero.** No session, database, Qloo or model call | **Zero.** No session, database, Qloo or model call | One Qloo search per new name, then up to four insights requests (two domains × two audiences); responses are cached |
+| Comparison and decision | The same deterministic functions as live | The same deterministic functions as live | The same deterministic functions |
 
-The saved example exists so judges can see the full result instantly and
-offline. It shows how the product behaves, not what real audiences prefer. Its
-full record, including every invented value and the deterministic call it
-produces, is [`docs/AUDITION_CANONICAL_EXAMPLE.md`](docs/AUDITION_CANONICAL_EXAMPLE.md);
-the fixture is [`fixtures/qloo/audition/`](fixtures/qloo/audition/), and
+The recorded example exists so judges can see a genuinely Qloo-backed result
+instantly and offline, with no credential. It shows what Qloo returned for one
+creator's comps on one day; it is not a claim about what audiences prefer in
+general. The record is
+[`evidence/qloo/audition/`](evidence/qloo/audition/) — normalized identity
+and affinity evidence only, no raw Qloo response bodies — and it is replayed
+by [`src/presentation/recorded-audition.ts`](src/presentation/recorded-audition.ts),
+which recomputes the record's own SHA-256 at load and refuses a record whose
+digest does not match. The full account, including the evidence-integrity
+mechanisms, is
+[`docs/AUDITION_CANONICAL_EXAMPLE.md`](docs/AUDITION_CANONICAL_EXAMPLE.md);
+the gate is
+[`tests/presentation/recorded-audition.test.ts`](tests/presentation/recorded-audition.test.ts).
+
+The invented record is kept separately, in
+[`fixtures/qloo/audition/`](fixtures/qloo/audition/), for the offline tests and
+for `?mode=synthetic`, where it is labelled as invented synthetic data, not Qloo
+data, on the mode label, the decision basis and every evidence line.
 [`tests/server/audition-saved.test.ts`](tests/server/audition-saved.test.ts)
 re-normalizes every synthetic response through the production normalizers.
 
 ## Judge demo (under 60 seconds)
 
 1. Open **[firstplayable.vercel.app/audition](https://firstplayable.vercel.app/audition)**.
-   It loads instantly, labelled *Saved example · synthetic demonstration data ·
-   no live calls*.
+   It loads instantly, labelled *Recorded Qloo example · real Qloo evidence
+   retrieved 2026-10-07 · no live calls*.
 2. Read the **Decision** block: *Which movie comp should I foreground for
-   Lanternfold fans?* → *Quiet Orbit is the clear lead.*
+   Radiohead fans?* → *Moon is the clear lead.*
 3. Under **Movies**, compare the two columns: the same three comps, in a
    different order. Two pairs are marked **reversed**, one **close — no call**.
-4. Press **Juno Kestrel fans**. The reading focus switches and each comp shows
-   its position move (Quiet Orbit: *Position 1 → 3*).
-5. Scroll to **Games**: Juno Kestrel fans get *Close at the top — no single
+4. Press **Kendrick Lamar fans**. The reading focus switches and each comp shows
+   its position move (Moon: *Position 1 → 3*).
+5. Scroll to **Games**: Kendrick Lamar fans get *Close at the top — no single
    lead*. The tool declines to call it.
-6. Open **Synthetic evidence** under either domain to see the entities and the
-   filtered request records behind the numbers.
+6. Open **Recorded Qloo evidence** under either domain to see Qloo's entity ids
+   and the filtered request records behind the numbers.
 7. *Optional, live:* press **Try your own** and type something like
    *"My game feels like Alien and Outer Wilds. Compare Radiohead fans and
    Kendrick Lamar fans. Which movie comp should I foreground for Radiohead
@@ -200,8 +214,10 @@ flowchart LR
   statistical meaning. Values near the threshold deserve judgment.
 - **One decision type.** The agent can record *which comp to foreground for
   this audience*; other questions are out of scope.
-- **The saved example is invented.** It demonstrates behaviour; its numbers
-  say nothing about real titles or artists.
+- **The recorded example is one run, one day.** Its affinities are Qloo's,
+  retrieved on 7 October 2026 for one creator's six comps and two audiences.
+  They are not a general statement about those titles or artists, and they are
+  not re-retrieved.
 - **Anonymous and finite.** No accounts and no saved auditions: task state
   travels with each request. Live use stops when the model budget or Qloo
   allowance is exhausted.
@@ -218,8 +234,8 @@ npm ci
 npm run dev
 ```
 
-Open `http://localhost:3000/audition`. The saved example needs **no account,
-no credential and no network access** to any service.
+Open `http://localhost:3000/audition`. The recorded example needs **no
+account, no credential and no network access** to any service.
 
 The live workflow needs server-side credentials. Copy
 [`.env.example`](.env.example) to `.env` and fill in:
@@ -237,8 +253,8 @@ No variable is `NEXT_PUBLIC_`; every credential stays on the server.
 | Command | What it checks |
 |---|---|
 | `npm run typecheck` | `tsc --noEmit` over the repository |
-| `npm test` | Vitest, offline: comparison and decision rules, the agent's schema boundary, Qloo normalization and exact-set filtering, route authority checks, the synthetic saved fixture, and the earlier product's engine |
-| `npm run test:e2e` | Playwright, offline (builds first): the saved judge path with zero API calls, audience switching, mobile readability, the live session-readiness gate, ask → confirm → score with mocked routes, and the bounded decision. Run `npx playwright install chromium` once |
+| `npm test` | Vitest, offline: comparison and decision rules, the agent's schema boundary, Qloo normalization and exact-set filtering, route authority checks, the recorded Qloo evidence integrity gate, the synthetic saved fixture, and the earlier product's engine |
+| `npm run test:e2e` | Playwright, offline (builds first): the recorded judge path with zero API calls, the synthetic mode's labelling, audience switching, mobile readability, the live session-readiness gate, ask → confirm → score with mocked routes, and the bounded decision. Run `npx playwright install chromium` once |
 | `npm run check:fixtures` | Validates the bundled fixtures |
 | `npm run build` then `npm run check:secrets` | Production build, then a credential-shape scan of tracked files and built assets |
 
@@ -261,7 +277,8 @@ test suite, but **it is not the submission**. Its records are in
 ## Links
 
 - Live product: [firstplayable.vercel.app](https://firstplayable.vercel.app)
-- Saved audition: [firstplayable.vercel.app/audition](https://firstplayable.vercel.app/audition)
+- Recorded audition: [firstplayable.vercel.app/audition](https://firstplayable.vercel.app/audition)
+- Synthetic audition: [firstplayable.vercel.app/audition?mode=synthetic](https://firstplayable.vercel.app/audition?mode=synthetic)
 - Live audition: [firstplayable.vercel.app/audition?mode=live](https://firstplayable.vercel.app/audition?mode=live)
 - Hackathon: [Qloo Agentic Hackathon on Devpost](https://qloo.devpost.com/)
 
