@@ -15,6 +15,12 @@ in this file.
 > offline tests now use synthetic fixtures in the same response shapes
 > (`fixtures/qloo/`). The observations below are kept as statements of what
 > was checked; the redacted values are marked *[redacted]*.
+>
+> **Update, 14 October 2026.** One recorded Qloo capture is committed again,
+> as normalized identity and affinity evidence only, at
+> `evidence/qloo/audition/` — the record behind the default `/audition`
+> comparison. No raw response body is committed, and `fixtures/qloo/` remains
+> synthetic. See `docs/AUDITION_CANONICAL_EXAMPLE.md`.
 
 ---
 

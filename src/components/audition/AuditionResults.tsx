@@ -3,10 +3,15 @@ import { useMemo, useState } from 'react';
 import { AUDITION_CLOSE_THRESHOLD } from '@/domain/audition';
 import type { AudienceRanking, PairComparison } from '@/domain/audition-compare';
 import { decisionAnswer, decisionQuestion, type DecisionResult } from '@/domain/audition-decision';
-import type { DomainAuditionView, ScoreResponse } from '@/domain/audition-view';
+import type { DomainAuditionView, ReplayProvenance, ScoreResponse } from '@/domain/audition-view';
 const DOMAIN_LABEL = { movie: 'Movies', videogame: 'Games' } as const;
 function formatAffinity(value: number): string { return value.toFixed(3); }
-export function AuditionResults({ result, savedAt }: { result: ScoreResponse; savedAt?: string | undefined }): React.JSX.Element {
+/**
+ * `replay` is absent for a live scoring run and present for a replayed one. It
+ * decides one thing only: whether the evidence on screen is presented as
+ * Qloo's or as invented. It never changes an ordering, a verdict or a call.
+ */
+export function AuditionResults({ result, replay }: { result: ScoreResponse; replay?: ReplayProvenance | undefined }): React.JSX.Element {
   const [a, b] = result.audiences;
   const [activeAudience, setActiveAudience] = useState(result.decision?.audience_entity_id ?? a.entity_id);
   return (
@@ -15,7 +20,7 @@ export function AuditionResults({ result, savedAt }: { result: ScoreResponse; sa
         {a.name} vs {b.name}
       </h2>
       <p className="rt-audition__summary">Movies: {result.domains.movie?.comparison.reversals ?? 0} reversals · Games: {result.domains.videogame?.comparison.reversals ?? 0} reversals</p>
-      {result.decision !== null && <DecisionCard decision={result.decision} saved={savedAt !== undefined} />}
+      {result.decision !== null && <DecisionCard decision={result.decision} replay={replay} />}
       <div className="rt-audition__switch" role="group" aria-label="Switch audience">
         {result.audiences.map((audience) => <button type="button" className="rt-button" key={audience.entity_id} aria-pressed={activeAudience === audience.entity_id} onClick={() => setActiveAudience(audience.entity_id)}>{audience.name} fans</button>)}
       </div>
@@ -29,7 +34,7 @@ export function AuditionResults({ result, savedAt }: { result: ScoreResponse; sa
               <p className="rt-audition__note">No confirmed {domain === "movie" ? "movie" : "game"} comps.</p>
             </div>
           ) : (
-            <DomainPanel key={domain} view={view} activeAudience={activeAudience} savedAt={savedAt} audiences={result.audiences} />
+            <DomainPanel key={domain} view={view} activeAudience={activeAudience} replay={replay} audiences={result.audiences} />
           );
         })}
       </div>
@@ -47,16 +52,22 @@ export function AuditionResults({ result, savedAt }: { result: ScoreResponse; sa
   );
 }
 
-function DecisionCard({ decision, saved }: { decision: DecisionResult; saved: boolean }): React.JSX.Element {
+function DecisionCard({ decision, replay }: { decision: DecisionResult; replay?: ReplayProvenance | undefined }): React.JSX.Element {
   const scope = decision.domain === 'movie' ? 'movies' : 'games';
+  const synthetic = replay?.kind === 'synthetic';
+  const basis = synthetic
+    ? `the synthetic saved affinities for ${decision.audience_name} fans, in Qloo’s response shape but not Qloo data,`
+    : replay?.kind === 'recorded_qloo'
+      ? `the recorded Qloo audience affinity for ${decision.audience_name} fans, retrieved ${replay.captured_at.slice(0, 10)},`
+      : `Qloo audience affinity for ${decision.audience_name} fans,`;
   return (
     <section className="rt-audition__decision" aria-label="Decision" data-testid="audition-decision" data-status={decision.outcome.status}>
-      <span className="rt-label">Decision{saved ? ' · fixed example question, no model call' : ''}</span>
+      <span className="rt-label">Decision{replay === undefined ? '' : ' · fixed example question, no model call'}</span>
       <p className="rt-audition__decision-ask" data-testid="decision-question">{decisionQuestion(decision)}</p>
       <p className="rt-audition__decision-answer" data-testid="decision-answer">{decisionAnswer(decision)}</p>
-      {decision.not_scored.length > 0 && <p className="rt-audition__note">{saved ? 'The saved example has no score for' : 'Qloo returned no score for'} {decision.not_scored.map((c) => c.name).join(', ')}, so it took no part in this call.</p>}
+      {decision.not_scored.length > 0 && <p className="rt-audition__note">{synthetic ? 'The saved example has no score for' : 'Qloo returned no score for'} {decision.not_scored.map((c) => c.name).join(', ')}, so it took no part in this call.</p>}
       <p className="rt-audition__note" data-testid="decision-basis">
-        Evidence: {saved ? `the synthetic saved affinities for ${decision.audience_name} fans, in Qloo’s response shape but not Qloo data,` : `Qloo audience affinity for ${decision.audience_name} fans,`} scored across your confirmed {scope} only. The call: this tool’s fixed rule — a lead needs a gap of at least {decision.threshold} over every other scored comp — not the assistant. Not a measure of project fit, demand or sales, and not statistical significance.
+        Evidence: {basis} scored across your confirmed {scope} only. The call: this tool’s fixed rule — a lead needs a gap of at least {decision.threshold} over every other scored comp — not the assistant. Not a measure of project fit, demand or sales, and not statistical significance.
       </p>
     </section>
   );
@@ -87,8 +98,10 @@ function verdictText(pair: PairComparison): string {
   }
 }
 
-function DomainPanel({ view, activeAudience, savedAt, audiences }: { view: DomainAuditionView; activeAudience: string; savedAt?: string | undefined; audiences: ScoreResponse['audiences'] }): React.JSX.Element {
+function DomainPanel({ view, activeAudience, replay, audiences }: { view: DomainAuditionView; activeAudience: string; replay?: ReplayProvenance | undefined; audiences: ScoreResponse['audiences'] }): React.JSX.Element {
   const names = useMemo(() => new Map(view.comps.map((comp) => [comp.entity_id, comp.name])), [view]);
+  const synthetic = replay?.kind === 'synthetic';
+  const recordedOn = replay?.kind === 'recorded_qloo' ? replay.captured_at.slice(0, 10) : null;
   return (
     <div className="rt-audition__panel" data-testid={`panel-${view.domain}`}>
       <h3 className="rt-audition__h3">{DOMAIN_LABEL[view.domain]}</h3>
@@ -110,30 +123,38 @@ function DomainPanel({ view, activeAudience, savedAt, audiences }: { view: Domai
         </ul>
       )}
       <details className="rt-audition__evidence" data-testid={`evidence-${view.domain}`}>
-        <summary>{savedAt ? "Synthetic evidence" : "Qloo evidence"}</summary>
-        {savedAt ? (
+        <summary>{synthetic ? "Synthetic evidence" : recordedOn === null ? "Qloo evidence" : "Recorded Qloo evidence"}</summary>
+        {synthetic ? (
           <p className="rt-audition__note" data-testid={`evidence-note-${view.domain}`}>
-            Synthetic saved example dated {savedAt.slice(0, 10)}: every name, entity ID, affinity, capture and request record below is a synthetic stand-in written in this application’s production schema. None of it was returned by Qloo. Replayed locally; no provider calls.
+            Synthetic saved example dated {replay!.captured_at.slice(0, 10)}: every name, entity ID, affinity, capture and request record below is a synthetic stand-in written in this application’s production schema. None of it was returned by Qloo. Replayed locally; no provider calls.
           </p>
-        ) : (
+        ) : recordedOn === null ? (
           <p className="rt-audition__note" data-testid={`evidence-note-${view.domain}`}>
             Names come from the Qloo search result you confirmed. Affinity is the value Qloo returned for each audience in
             one request per audience, filtered to exactly your confirmed {view.domain === "movie" ? "movies" : "games"}.
+          </p>
+        ) : (
+          <p className="rt-audition__note" data-testid={`evidence-note-${view.domain}`}>
+            Recorded Qloo capture dated {recordedOn}. Names come from the Qloo search results confirmed in that run, and
+            each affinity is the value Qloo returned for that audience in one request per audience, filtered to exactly
+            these {view.domain === "movie" ? "movies" : "games"}. Replayed locally; no provider calls.
           </p>
         )}
         <ul>
           {[...audiences, ...view.comps].map((entity) => (
             <li key={entity.entity_id} className="rt-audition__fact" data-testid="evidence-entity">
-              {savedAt
+              {synthetic
                 ? `${entity.name} — synthetic entity id ${entity.entity_id}, synthetic search result ${entity.original_rank}, synthetic capture ${entity.search_capture_id}`
                 : `${entity.name} — Qloo ${entity.entity_id}, search result ${entity.original_rank}, capture ${entity.search_capture_id}`}
             </li>
           ))}
           {view.evidence.map((item) => (
             <li key={item.audience_entity_id} className="rt-audition__fact" data-testid="evidence-request">
-              {savedAt
+              {synthetic
                 ? `Synthetic request record: ${item.request} · dated ${item.retrieved_at}${item.capture_id === null ? "" : ` · synthetic capture ${item.capture_id}`}`
-                : `${item.request} · ${item.cache} · ${item.retrieved_at}${item.capture_id === null ? "" : ` · capture ${item.capture_id}`}`}
+                : recordedOn === null
+                  ? `${item.request} · ${item.cache} · ${item.retrieved_at}${item.capture_id === null ? "" : ` · capture ${item.capture_id}`}`
+                  : `${item.request} · recorded · ${item.retrieved_at}${item.capture_id === null ? "" : ` · capture ${item.capture_id}`}`}
               {item.missing_entity_ids.length > 0 && ` · no score returned for ${item.missing_entity_ids.map((id) => names.get(id) ?? id).join(", ")}`}
             </li>
           ))}

@@ -1,9 +1,14 @@
 import Link from 'next/link';
-import { savedAuditionResult, SAVED_AUDITION } from '@/presentation/saved-audition';
+import { recordedAuditionReplay } from '@/presentation/recorded-audition';
 
-/** Public entry: every specimen position comes from the saved deterministic result. */
+/**
+ * Public entry. Every specimen position below comes from the recorded Qloo
+ * comparison, ordered by the same deterministic code the page uses: nothing
+ * here is written by hand, and nothing here is synthetic.
+ */
 export function AudienceLanding(): React.ReactElement {
-  const result = savedAuditionResult();
+  const replay = recordedAuditionReplay();
+  const result = replay.result;
   const movies = result.domains.movie!;
   const pair = movies.comparison.pairs.find((p) => p.verdict === 'reversal')!;
   const names = new Map(movies.comps.map((c) => [c.entity_id, c.name]));
@@ -26,7 +31,7 @@ export function AudienceLanding(): React.ReactElement {
             <li><Link href="/audition" className="rt-door" data-testid="rt-door-play">
               <span className="rt-door__num" aria-hidden="true">01</span>
               <span className="rt-door__label">Switch the audience</span>
-              <span className="rt-door__aside"><span className="rt-chip">Saved example · synthetic demonstration</span><span className="rt-door__sub">Opens instantly · no live calls</span></span>
+              <span className="rt-door__aside"><span className="rt-chip">Recorded Qloo evidence · {replay.provenance.captured_at.slice(0, 10)}</span><span className="rt-door__sub">Opens instantly · no live calls</span></span>
             </Link></li>
             <li><Link href="/audition?mode=live" className="rt-door" data-testid="rt-door-create">
               <span className="rt-door__num" aria-hidden="true">02</span>
@@ -35,10 +40,10 @@ export function AudienceLanding(): React.ReactElement {
             </Link></li>
           </ol>
         </nav>
-        <aside className="rt-landing__margin" aria-label="From the saved example">
+        <aside className="rt-landing__margin" aria-label="From the recorded example">
           <figure className="rt-specimen" data-testid="rt-specimen">
-            <figcaption className="rt-label rt-specimen__eyebrow">From the saved example</figcaption>
-            <p className="rt-specimen__title">{SAVED_AUDITION.title}</p>
+            <figcaption className="rt-label rt-specimen__eyebrow">From the recorded Qloo example</figcaption>
+            <p className="rt-specimen__title">{replay.title}</p>
             <p className="rt-specimen__lede">Same movie comps. Different audience.</p>
             <div className="rt-specimen__split">
               {movies.comparison.rankings.map((ranking, index) => <div key={ranking.audience_entity_id} className={`rt-specimen__cell ${index === 1 ? 'rt-specimen__cell--with' : ''}`}>

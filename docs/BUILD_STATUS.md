@@ -2092,3 +2092,23 @@ if a fixture names the real Qloo host.
 
 Gates: typecheck; full unit/server/presentation/engine suite; fixture checks;
 production build; source and built-asset secret scans; full Playwright suite.
+
+### Superseded in part — 14 October 2026
+
+The saved `/audition` default is no longer the synthetic record. A complete
+artist-conditioned Qloo capture from 7 October 2026 was recovered from git
+history and re-committed as **normalized evidence only** at
+`evidence/qloo/audition/recorded-2026-10-07.json`: confirmed identities, the
+four candidate-filtered `comp_scores` captures with the affinities Qloo
+returned, request fingerprints, original retrieval timestamps, and the SHA-256
+of each original wire body. No raw Qloo response body and no unused provider
+metadata is committed, so the fixture cleanup's redistribution intent holds
+for response payloads; what is published is the small set of identity and
+affinity values the product displays to any user.
+
+`fixtures/qloo/` stays synthetic and stays gated by
+`tests/engine/fixtures.test.ts`; the invented record is now served at
+`/audition?mode=synthetic`. The recorded record is gated separately by
+`tests/presentation/recorded-audition.test.ts`, and
+`src/presentation/recorded-audition.ts` recomputes the record's own digest at
+load and refuses a mismatch. See `docs/AUDITION_CANONICAL_EXAMPLE.md`.

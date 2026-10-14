@@ -1,58 +1,93 @@
 import { expect, test } from '@playwright/test';
-import record from '../../fixtures/qloo/audition/canonical.json';
+import recorded from '../../evidence/qloo/audition/recorded-2026-10-07.json';
+import synthetic from '../../fixtures/qloo/audition/canonical.json';
 import { auditContrast } from './support/contrast';
-const lanternfold = record.audiences[0]!.entity_id;
-const juno = record.audiences[1]!.entity_id;
+const radiohead = recorded.audiences[0]!.entity_id;
+const kendrick = recorded.audiences[1]!.entity_id;
+const lanternfold = synthetic.audiences[0]!.entity_id;
+const juno = synthetic.audiences[1]!.entity_id;
 
-test('saved judge path uses zero API calls, switches reading and exposes synthetic saved evidence', async ({ page, baseURL }) => {
+/**
+ * The default judge path is the recorded Qloo comparison: real Qloo
+ * identities and affinities, replayed from `evidence/qloo/`, with no provider
+ * call of any kind. The synthetic record is still reachable at
+ * `?mode=synthetic` and still has to label itself as invented.
+ */
+test('recorded judge path uses zero API calls, switches reading and exposes real Qloo evidence', async ({ page, baseURL }) => {
   const unexpected: string[] = [];
   page.on('request', (request) => { const url = request.url(); if (!url.startsWith(baseURL!) || new URL(url).pathname.startsWith('/api/')) unexpected.push(url); });
   await page.route('**/api/**', (route) => route.abort());
   await page.goto('/audition');
   await expect(page.getByRole('heading', { name: 'The Last Signal', exact: true })).toBeVisible();
-  await expect(page.getByText('Saved example · synthetic demonstration data · no live calls')).toBeVisible();
+  await expect(page.getByTestId('replay-label')).toHaveText('Recorded Qloo example · real Qloo evidence retrieved 2026-10-07 · no live calls');
+  await expect(page.getByTestId('replay-mode')).toHaveText('Recorded Qloo example');
   const movies = page.getByTestId('panel-movie');
   const games = page.getByTestId('panel-videogame');
   const decision = page.getByTestId('audition-decision');
   await expect(decision).toContainText('fixed example question, no model call');
-  await expect(page.getByTestId('decision-question')).toHaveText(`Which movie comp should I foreground for ${record.audiences[0]!.name} fans?`);
-  await expect(page.getByTestId('decision-answer')).toHaveText('For this audience signal, Quiet Orbit is the clear lead among your confirmed movie comps.');
-  await expect(page.getByTestId('decision-basis')).toContainText('synthetic saved affinities');
-  await expect(page.getByTestId('decision-basis')).not.toContainText('Qloo audience affinity');
+  await expect(page.getByTestId('decision-question')).toHaveText('Which movie comp should I foreground for Radiohead fans?');
+  await expect(page.getByTestId('decision-answer')).toHaveText('For this audience signal, Moon is the clear lead among your confirmed movie comps.');
+  await expect(page.getByTestId('decision-basis')).toContainText('the recorded Qloo audience affinity for Radiohead fans, retrieved 2026-10-07');
+  await expect(page.getByTestId('decision-basis')).not.toContainText('synthetic');
+  // Qloo's own numbers, ordered by this tool: two movie reversals, one game reversal.
   await expect(movies.locator('[data-verdict="reversal"]')).toHaveCount(2);
   await expect(games.locator('[data-verdict="reversal"]')).toHaveCount(1);
-  await expect(games.locator('[data-verdict="holds"]')).toContainText('Orrery Vale / Starward Accord: same order');
+  await expect(games.locator('[data-verdict="holds"]')).toContainText('Outer Wilds / Mass Effect: same order');
   await expect(movies.locator('[data-verdict="close"]')).toContainText('close — no call');
-  await expect(games.getByTestId(`ranking-videogame-${juno}`).getByTestId('top-status')).toHaveAttribute('data-status', 'close');
-  await expect(games.getByTestId(`ranking-videogame-${juno}`)).toContainText('no single lead');
-  await page.getByRole('button', { name: 'Juno Kestrel fans', exact: true }).click();
-  await expect(movies.getByTestId(`ranking-movie-${juno}`)).toHaveAttribute('data-active', 'true');
-  await expect(movies.getByTestId(`ranking-movie-${lanternfold}`)).toHaveAttribute('data-active', 'false');
-  await expect(movies.getByTestId(`ranking-movie-${juno}`).getByTestId('ranked').last()).toContainText('Position 1 → 3');
+  await expect(movies.getByTestId(`ranking-movie-${radiohead}`).getByTestId('ranked').first()).toContainText('affinity 0.928');
+  await expect(games.getByTestId(`ranking-videogame-${kendrick}`).getByTestId('top-status')).toHaveAttribute('data-status', 'close');
+  await expect(games.getByTestId(`ranking-videogame-${kendrick}`)).toContainText('no single lead');
+  await page.getByRole('button', { name: 'Kendrick Lamar fans', exact: true }).click();
+  await expect(movies.getByTestId(`ranking-movie-${kendrick}`)).toHaveAttribute('data-active', 'true');
+  await expect(movies.getByTestId(`ranking-movie-${radiohead}`)).toHaveAttribute('data-active', 'false');
+  await expect(movies.getByTestId(`ranking-movie-${kendrick}`).getByTestId('ranked').last()).toContainText('Position 1 → 3');
   for (const domain of ['movie', 'videogame']) {
     const evidence = page.getByTestId(`evidence-${domain}`);
     await evidence.locator('summary').click();
+    await expect(evidence.locator('summary')).toHaveText('Recorded Qloo evidence');
+    await expect(evidence).toContainText('Recorded Qloo capture dated 2026-10-07');
     await expect(evidence).toContainText('Replayed locally; no provider calls');
     await expect(evidence).toContainText('filter.results.entities=');
-    await expect(evidence).toContainText('Synthetic saved example dated 2026-01-15');
-    await expect(evidence.locator('summary')).toHaveText('Synthetic evidence');
-    await expect(evidence).toContainText('None of it was returned by Qloo');
-    await expect(evidence.getByTestId('evidence-entity').first()).toContainText('synthetic entity id');
-    await expect(evidence.getByTestId('evidence-request').first()).toContainText('Synthetic request record');
-    // Saved mode must never present synthetic values as Qloo-returned or Qloo-identified.
-    await expect(evidence).not.toContainText('Names come from the Qloo');
-    await expect(evidence).not.toContainText('Qloo returned');
-    await expect(evidence).not.toContainText(/Qloo [0-9A-F]{8}-/);
-    await expect(evidence).toContainText(lanternfold);
-    await expect(evidence).toContainText(juno);
+    await expect(evidence.getByTestId('evidence-entity').first()).toContainText(`Qloo ${radiohead}`);
+    await expect(evidence.getByTestId('evidence-request').first()).toContainText('recorded · 2026-10-07T12:15:');
+    // Recorded mode may never be presented as invented, and never leaks the host.
+    await expect(evidence).not.toContainText(/synthetic/i);
+    await expect(evidence).not.toContainText('qloo.com');
+    await expect(evidence).toContainText(radiohead);
+    await expect(evidence).toContainText(kendrick);
   }
   expect(unexpected).toEqual([]);
 });
 
-test('mobile saved comparison keeps both audiences readable without overflow', async ({ page }) => {
+test('the synthetic record stays reachable and still labels itself as invented', async ({ page, baseURL }) => {
+  const unexpected: string[] = [];
+  page.on('request', (request) => { const url = request.url(); if (!url.startsWith(baseURL!) || new URL(url).pathname.startsWith('/api/')) unexpected.push(url); });
+  await page.goto('/audition?mode=synthetic');
+  await expect(page.getByTestId('replay-label')).toHaveText('Synthetic example · invented demonstration data · no live calls');
+  await expect(page.getByTestId('replay-mode')).toHaveText('Synthetic example');
+  await expect(page.getByTestId('decision-answer')).toHaveText('For this audience signal, Quiet Orbit is the clear lead among your confirmed movie comps.');
+  await expect(page.getByTestId('decision-basis')).toContainText('synthetic saved affinities');
+  await expect(page.getByTestId('decision-basis')).not.toContainText('Qloo audience affinity');
+  const evidence = page.getByTestId('evidence-movie');
+  await evidence.locator('summary').click();
+  await expect(evidence.locator('summary')).toHaveText('Synthetic evidence');
+  await expect(evidence).toContainText('Synthetic saved example dated 2026-01-15');
+  await expect(evidence).toContainText('None of it was returned by Qloo');
+  await expect(evidence.getByTestId('evidence-entity').first()).toContainText('synthetic entity id');
+  await expect(evidence.getByTestId('evidence-request').first()).toContainText('Synthetic request record');
+  // Synthetic mode must never present invented values as Qloo-returned or Qloo-identified.
+  await expect(evidence).not.toContainText('Names come from the Qloo');
+  await expect(evidence).not.toContainText('Qloo returned');
+  await expect(evidence).not.toContainText(/Qloo [0-9A-F]{8}-/);
+  await expect(evidence).toContainText(lanternfold);
+  await expect(evidence).toContainText(juno);
+  expect(unexpected).toEqual([]);
+});
+
+test('mobile recorded comparison keeps both audiences readable without overflow', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/audition');
-  await page.getByRole('button', { name: 'Juno Kestrel fans', exact: true }).click();
+  await page.getByRole('button', { name: 'Kendrick Lamar fans', exact: true }).click();
   const columns = page.getByTestId('panel-movie').locator('.rt-audition__column');
   const first = await columns.nth(0).boundingBox(); const second = await columns.nth(1).boundingBox();
   expect(first!.x + first!.width).toBeLessThanOrEqual(second!.x);
@@ -99,24 +134,24 @@ test('failed session keeps live actions disabled and can be retried', async ({ p
   await expect(page.getByTestId('audition-send')).toBeDisabled();
   await page.getByTestId('session-retry').click();
   await expect(page.getByTestId('audition-send')).toBeEnabled();
-  await page.getByRole('button', { name: 'Saved example', exact: true }).click();
+  await page.getByTestId('replay-mode').click();
   await expect(page.getByTestId('audition-results')).toBeVisible();
   expect(attempts).toBe(2);
 });
 
-test('main landing routes to saved audition first and keeps the thesis and synthetic specimen', async ({ page, baseURL }) => {
+test('main landing routes to the recorded audition first and keeps the thesis and specimen', async ({ page, baseURL }) => {
   const api: string[] = [];
   page.on('request', (r) => { if (!r.url().startsWith(baseURL!) || new URL(r.url()).pathname.startsWith('/api/')) api.push(r.url()); });
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Choose the comps. Switch the audience. See what changes.');
   await expect(page.locator('.rt-landing__lede')).toContainText('Qloo’s taste data');
   await expect(page.getByTestId('rt-door-play')).toHaveAttribute('href', '/audition');
-  await expect(page.getByTestId('rt-door-play')).toContainText('Saved example · synthetic demonstration');
+  await expect(page.getByTestId('rt-door-play')).toContainText('Recorded Qloo evidence · 2026-10-07');
   await expect(page.getByTestId('rt-door-create')).toHaveAttribute('href', '/audition?mode=live');
   const specimen = page.getByTestId('rt-specimen');
-  await expect(specimen).toContainText('Quiet Orbit / First Hello: reversed');
-  await expect(specimen.locator('.rt-specimen__cell').nth(0)).toContainText('1. Quiet Orbit');
-  await expect(specimen.locator('.rt-specimen__cell').nth(1)).toContainText('1. First Hello');
+  await expect(specimen).toContainText('Moon / Arrival: reversed');
+  await expect(specimen.locator('.rt-specimen__cell').nth(0)).toContainText('1. Moon');
+  await expect(specimen.locator('.rt-specimen__cell').nth(1)).toContainText('1. Arrival');
   await page.keyboard.press('Tab'); await page.keyboard.press('Tab');
   await expect(page.getByTestId('rt-door-play')).toBeFocused();
   await page.keyboard.press('Enter');
@@ -135,7 +170,7 @@ for (const width of [1440, 390]) {
   });
 }
 
-test('mobile landing opens the saved product without horizontal pan', async ({ page }) => {
+test('mobile landing opens the recorded product without horizontal pan', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

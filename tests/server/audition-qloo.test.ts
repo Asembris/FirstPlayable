@@ -208,7 +208,11 @@ describe("score capture storage", () => {
     const now = new Date("2026-10-07T10:00:00.000Z");
     gateway.setClock(() => now);
     const { deps } = transport([() => json(insights("urn:entity:videogame", [[OUTER_WILDS_ID, "Outer Wilds", 0.5]]))]);
-    const { capture } = await scoreComps({ audienceEntityId: audienceId(), domain: "videogame", candidateEntityIds: [OUTER_WILDS_ID] }, deps);
+    // One clock for all three: the capture's `retrieved_at`, the gateway's
+    // own clock, and the expiry `writeCompScoreCapture` derives. Left on the
+    // wall clock, `retrieved_at` drifts past the pinned expiry once the
+    // first-hop TTL has elapsed in real time, and the insert is refused.
+    const { capture } = await scoreComps({ audienceEntityId: audienceId(), domain: "videogame", candidateEntityIds: [OUTER_WILDS_ID] }, { ...deps, now: () => now });
     const stored = await writeCompScoreCapture(gateway, capture, null, now);
     expect(stored.cache).toBe("live");
     expect(await gateway.findLatestQlooCapture(audienceId(), "videogame")).toBeNull();
