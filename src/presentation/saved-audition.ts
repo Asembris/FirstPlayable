@@ -19,7 +19,6 @@ const entityView = (entity: (typeof record.comps)[number] | (typeof record.audie
   slot_id: entity.slot_id, entity_id: entity.entity_id, name: entity.name,
   search_capture_id: entity.search_capture_id, original_rank: entity.original_rank,
 });
-export const SAVED_AUDITION = { title: record.title, concept: record.concept, captured_at: record.captured_at };
 export function savedAuditionResult(): ScoreResponse {
   const audiences: [ConfirmedEntityView, ConfirmedEntityView] = [entityView(record.audiences[0]!), entityView(record.audiences[1]!)];
   const domains: ScoreResponse['domains'] = { movie: null, videogame: null };

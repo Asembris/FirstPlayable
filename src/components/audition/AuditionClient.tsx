@@ -21,7 +21,7 @@ import {
   type SlotSearchView,
 } from "@/domain/audition";
 import { AuditionResults } from "./AuditionResults";
-import type { ScoreResponse } from "@/domain/audition-view";
+import type { AuditionReplay, ScoreResponse } from "@/domain/audition-view";
 import { postJson, type RequestFailure } from "@/components/studio/shared";
 
 const KIND_LABEL: Record<SlotKind, string> = {
@@ -33,7 +33,9 @@ const KIND_LABEL: Record<SlotKind, string> = {
 
 const EXAMPLE = "Compare Moon, Arrival and O Brother for Radiohead and Kendrick Lamar fans.";
 
-export function AuditionClient({ savedResult, example, startLive = false }: { savedResult: ScoreResponse; example: { title: string; concept: string; captured_at: string }; startLive?: boolean }): React.JSX.Element {
+export function AuditionClient({ replay, startLive = false }: { replay: AuditionReplay; startLive?: boolean }): React.JSX.Element {
+  const recorded = replay.provenance.kind === "recorded_qloo";
+  const retrievedOn = replay.provenance.captured_at.slice(0, 10);
   const [live, setLive] = useState(startLive);
   const [session, setSession] = useState<'pending' | 'ready' | 'failed'>('pending');
   const [sessionAttempt, setSessionAttempt] = useState(0);
@@ -124,20 +126,29 @@ export function AuditionClient({ savedResult, example, startLive = false }: { sa
       </header>
 
       <nav className="rt-audition__mode" aria-label="Audition mode">
-        <button className="rt-button" type="button" aria-pressed={!live} onClick={() => { setLive(false); setFailure(null); }}>Saved example</button>
+        <button className="rt-button" type="button" data-testid="replay-mode" aria-pressed={!live} onClick={() => { setLive(false); setFailure(null); }}>{recorded ? 'Recorded Qloo example' : 'Synthetic example'}</button>
         <button className="rt-button" type="button" data-testid="try-own" aria-pressed={live} onClick={() => { if (!live) { setSession('pending'); setLive(true); } }}>Try your own</button>
       </nav>
       </div>
       {!live && (
         <section className="rt-audition__concept" aria-label="Game concept">
-          <span className="rt-label">Saved example · synthetic demonstration data · no live calls</span>
-          <h2 className="rt-audition__h2">{example.title}</h2>
-          <p>{example.concept}</p>
-          <p className="rt-audition__note">Comps chosen for isolation, first contact and exploration. Titles, artists and affinities here are invented in Qloo’s response shape, not Qloo data. Try your own for live Qloo scores.</p>
+          <span className="rt-label" data-testid="replay-label">
+            {recorded
+              ? `Recorded Qloo example · real Qloo evidence retrieved ${retrievedOn} · no live calls`
+              : 'Synthetic example · invented demonstration data · no live calls'}
+          </span>
+          <h2 className="rt-audition__h2">{replay.title}</h2>
+          <p>{replay.concept}</p>
+          <p className="rt-audition__note">
+            {replay.selection}{' '}
+            {recorded
+              ? `Every title, audience and affinity below is the value Qloo returned on ${retrievedOn}; the ordering, the close calls and the decision are computed here. Try your own to score your comps live.`
+              : 'Titles, artists and affinities here are invented in Qloo’s response shape, not Qloo data. Try your own for live Qloo scores.'}
+          </p>
         </section>
       )}
       </div>
-      {!live && <AuditionResults result={savedResult} savedAt={example.captured_at} />}
+      {!live && <AuditionResults result={replay.result} replay={replay.provenance} />}
       {live && <>
       {session === 'pending' && <p role="status">Preparing your session…</p>}
       {session === 'failed' && <button className="rt-button" type="button" data-testid="session-retry" onClick={() => { setFailure(null); setSession('pending'); setSessionAttempt((v) => v + 1); }}>Retry session</button>}
