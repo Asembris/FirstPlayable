@@ -9,7 +9,7 @@
 
 **Choose the comps. Switch the audience. See what changes.**
 
-[![Watch 90s Demo](https://img.shields.io/badge/%E2%96%B6_Watch_90s_Demo-B0154C?style=for-the-badge)](https://youtu.be/2YhuPYuNKak)
+[![Watch 2-min Demo](https://img.shields.io/badge/%E2%96%B6_Watch_2--min_Demo-B0154C?style=for-the-badge)](https://youtu.be/nDwtJwDvir4)
 [![Try Live App](https://img.shields.io/badge/Try_Live_App-141518?style=for-the-badge)](https://firstplayable.vercel.app/audition?mode=live)
 
 [![Recorded Qloo Demo](https://img.shields.io/badge/Recorded_Qloo_Demo-6B6E75?style=for-the-badge)](https://firstplayable.vercel.app/audition)
