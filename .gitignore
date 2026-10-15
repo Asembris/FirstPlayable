@@ -22,3 +22,6 @@ blob-report/
 .playwright/
 
 probes/out/
+demo/
+showreel/
+.playwright-mcp/
