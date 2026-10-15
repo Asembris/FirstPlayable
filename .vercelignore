@@ -38,3 +38,8 @@ supabase/.temp/
 
 # Local design handoff and inspection material are not deployment inputs.
 phase6-handoff/
+
+# Local video production (demo and showreel renders) and Playwright MCP output.
+demo/
+showreel/
+.playwright-mcp/
